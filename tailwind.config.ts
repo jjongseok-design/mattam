@@ -57,6 +57,11 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        rating: "hsl(var(--rating-star))",
+      },
+      boxShadow: {
+        panel: "var(--panel-shadow)",
+        "card-hover": "var(--card-hover-shadow)",
       },
       borderRadius: {
         lg: "var(--radius)",

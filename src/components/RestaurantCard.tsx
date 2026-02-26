@@ -1,0 +1,75 @@
+import { Star, MapPin, Phone, ExternalLink } from "lucide-react";
+import type { Restaurant } from "@/data/restaurants";
+
+interface RestaurantCardProps {
+  restaurant: Restaurant;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left p-4 rounded-xl transition-all duration-200 border ${
+        isSelected
+          ? "border-primary bg-secondary shadow-card-hover"
+          : "border-transparent bg-card hover:shadow-card-hover hover:border-border"
+      }`}
+    >
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <h3 className="font-semibold text-foreground text-base">{restaurant.name}</h3>
+          <span className="text-xs text-muted-foreground">{restaurant.category}</span>
+        </div>
+        <div className="flex items-center gap-1 bg-secondary px-2 py-0.5 rounded-md">
+          <Star className="h-3.5 w-3.5 text-rating fill-current" />
+          <span className="text-sm font-bold text-foreground">{restaurant.rating}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5">
+        <MapPin className="h-3 w-3 flex-shrink-0" />
+        <span className="truncate">{restaurant.address}</span>
+      </div>
+
+      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+        <Phone className="h-3 w-3 flex-shrink-0" />
+        <span>{restaurant.phone}</span>
+        <span className="ml-auto text-xs">{restaurant.priceRange}</span>
+      </div>
+
+      <div className="flex gap-1 flex-wrap mb-3">
+        {restaurant.tags.map((tag) => (
+          <span
+            key={tag}
+            className="px-2 py-0.5 bg-muted rounded text-[11px] text-muted-foreground"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
+        {restaurant.sources.map((source) => (
+          <div
+            key={source.name}
+            className="flex items-center gap-1 text-[11px] text-muted-foreground"
+          >
+            <ExternalLink className="h-2.5 w-2.5" />
+            <span className="font-medium">{source.name}</span>
+            <Star className="h-2.5 w-2.5 text-rating fill-current" />
+            <span>{source.rating}</span>
+            <span className="text-border">({source.reviewCount})</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 text-[11px] text-muted-foreground">
+        종합 리뷰 {restaurant.reviewCount.toLocaleString()}개
+      </div>
+    </button>
+  );
+};
+
+export default RestaurantCard;
