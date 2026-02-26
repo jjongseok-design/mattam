@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import type { Restaurant } from "@/data/restaurants";
 
@@ -29,8 +28,7 @@ const defaultIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// 춘천시 중심 좌표
-const CHUNCHEON_CENTER: [number, number] = [37.8780, 127.7300];
+const CHUNCHEON_CENTER: L.LatLngExpression = [37.8780, 127.7300];
 
 interface MapViewProps {
   restaurants: Restaurant[];
@@ -38,51 +36,65 @@ interface MapViewProps {
   onSelect: (id: string) => void;
 }
 
-function FlyToSelected({ restaurant }: { restaurant: Restaurant | undefined }) {
-  const map = useMap();
-  useEffect(() => {
-    if (restaurant) {
-      map.flyTo([restaurant.lat, restaurant.lng], 15, { duration: 0.8 });
-    }
-  }, [restaurant, map]);
-  return null;
-}
-
 const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
-  const selected = restaurants.find((r) => r.id === selectedId);
+  const mapRef = useRef<L.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<L.Marker[]>([]);
 
-  return (
-    <MapContainer
-      center={CHUNCHEON_CENTER}
-      zoom={14}
-      className="w-full h-full rounded-none"
-      zoomControl={false}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <FlyToSelected restaurant={selected} />
-      {restaurants.map((r) => (
-        <Marker
-          key={r.id}
-          position={[r.lat, r.lng]}
-          icon={r.id === selectedId ? selectedIcon : defaultIcon}
-          eventHandlers={{ click: () => onSelect(r.id) }}
-        >
-          <Popup>
-            <div className="text-sm">
-              <strong>{r.name}</strong>
-              <br />
-              ⭐ {r.rating} ({r.reviewCount.toLocaleString()}개 리뷰)
-              <br />
-              <span className="text-xs">{r.address}</span>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
-  );
+  // Initialize map
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    mapRef.current = L.map(containerRef.current, {
+      center: CHUNCHEON_CENTER,
+      zoom: 14,
+      zoomControl: false,
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(mapRef.current);
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // Update markers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Clear old markers
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    restaurants.forEach((r) => {
+      const marker = L.marker([r.lat, r.lng], {
+        icon: r.id === selectedId ? selectedIcon : defaultIcon,
+      })
+        .addTo(map)
+        .bindPopup(
+          `<div style="font-size:13px"><strong>${r.name}</strong><br/>⭐ ${r.rating} (${r.reviewCount.toLocaleString()}개 리뷰)<br/><span style="font-size:11px">${r.address}</span></div>`
+        );
+
+      marker.on("click", () => onSelect(r.id));
+      markersRef.current.push(marker);
+    });
+  }, [restaurants, selectedId, onSelect]);
+
+  // Fly to selected
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedId) return;
+    const r = restaurants.find((r) => r.id === selectedId);
+    if (r) {
+      map.flyTo([r.lat, r.lng], 15, { duration: 0.8 });
+    }
+  }, [selectedId, restaurants]);
+
+  return <div ref={containerRef} className="w-full h-full" />;
 };
 
 export default MapView;
