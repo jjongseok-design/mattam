@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { categories } from "@/data/restaurants";
+import { categories, categoryMap } from "@/data/restaurants";
 
 interface SearchBarProps {
   query: string;
@@ -22,19 +22,23 @@ const SearchBar = ({ query, onQueryChange, selectedCategory, onCategoryChange }:
         />
       </div>
       <div className="flex gap-1.5 flex-wrap">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => onCategoryChange(cat)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-              selectedCategory === cat
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+        {categories.map((cat) => {
+          const info = categoryMap[cat];
+          return (
+            <button
+              key={cat}
+              onClick={() => onCategoryChange(cat)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+                selectedCategory === cat
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              <span>{info?.emoji}</span>
+              {cat}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

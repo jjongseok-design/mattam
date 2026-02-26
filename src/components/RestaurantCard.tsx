@@ -1,5 +1,6 @@
-import { Star, MapPin, Phone, ExternalLink } from "lucide-react";
+import { Star, MapPin, Phone } from "lucide-react";
 import type { Restaurant } from "@/data/restaurants";
+import { categoryMap } from "@/data/restaurants";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -8,6 +9,8 @@ interface RestaurantCardProps {
 }
 
 const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps) => {
+  const catInfo = categoryMap[restaurant.category];
+
   return (
     <button
       onClick={onClick}
@@ -19,7 +22,10 @@ const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps
     >
       <div className="flex justify-between items-start mb-2">
         <div>
-          <h3 className="font-semibold text-foreground text-base">{restaurant.name}</h3>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm">{catInfo?.emoji}</span>
+            <h3 className="font-semibold text-foreground text-base">{restaurant.name}</h3>
+          </div>
           <span className="text-xs text-muted-foreground">{restaurant.category}</span>
         </div>
         <div className="flex items-center gap-1 bg-secondary px-2 py-0.5 rounded-md">
@@ -27,6 +33,10 @@ const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps
           <span className="text-sm font-bold text-foreground">{restaurant.rating}</span>
         </div>
       </div>
+
+      {restaurant.description && (
+        <p className="text-xs text-muted-foreground mb-2">{restaurant.description}</p>
+      )}
 
       <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5">
         <MapPin className="h-3 w-3 flex-shrink-0" />
@@ -39,7 +49,7 @@ const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps
         <span className="ml-auto text-xs">{restaurant.priceRange}</span>
       </div>
 
-      <div className="flex gap-1 flex-wrap mb-3">
+      <div className="flex gap-1 flex-wrap mb-2">
         {restaurant.tags.map((tag) => (
           <span
             key={tag}
@@ -50,23 +60,8 @@ const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps
         ))}
       </div>
 
-      <div className="flex gap-2">
-        {restaurant.sources.map((source) => (
-          <div
-            key={source.name}
-            className="flex items-center gap-1 text-[11px] text-muted-foreground"
-          >
-            <ExternalLink className="h-2.5 w-2.5" />
-            <span className="font-medium">{source.name}</span>
-            <Star className="h-2.5 w-2.5 text-rating fill-current" />
-            <span>{source.rating}</span>
-            <span className="text-border">({source.reviewCount})</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-2 text-[11px] text-muted-foreground">
-        종합 리뷰 {restaurant.reviewCount.toLocaleString()}개
+      <div className="text-[11px] text-muted-foreground">
+        리뷰 {restaurant.reviewCount.toLocaleString()}개
       </div>
     </button>
   );

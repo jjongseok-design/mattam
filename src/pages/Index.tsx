@@ -3,7 +3,7 @@ import { MapPin, Utensils } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
-import { sampleRestaurants } from "@/data/restaurants";
+import { restaurants } from "@/data/restaurants";
 
 const Index = () => {
   const [query, setQuery] = useState("");
@@ -11,7 +11,7 @@ const Index = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    let list = sampleRestaurants;
+    let list = restaurants;
 
     if (selectedCategory !== "전체") {
       list = list.filter((r) => r.category === selectedCategory);
@@ -28,7 +28,6 @@ const Index = () => {
       );
     }
 
-    // 별점 높은 순 정렬
     return [...list].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
   }, [query, selectedCategory]);
 
@@ -46,7 +45,7 @@ const Index = () => {
               <h1 className="text-lg font-bold text-foreground">춘천 맛집지도</h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                강원도 춘천시
+                강원특별자치도 춘천시 · 실제 영업 음식점
               </p>
             </div>
           </div>
