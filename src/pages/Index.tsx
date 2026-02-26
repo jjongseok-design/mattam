@@ -28,8 +28,11 @@ const Index = () => {
       );
     }
 
-    return [...list].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
+    return [...list].sort((a, b) => b.reviewCount - a.reviewCount || b.rating - a.rating);
   }, [query, selectedCategory]);
+
+  // 지도에는 카테고리 선택 시에만 마커 표시 (전체일 때는 마커 없음)
+  const mapRestaurants = selectedCategory === "전체" ? [] : filtered;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
@@ -45,7 +48,7 @@ const Index = () => {
               <h1 className="text-lg font-bold text-foreground">춘천 맛집지도</h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                강원특별자치도 춘천시 · 실제 영업 음식점
+                강원특별자치도 춘천시 · {restaurants.length}개 음식점
               </p>
             </div>
           </div>
@@ -60,7 +63,10 @@ const Index = () => {
         {/* Results */}
         <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
           <p className="text-xs text-muted-foreground px-1 mb-1">
-            {filtered.length}개 음식점 · 별점순 정렬
+            {filtered.length}개 음식점 · 리뷰 많은 순
+            {selectedCategory === "전체" && (
+              <span className="ml-1 text-primary">← 업종을 선택하면 지도에 표시됩니다</span>
+            )}
           </p>
           {filtered.map((restaurant) => (
             <RestaurantCard
@@ -82,7 +88,7 @@ const Index = () => {
       {/* Map */}
       <div className="flex-1 h-full">
         <MapView
-          restaurants={filtered}
+          restaurants={mapRestaurants}
           selectedId={selectedId}
           onSelect={setSelectedId}
         />
