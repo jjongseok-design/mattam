@@ -3,13 +3,11 @@ import L from "leaflet";
 import type { Restaurant } from "@/data/restaurants";
 import { categoryMap, markerColorUrls } from "@/data/restaurants";
 
-// Fix default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
 const SHADOW_URL = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png";
 const DEFAULT_ICON_URL = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png";
 
-// Cache icons by color
 const iconCache: Record<string, L.Icon> = {};
 function getIcon(color: string, selected: boolean): L.Icon {
   const key = `${color}-${selected}`;
@@ -26,12 +24,9 @@ function getIcon(color: string, selected: boolean): L.Icon {
   return iconCache[key];
 }
 
-// 춘천시 행정구역 대략적 경계
-const CHUNCHEON_BOUNDS: L.LatLngBoundsExpression = [
-  [37.82, 127.65], // 남서
-  [37.97, 127.82], // 북동
-];
+// 춘천시 전체가 보이는 범위
 const CHUNCHEON_CENTER: L.LatLngExpression = [37.8813, 127.7300];
+const DEFAULT_ZOOM = 12;
 
 interface MapViewProps {
   restaurants: Restaurant[];
@@ -44,32 +39,20 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.Marker[]>([]);
 
-  // Initialize map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     const map = L.map(containerRef.current, {
       center: CHUNCHEON_CENTER,
-      zoom: 13,
+      zoom: DEFAULT_ZOOM,
       zoomControl: true,
-      maxBounds: CHUNCHEON_BOUNDS,
-      maxBoundsViscosity: 0.8,
-      minZoom: 11,
+      minZoom: 10,
       maxZoom: 18,
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
-
-    // 춘천시 경계선 표시
-    const boundary = L.rectangle(CHUNCHEON_BOUNDS, {
-      color: "hsl(4, 80%, 52%)",
-      weight: 2,
-      fillOpacity: 0.03,
-      dashArray: "8, 4",
-    });
-    boundary.addTo(map);
 
     mapRef.current = map;
 
@@ -81,7 +64,6 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
   const onSelectCb = useCallback(onSelect, [onSelect]);
 
-  // Update markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -113,7 +95,6 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
     });
   }, [restaurants, selectedId, onSelectCb]);
 
-  // Fly to selected
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedId) return;
