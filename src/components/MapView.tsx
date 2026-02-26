@@ -1,34 +1,37 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
 import type { Restaurant } from "@/data/restaurants";
+import { categoryMap, markerColorUrls } from "@/data/restaurants";
 
 // Fix default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
 
-const selectedIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+const SHADOW_URL = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png";
+const DEFAULT_ICON_URL = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png";
 
-const defaultIcon = new L.Icon({
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+// Cache icons by color
+const iconCache: Record<string, L.Icon> = {};
+function getIcon(color: string, selected: boolean): L.Icon {
+  const key = `${color}-${selected}`;
+  if (!iconCache[key]) {
+    iconCache[key] = new L.Icon({
+      iconUrl: markerColorUrls[color] || DEFAULT_ICON_URL,
+      shadowUrl: SHADOW_URL,
+      iconSize: selected ? [30, 49] : [25, 41],
+      iconAnchor: selected ? [15, 49] : [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+  }
+  return iconCache[key];
+}
 
-const CHUNCHEON_CENTER: L.LatLngExpression = [37.8780, 127.7300];
+// 춘천시 행정구역 대략적 경계
+const CHUNCHEON_BOUNDS: L.LatLngBoundsExpression = [
+  [37.82, 127.65], // 남서
+  [37.97, 127.82], // 북동
+];
+const CHUNCHEON_CENTER: L.LatLngExpression = [37.8813, 127.7300];
 
 interface MapViewProps {
   restaurants: Restaurant[];
@@ -45,44 +48,70 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    mapRef.current = L.map(containerRef.current, {
+    const map = L.map(containerRef.current, {
       center: CHUNCHEON_CENTER,
-      zoom: 14,
-      zoomControl: false,
+      zoom: 13,
+      zoomControl: true,
+      maxBounds: CHUNCHEON_BOUNDS,
+      maxBoundsViscosity: 0.8,
+      minZoom: 11,
+      maxZoom: 18,
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(mapRef.current);
+    }).addTo(map);
+
+    // 춘천시 경계선 표시
+    const boundary = L.rectangle(CHUNCHEON_BOUNDS, {
+      color: "hsl(4, 80%, 52%)",
+      weight: 2,
+      fillOpacity: 0.03,
+      dashArray: "8, 4",
+    });
+    boundary.addTo(map);
+
+    mapRef.current = map;
 
     return () => {
-      mapRef.current?.remove();
+      map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  const onSelectCb = useCallback(onSelect, [onSelect]);
 
   // Update markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Clear old markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
     restaurants.forEach((r) => {
+      const catInfo = categoryMap[r.category];
+      const color = catInfo?.color || "grey";
+      const isSelected = r.id === selectedId;
+
       const marker = L.marker([r.lat, r.lng], {
-        icon: r.id === selectedId ? selectedIcon : defaultIcon,
+        icon: getIcon(color, isSelected),
+        zIndexOffset: isSelected ? 1000 : 0,
       })
         .addTo(map)
         .bindPopup(
-          `<div style="font-size:13px"><strong>${r.name}</strong><br/>⭐ ${r.rating} (${r.reviewCount.toLocaleString()}개 리뷰)<br/><span style="font-size:11px">${r.address}</span></div>`
+          `<div style="font-size:13px;min-width:140px">
+            <strong>${catInfo?.emoji || ""} ${r.name}</strong><br/>
+            <span style="color:#666">${r.category}</span><br/>
+            ⭐ ${r.rating} (${r.reviewCount.toLocaleString()}개 리뷰)<br/>
+            <span style="font-size:11px;color:#888">${r.address}</span>
+          </div>`
         );
 
-      marker.on("click", () => onSelect(r.id));
+      marker.on("click", () => onSelectCb(r.id));
       markersRef.current.push(marker);
     });
-  }, [restaurants, selectedId, onSelect]);
+  }, [restaurants, selectedId, onSelectCb]);
 
   // Fly to selected
   useEffect(() => {
