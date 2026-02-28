@@ -7,15 +7,10 @@ import { restaurants } from "@/data/restaurants";
 
 const Index = () => {
   const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("전체");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     let list = restaurants;
-
-    if (selectedCategory !== "전체") {
-      list = list.filter((r) => r.category === selectedCategory);
-    }
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
@@ -23,16 +18,12 @@ const Index = () => {
         (r) =>
           r.name.toLowerCase().includes(q) ||
           r.tags.some((t) => t.includes(q)) ||
-          r.category.includes(q) ||
           r.address.includes(q)
       );
     }
 
-    return [...list].sort((a, b) => b.reviewCount - a.reviewCount || b.rating - a.rating);
-  }, [query, selectedCategory]);
-
-  // 지도에는 카테고리 선택 시에만 마커 표시 (전체일 때는 마커 없음)
-  const mapRestaurants = selectedCategory === "전체" ? [] : filtered;
+    return [...list].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
+  }, [query]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
@@ -45,28 +36,20 @@ const Index = () => {
               <Utensils className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">춘천 맛집지도</h1>
+              <h1 className="text-lg font-bold text-foreground">🥟 춘천 중국집 지도</h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                강원특별자치도 춘천시 · {restaurants.length}개 음식점
+                강원특별자치도 춘천시 · {restaurants.length}개 중국집
               </p>
             </div>
           </div>
-          <SearchBar
-            query={query}
-            onQueryChange={setQuery}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-          />
+          <SearchBar query={query} onQueryChange={setQuery} />
         </div>
 
         {/* Results */}
         <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
           <p className="text-xs text-muted-foreground px-1 mb-1">
-            {filtered.length}개 음식점 · 리뷰 많은 순
-            {selectedCategory === "전체" && (
-              <span className="ml-1 text-primary">← 업종을 선택하면 지도에 표시됩니다</span>
-            )}
+            {filtered.length}개 중국집 · 평점 높은 순
           </p>
           {filtered.map((restaurant) => (
             <RestaurantCard
@@ -85,10 +68,10 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Map */}
+      {/* Map - 모든 중국집 마커 표시 */}
       <div className="flex-1 h-full">
         <MapView
-          restaurants={mapRestaurants}
+          restaurants={filtered}
           selectedId={selectedId}
           onSelect={setSelectedId}
         />

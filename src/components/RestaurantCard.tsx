@@ -1,6 +1,5 @@
 import { Star, MapPin, Phone } from "lucide-react";
 import type { Restaurant } from "@/data/restaurants";
-import { categoryMap } from "@/data/restaurants";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -9,8 +8,6 @@ interface RestaurantCardProps {
 }
 
 const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps) => {
-  const catInfo = categoryMap[restaurant.category];
-
   return (
     <button
       onClick={onClick}
@@ -23,10 +20,9 @@ const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps
       <div className="flex justify-between items-start mb-2">
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm">{catInfo?.emoji}</span>
+            <span className="text-sm">🥟</span>
             <h3 className="font-semibold text-foreground text-base">{restaurant.name}</h3>
           </div>
-          <span className="text-xs text-muted-foreground">{restaurant.category}</span>
         </div>
         <div className="flex items-center gap-1 bg-secondary px-2 py-0.5 rounded-md">
           <Star className="h-3.5 w-3.5 text-rating fill-current" />

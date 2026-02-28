@@ -1,30 +1,31 @@
 import { useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
 import type { Restaurant } from "@/data/restaurants";
-import { categoryMap, markerColorUrls } from "@/data/restaurants";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
 const SHADOW_URL = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png";
-const DEFAULT_ICON_URL = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png";
+const MARKER_URL = "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png";
+const MARKER_SELECTED_URL = "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png";
 
-const iconCache: Record<string, L.Icon> = {};
-function getIcon(color: string, selected: boolean): L.Icon {
-  const key = `${color}-${selected}`;
-  if (!iconCache[key]) {
-    iconCache[key] = new L.Icon({
-      iconUrl: markerColorUrls[color] || DEFAULT_ICON_URL,
-      shadowUrl: SHADOW_URL,
-      iconSize: selected ? [30, 49] : [25, 41],
-      iconAnchor: selected ? [15, 49] : [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41],
-    });
-  }
-  return iconCache[key];
-}
+const defaultIcon = new L.Icon({
+  iconUrl: MARKER_URL,
+  shadowUrl: SHADOW_URL,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
-// 춘천시 전체가 보이는 범위
+const selectedIcon = new L.Icon({
+  iconUrl: MARKER_SELECTED_URL,
+  shadowUrl: SHADOW_URL,
+  iconSize: [30, 49],
+  iconAnchor: [15, 49],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 const CHUNCHEON_CENTER: L.LatLngExpression = [37.8813, 127.7300];
 const DEFAULT_ZOOM = 12;
 
@@ -72,19 +73,16 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
     markersRef.current = [];
 
     restaurants.forEach((r) => {
-      const catInfo = categoryMap[r.category];
-      const color = catInfo?.color || "grey";
       const isSelected = r.id === selectedId;
 
       const marker = L.marker([r.lat, r.lng], {
-        icon: getIcon(color, isSelected),
+        icon: isSelected ? selectedIcon : defaultIcon,
         zIndexOffset: isSelected ? 1000 : 0,
       })
         .addTo(map)
         .bindPopup(
           `<div style="font-size:13px;min-width:140px">
-            <strong>${catInfo?.emoji || ""} ${r.name}</strong><br/>
-            <span style="color:#666">${r.category}</span><br/>
+            <strong>🥟 ${r.name}</strong><br/>
             ⭐ ${r.rating} (${r.reviewCount.toLocaleString()}개 리뷰)<br/>
             <span style="font-size:11px;color:#888">${r.address}</span>
           </div>`
