@@ -3,7 +3,6 @@ import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronUp, ChevronDown, Utensils } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
-import TagFilter from "./TagFilter";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
 interface MobileBottomSheetProps {
@@ -12,8 +11,6 @@ interface MobileBottomSheetProps {
   onSelect: (id: string) => void;
   query: string;
   onQueryChange: (q: string) => void;
-  activeTags: string[];
-  onToggleTag: (tag: string) => void;
   totalCount: number;
 }
 
@@ -25,8 +22,6 @@ const MobileBottomSheet = ({
   onSelect,
   query,
   onQueryChange,
-  activeTags,
-  onToggleTag,
   totalCount,
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("peek");
@@ -81,9 +76,8 @@ const MobileBottomSheet = ({
             className="px-3 pb-2 flex flex-col h-[calc(100%-48px)]"
           >
             <SearchBar query={query} onQueryChange={onQueryChange} />
-            <div className="py-2">
-              <TagFilter activeTags={activeTags} onToggle={onToggleTag} />
-            </div>
+
+
             <p className="text-xs text-muted-foreground px-1 mb-1">
               {restaurants.length}개 · 평점 높은 순
             </p>

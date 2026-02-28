@@ -3,7 +3,6 @@ import { MapPin, Utensils, Loader2 } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
-import TagFilter from "@/components/TagFilter";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -12,15 +11,9 @@ import { AnimatePresence } from "framer-motion";
 const Index = () => {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activeTags, setActiveTags] = useState<string[]>([]);
+  
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading } = useRestaurants();
-
-  const toggleTag = useCallback((tag: string) => {
-    setActiveTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  }, []);
 
   const filtered = useMemo(() => {
     let list = restaurants;
@@ -35,14 +28,8 @@ const Index = () => {
       );
     }
 
-    if (activeTags.length > 0) {
-      list = list.filter((r) =>
-        activeTags.some((tag) => r.tags.includes(tag))
-      );
-    }
-
     return [...list].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
-  }, [query, activeTags, restaurants]);
+  }, [query, restaurants]);
 
   if (isLoading) {
     return (
@@ -67,8 +54,6 @@ const Index = () => {
           onSelect={setSelectedId}
           query={query}
           onQueryChange={setQuery}
-          activeTags={activeTags}
-          onToggleTag={toggleTag}
           totalCount={restaurants.length}
         />
       </div>
@@ -95,9 +80,6 @@ const Index = () => {
             </div>
           </div>
           <SearchBar query={query} onQueryChange={setQuery} />
-          <div className="mt-3">
-            <TagFilter activeTags={activeTags} onToggle={toggleTag} />
-          </div>
         </div>
 
         {/* Results */}
