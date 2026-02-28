@@ -1,13 +1,26 @@
-import { useMemo, useState } from "react";
-import { MapPin, Utensils } from "lucide-react";
+import { useMemo, useState, useCallback } from "react";
+import { MapPin, Utensils, Loader2 } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
-import { restaurants } from "@/data/restaurants";
+import TagFilter from "@/components/TagFilter";
+import MobileBottomSheet from "@/components/MobileBottomSheet";
+import { useRestaurants } from "@/hooks/useRestaurants";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { AnimatePresence } from "framer-motion";
 
 const Index = () => {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const isMobile = useIsMobile();
+  const { data: restaurants = [], isLoading } = useRestaurants();
+
+  const toggleTag = useCallback((tag: string) => {
+    setActiveTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  }, []);
 
   const filtered = useMemo(() => {
     let list = restaurants;
@@ -22,9 +35,47 @@ const Index = () => {
       );
     }
 
-    return [...list].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
-  }, [query]);
+    if (activeTags.length > 0) {
+      list = list.filter((r) =>
+        activeTags.some((tag) => r.tags.includes(tag))
+      );
+    }
 
+    return [...list].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
+  }, [query, activeTags, restaurants]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <div className="relative h-screen w-screen overflow-hidden bg-background">
+        <MapView
+          restaurants={filtered}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
+        <MobileBottomSheet
+          restaurants={filtered}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          query={query}
+          onQueryChange={setQuery}
+          activeTags={activeTags}
+          onToggleTag={toggleTag}
+          totalCount={restaurants.length}
+        />
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
       {/* Side Panel */}
@@ -44,6 +95,9 @@ const Index = () => {
             </div>
           </div>
           <SearchBar query={query} onQueryChange={setQuery} />
+          <div className="mt-3">
+            <TagFilter activeTags={activeTags} onToggle={toggleTag} />
+          </div>
         </div>
 
         {/* Results */}
@@ -51,14 +105,16 @@ const Index = () => {
           <p className="text-xs text-muted-foreground px-1 mb-1">
             {filtered.length}개 중국집 · 평점 높은 순
           </p>
-          {filtered.map((restaurant) => (
-            <RestaurantCard
-              key={restaurant.id}
-              restaurant={restaurant}
-              isSelected={selectedId === restaurant.id}
-              onClick={() => setSelectedId(restaurant.id)}
-            />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {filtered.map((restaurant) => (
+              <RestaurantCard
+                key={restaurant.id}
+                restaurant={restaurant}
+                isSelected={selectedId === restaurant.id}
+                onClick={() => setSelectedId(restaurant.id)}
+              />
+            ))}
+          </AnimatePresence>
           {filtered.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Utensils className="h-8 w-8 mx-auto mb-2 opacity-40" />
@@ -68,7 +124,7 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Map - 모든 중국집 마커 표시 */}
+      {/* Map */}
       <div className="flex-1 h-full">
         <MapView
           restaurants={filtered}

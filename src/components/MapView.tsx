@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
-import type { Restaurant } from "@/data/restaurants";
+import type { Restaurant } from "@/hooks/useRestaurants";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
