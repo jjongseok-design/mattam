@@ -1,5 +1,6 @@
 import { Star, MapPin, Phone } from "lucide-react";
-import type { Restaurant } from "@/data/restaurants";
+import { motion } from "framer-motion";
+import type { Restaurant } from "@/hooks/useRestaurants";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -9,7 +10,12 @@ interface RestaurantCardProps {
 
 const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps) => {
   return (
-    <button
+    <motion.button
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={`w-full text-left p-4 rounded-xl transition-all duration-200 border ${
         isSelected
@@ -59,7 +65,7 @@ const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps
       <div className="text-[11px] text-muted-foreground">
         리뷰 {restaurant.reviewCount.toLocaleString()}개
       </div>
-    </button>
+    </motion.button>
   );
 };
 
