@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
-import { MapPin, Utensils, Loader2 } from "lucide-react";
+import { MapPin, Utensils, Loader2, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
@@ -71,13 +72,18 @@ const Index = () => {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Utensils className="h-4 w-4 text-primary-foreground" />
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-lg font-bold text-foreground">🥟 춘천 중국집 지도</h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
                 강원특별자치도 춘천시 · {restaurants.length}개 중국집
               </p>
             </div>
+            <Link to="/admin">
+              <button className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors" title="관리자">
+                <Settings className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </Link>
           </div>
           <SearchBar query={query} onQueryChange={setQuery} />
         </div>

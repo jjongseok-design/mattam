@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2 } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface RestaurantRow {
@@ -37,17 +37,41 @@ const emptyForm: Omit<RestaurantRow, "id"> & { id: string } = {
   description: "",
 };
 
+const adminApi = async (pin: string, action: string, data?: any) => {
+  const { data: result, error } = await supabase.functions.invoke("admin-api", {
+    body: { pin, action, data },
+  });
+  if (error) throw new Error(error.message);
+  if (!result.success) throw new Error(result.error);
+  return result;
+};
+
 const Admin = () => {
   const { toast } = useToast();
+  const [pin, setPin] = useState("");
+  const [pinInput, setPinInput] = useState("");
+  const [authenticated, setAuthenticated] = useState(false);
   const [restaurants, setRestaurants] = useState<RestaurantRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<RestaurantRow | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPinChange, setShowPinChange] = useState(false);
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
 
-  const fetchAll = async () => {
+  // Restore session
+  useEffect(() => {
+    const saved = sessionStorage.getItem("admin_pin");
+    if (saved) {
+      setPin(saved);
+      setAuthenticated(true);
+    }
+  }, []);
+
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("restaurants")
@@ -59,11 +83,53 @@ const Admin = () => {
       setRestaurants(data ?? []);
     }
     setLoading(false);
-  };
+  }, [toast]);
 
   useEffect(() => {
-    fetchAll();
-  }, []);
+    if (authenticated) fetchAll();
+  }, [authenticated, fetchAll]);
+
+  const handleLogin = async () => {
+    if (!pinInput.trim()) return;
+    try {
+      await adminApi(pinInput, "verify");
+      setPin(pinInput);
+      setAuthenticated(true);
+      sessionStorage.setItem("admin_pin", pinInput);
+      toast({ title: "로그인 성공 ✅" });
+    } catch {
+      toast({ title: "PIN이 틀렸습니다", variant: "destructive" });
+    }
+  };
+
+  const handleLogout = () => {
+    setAuthenticated(false);
+    setPin("");
+    setPinInput("");
+    sessionStorage.removeItem("admin_pin");
+  };
+
+  const handleChangePin = async () => {
+    if (newPin !== confirmPin) {
+      toast({ title: "새 PIN이 일치하지 않습니다", variant: "destructive" });
+      return;
+    }
+    if (newPin.length < 4 || newPin.length > 8) {
+      toast({ title: "PIN은 4~8자리여야 합니다", variant: "destructive" });
+      return;
+    }
+    try {
+      await adminApi(pin, "change_pin", { new_pin: newPin });
+      setPin(newPin);
+      sessionStorage.setItem("admin_pin", newPin);
+      setShowPinChange(false);
+      setNewPin("");
+      setConfirmPin("");
+      toast({ title: "PIN 변경 완료 ✅" });
+    } catch (err: any) {
+      toast({ title: "PIN 변경 실패", description: err.message, variant: "destructive" });
+    }
+  };
 
   const filtered = restaurants.filter(
     (r) =>
@@ -73,7 +139,11 @@ const Admin = () => {
   );
 
   const openNew = () => {
-    const nextId = `cn${String(restaurants.length + 1).padStart(2, "0")}`;
+    const maxNum = restaurants.reduce((max, r) => {
+      const m = r.id.match(/^cn(\d+)$/);
+      return m ? Math.max(max, parseInt(m[1])) : max;
+    }, 0);
+    const nextId = `cn${String(maxNum + 1).padStart(2, "0")}`;
     setForm({ ...emptyForm, id: nextId });
     setEditing(null);
     setShowForm(true);
@@ -115,40 +185,78 @@ const Admin = () => {
       lat: Number(form.lat),
       lng: Number(form.lng),
       price_range: form.price_range || null,
-      tags: typeof form.tags === "string" ? (form.tags as string).split(",").map((t) => t.trim()).filter(Boolean) : form.tags,
+      tags:
+        typeof form.tags === "string"
+          ? (form.tags as string)
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : form.tags,
       description: form.description || null,
     };
 
-    let error;
-    if (editing) {
-      const { error: e } = await supabase.from("restaurants").update(payload).eq("id", editing.id);
-      error = e;
-    } else {
-      const { error: e } = await supabase.from("restaurants").insert(payload);
-      error = e;
-    }
-
-    if (error) {
-      toast({ title: "저장 실패", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: editing ? "수정 완료" : "추가 완료" });
+    try {
+      if (editing) {
+        await adminApi(pin, "update", payload);
+      } else {
+        await adminApi(pin, "insert", payload);
+      }
+      toast({ title: editing ? "수정 완료 ✅" : "추가 완료 ✅" });
       setShowForm(false);
       fetchAll();
+    } catch (err: any) {
+      toast({ title: "저장 실패", description: err.message, variant: "destructive" });
     }
     setSaving(false);
   };
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`"${name}" 을(를) 삭제하시겠습니까?`)) return;
-    const { error } = await supabase.from("restaurants").delete().eq("id", id);
-    if (error) {
-      toast({ title: "삭제 실패", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "삭제 완료" });
+    try {
+      await adminApi(pin, "delete", { id });
+      toast({ title: "삭제 완료 ✅" });
       fetchAll();
+    } catch (err: any) {
+      toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
     }
   };
 
+  // --- PIN Login Screen ---
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-xs space-y-6 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center">
+              <Lock className="h-7 w-7 text-primary-foreground" />
+            </div>
+            <h1 className="text-xl font-bold">관리자 로그인</h1>
+            <p className="text-sm text-muted-foreground">PIN 번호를 입력하세요</p>
+          </div>
+          <div className="space-y-3">
+            <Input
+              type="password"
+              placeholder="PIN (기본: 0000)"
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              className="text-center text-lg tracking-[0.5em] font-mono"
+              maxLength={8}
+              autoFocus
+            />
+            <Button onClick={handleLogin} className="w-full">
+              로그인
+            </Button>
+          </div>
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-block">
+            ← 지도로 돌아가기
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Authenticated Admin ---
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -163,9 +271,17 @@ const Admin = () => {
             <h1 className="text-lg font-bold">🛠 식당 관리</h1>
             <span className="text-sm text-muted-foreground">{restaurants.length}개</span>
           </div>
-          <Button onClick={openNew} size="sm">
-            <Plus className="h-4 w-4 mr-1" /> 추가
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowPinChange(true)}>
+              <KeyRound className="h-3.5 w-3.5 mr-1" /> PIN 변경
+            </Button>
+            <Button onClick={openNew} size="sm">
+              <Plus className="h-4 w-4 mr-1" /> 추가
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
+              로그아웃
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -181,12 +297,48 @@ const Admin = () => {
           />
         </div>
 
-        {/* Form Modal */}
+        {/* PIN Change Modal */}
+        {showPinChange && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-lg w-full max-w-sm p-6 space-y-4">
+              <h2 className="text-lg font-bold">PIN 변경</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium">새 PIN (4~8자리)</label>
+                  <Input
+                    type="password"
+                    value={newPin}
+                    onChange={(e) => setNewPin(e.target.value)}
+                    maxLength={8}
+                    className="text-center tracking-[0.3em] font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">새 PIN 확인</label>
+                  <Input
+                    type="password"
+                    value={confirmPin}
+                    onChange={(e) => setConfirmPin(e.target.value)}
+                    maxLength={8}
+                    className="text-center tracking-[0.3em] font-mono"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => { setShowPinChange(false); setNewPin(""); setConfirmPin(""); }}>
+                  취소
+                </Button>
+                <Button onClick={handleChangePin}>변경</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Restaurant Form Modal */}
         {showForm && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-card border border-border rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4">
               <h2 className="text-lg font-bold">{editing ? "식당 수정" : "새 식당 추가"}</h2>
-
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className="text-sm font-medium">ID</label>
@@ -241,7 +393,6 @@ const Admin = () => {
                   <Textarea value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
                 </div>
               </div>
-
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setShowForm(false)}>취소</Button>
                 <Button onClick={handleSave} disabled={saving}>
