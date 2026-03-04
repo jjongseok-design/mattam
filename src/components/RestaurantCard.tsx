@@ -1,14 +1,16 @@
-import { Star, MapPin, Phone } from "lucide-react";
+import { Star, MapPin, Phone, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
   isSelected: boolean;
+  isVisited: boolean;
   onClick: () => void;
+  onToggleVisited: (e: React.MouseEvent) => void;
 }
 
-const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps) => {
+const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVisited }: RestaurantCardProps) => {
   return (
     <motion.button
       layout
@@ -21,18 +23,34 @@ const RestaurantCard = ({ restaurant, isSelected, onClick }: RestaurantCardProps
         isSelected
           ? "border-primary bg-secondary shadow-card-hover"
           : "border-transparent bg-card hover:shadow-card-hover hover:border-border"
-      }`}
+      } ${isVisited ? "ring-1 ring-primary/30" : ""}`}
     >
       <div className="flex justify-between items-start mb-2">
-        <div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm">🥟</span>
-            <h3 className="font-semibold text-foreground text-base">{restaurant.name}</h3>
-          </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm">🥟</span>
+          <h3 className="font-semibold text-foreground text-base">{restaurant.name}</h3>
+          {isVisited && (
+            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
+              방문완료
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-1 bg-secondary px-2 py-0.5 rounded-md">
-          <Star className="h-3.5 w-3.5 text-rating fill-current" />
-          <span className="text-sm font-bold text-foreground">{restaurant.rating}</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onToggleVisited}
+            className={`p-1 rounded-full transition-colors ${
+              isVisited
+                ? "text-primary hover:text-primary/80"
+                : "text-muted-foreground/40 hover:text-primary/60"
+            }`}
+            title={isVisited ? "방문 취소" : "방문 표시"}
+          >
+            <CheckCircle2 className={`h-5 w-5 ${isVisited ? "fill-primary/20" : ""}`} />
+          </button>
+          <div className="flex items-center gap-1 bg-secondary px-2 py-0.5 rounded-md">
+            <Star className="h-3.5 w-3.5 text-rating fill-current" />
+            <span className="text-sm font-bold text-foreground">{restaurant.rating}</span>
+          </div>
         </div>
       </div>
 

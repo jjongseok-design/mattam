@@ -12,6 +12,8 @@ interface MobileBottomSheetProps {
   query: string;
   onQueryChange: (q: string) => void;
   totalCount: number;
+  isVisited: (id: string) => boolean;
+  onToggleVisited: (id: string) => void;
 }
 
 type SheetState = "peek" | "half" | "full";
@@ -23,6 +25,8 @@ const MobileBottomSheet = ({
   query,
   onQueryChange,
   totalCount,
+  isVisited,
+  onToggleVisited,
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("peek");
   const listRef = useRef<HTMLDivElement>(null);
@@ -56,7 +60,6 @@ const MobileBottomSheet = ({
       dragElastic={0.1}
       onDragEnd={handleDragEnd}
     >
-      {/* Handle */}
       <button onClick={toggle} className="w-full flex flex-col items-center pt-2 pb-1">
         <div className="w-10 h-1 rounded-full bg-border mb-1" />
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -66,7 +69,6 @@ const MobileBottomSheet = ({
         </div>
       </button>
 
-      {/* Content */}
       <AnimatePresence>
         {state !== "peek" && (
           <motion.div
@@ -77,7 +79,6 @@ const MobileBottomSheet = ({
           >
             <SearchBar query={query} onQueryChange={onQueryChange} />
 
-
             <p className="text-xs text-muted-foreground px-1 mb-1">
               {restaurants.length}개 · 평점 높은 순
             </p>
@@ -87,10 +88,12 @@ const MobileBottomSheet = ({
                   key={restaurant.id}
                   restaurant={restaurant}
                   isSelected={selectedId === restaurant.id}
+                  isVisited={isVisited(restaurant.id)}
                   onClick={() => {
                     onSelect(restaurant.id);
                     setState("peek");
                   }}
+                  onToggleVisited={(e) => { e.stopPropagation(); onToggleVisited(restaurant.id); }}
                 />
               ))}
               {restaurants.length === 0 && (
