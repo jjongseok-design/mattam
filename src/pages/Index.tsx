@@ -7,6 +7,7 @@ import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useVisited } from "@/hooks/useVisited";
 import { AnimatePresence } from "framer-motion";
 
 const Index = () => {
@@ -15,6 +16,7 @@ const Index = () => {
   
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading } = useRestaurants();
+  const { isVisited, toggle: toggleVisited } = useVisited();
 
   const filtered = useMemo(() => {
     let list = restaurants;
@@ -56,6 +58,8 @@ const Index = () => {
           query={query}
           onQueryChange={setQuery}
           totalCount={restaurants.length}
+          isVisited={isVisited}
+          onToggleVisited={toggleVisited}
         />
       </div>
     );
@@ -99,7 +103,9 @@ const Index = () => {
                 key={restaurant.id}
                 restaurant={restaurant}
                 isSelected={selectedId === restaurant.id}
+                isVisited={isVisited(restaurant.id)}
                 onClick={() => setSelectedId(restaurant.id)}
+                onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
               />
             ))}
           </AnimatePresence>
