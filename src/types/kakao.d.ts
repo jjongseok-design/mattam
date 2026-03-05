@@ -1,3 +1,7 @@
+interface Window {
+  kakao: typeof kakao;
+}
+
 declare namespace kakao.maps {
   class LatLng {
     constructor(lat: number, lng: number);
