@@ -3,6 +3,7 @@ import type { Restaurant } from "@/hooks/useRestaurants";
 
 const CHUNCHEON_CENTER = { lat: 37.8813, lng: 127.73 };
 const DEFAULT_LEVEL = 7;
+const SDK_WAIT_MS = 10000;
 
 interface MapViewProps {
   restaurants: Restaurant[];
@@ -10,44 +11,65 @@ interface MapViewProps {
   onSelect: (id: string) => void;
 }
 
+const getKakaoMaps = () => (window as any).kakao?.maps;
+
 const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
   const mapRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<any[]>([]);
   const overlayRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [sdkError, setSdkError] = useState<string | null>(null);
 
   const onSelectCb = useCallback(onSelect, [onSelect]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
+    let isUnmounted = false;
+    let checkTimer: number | null = null;
+    const startedAt = Date.now();
+
     const initMap = () => {
-      if (!containerRef.current || !window.kakao?.maps) return;
-      window.kakao.maps.load(() => {
-        if (!containerRef.current) return;
-        const maps = window.kakao.maps;
+      const maps = getKakaoMaps();
+      if (!containerRef.current || !maps) return;
+
+      maps.load(() => {
+        if (!containerRef.current || isUnmounted) return;
         const center = new maps.LatLng(CHUNCHEON_CENTER.lat, CHUNCHEON_CENTER.lng);
         const map = new maps.Map(containerRef.current, { center, level: DEFAULT_LEVEL });
         mapRef.current = map;
+        setSdkError(null);
         setMapReady(true);
       });
     };
 
-    if (window.kakao?.maps) {
-      initMap();
-    } else {
-      // Wait for SDK to load
-      const check = setInterval(() => {
-        if (window.kakao?.maps) {
-          clearInterval(check);
-          initMap();
-        }
-      }, 100);
-      return () => clearInterval(check);
-    }
+    const waitForSdk = () => {
+      const maps = getKakaoMaps();
+      if (maps) {
+        initMap();
+        return;
+      }
+
+      if (Date.now() - startedAt >= SDK_WAIT_MS) {
+        setSdkError("지도를 불러오지 못했습니다. Kakao JavaScript 플랫폼 도메인 설정을 다시 확인해 주세요.");
+        return;
+      }
+
+      checkTimer = window.setTimeout(waitForSdk, 100);
+    };
+
+    waitForSdk();
 
     return () => {
+      isUnmounted = true;
+      if (checkTimer) window.clearTimeout(checkTimer);
+      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current = [];
+      if (overlayRef.current) {
+        overlayRef.current.setMap(null);
+        overlayRef.current = null;
+      }
       mapRef.current = null;
       setMapReady(false);
     };
@@ -55,10 +77,9 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
   useEffect(() => {
     const map = mapRef.current;
-    const maps = window.kakao?.maps;
+    const maps = getKakaoMaps();
     if (!map || !maps || !mapReady) return;
 
-    // Clear existing markers & overlay
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
     if (overlayRef.current) {
@@ -111,16 +132,26 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
   useEffect(() => {
     const map = mapRef.current;
-    const maps = window.kakao?.maps;
+    const maps = getKakaoMaps();
     if (!map || !maps || !selectedId || !mapReady) return;
-    const r = restaurants.find((r) => r.id === selectedId);
+
+    const r = restaurants.find((restaurant) => restaurant.id === selectedId);
     if (r) {
       map.setLevel(4, { animate: { duration: 300 } });
       map.panTo(new maps.LatLng(r.lat, r.lng));
     }
   }, [selectedId, restaurants, mapReady]);
 
+  if (sdkError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-sm p-4 text-center">
+        {sdkError}
+      </div>
+    );
+  }
+
   return <div ref={containerRef} className="w-full h-full" />;
 };
 
 export default MapView;
+
