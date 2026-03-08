@@ -54,7 +54,7 @@ const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
               )}
               <span className="relative z-10 text-xl">{cat.emoji}</span>
               <span
-                className={`relative z-10 text-xs font-medium leading-tight truncate w-full text-center ${
+                className={`relative z-10 text-[11px] font-medium leading-tight w-full text-center break-keep ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
