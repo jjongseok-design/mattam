@@ -86,6 +86,41 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          nickname: string | null
+          rating: number
+          restaurant_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          nickname?: string | null
+          rating: number
+          restaurant_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          nickname?: string | null
+          rating?: number
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tips: {
         Row: {
           address: string | null
