@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound, MessageSquarePlus, Check, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CATEGORIES, type CategoryId } from "@/components/CategoryTabs";
 import { motion } from "framer-motion";
@@ -167,6 +167,9 @@ const Admin = () => {
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [adminCategory, setAdminCategory] = useState<CategoryId>("중국집");
+  const [tips, setTips] = useState<any[]>([]);
+  const [showTips, setShowTips] = useState(false);
+  const [tipsLoading, setTipsLoading] = useState(false);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_pin");
@@ -391,6 +394,29 @@ const Admin = () => {
             </Link>
             <h1 className="text-lg font-bold">🛠 식당 관리</h1>
             <span className="text-sm text-muted-foreground">{restaurants.length}개</span>
+            <Button
+              variant={showTips ? "default" : "outline"}
+              size="sm"
+              onClick={async () => {
+                setShowTips(!showTips);
+                if (!showTips && tips.length === 0) {
+                  setTipsLoading(true);
+                  try {
+                    const res = await adminApi(pin, "list_tips");
+                    setTips(res.tips || []);
+                  } catch { }
+                  setTipsLoading(false);
+                }
+              }}
+            >
+              <MessageSquarePlus className="h-3.5 w-3.5 mr-1" />
+              제보
+              {tips.filter(t => t.status === 'pending').length > 0 && (
+                <span className="ml-1 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full">
+                  {tips.filter(t => t.status === 'pending').length}
+                </span>
+              )}
+            </Button>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowPinChange(true)}>
@@ -624,6 +650,110 @@ const Admin = () => {
             </div>
             {filtered.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">검색 결과가 없습니다</div>
+            )}
+          </div>
+        )}
+
+        {/* Tips Panel */}
+        {showTips && (
+          <div className="mt-6 border border-border rounded-lg p-4">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <MessageSquarePlus className="h-5 w-5 text-primary" />
+              맛집 제보 목록
+            </h2>
+            {tipsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : tips.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">제보가 없습니다</p>
+            ) : (
+              <div className="space-y-3">
+                {tips.map((tip) => (
+                  <div
+                    key={tip.id}
+                    className={`border rounded-lg p-3 ${
+                      tip.status === 'pending' ? 'border-primary/30 bg-primary/5' :
+                      tip.status === 'approved' ? 'border-green-500/30 bg-green-500/5' :
+                      'border-border bg-muted/30 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold">{tip.restaurant_name}</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tip.category}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            tip.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            tip.status === 'approved' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {tip.status === 'pending' ? '대기' : tip.status === 'approved' ? '승인' : '거절'}
+                          </span>
+                        </div>
+                        {tip.address && <p className="text-sm text-muted-foreground">{tip.address}</p>}
+                        {tip.reason && <p className="text-sm mt-1">{tip.reason}</p>}
+                        <p className="text-xs text-muted-foreground/60 mt-1">
+                          {new Date(tip.created_at).toLocaleDateString('ko-KR')}
+                        </p>
+                      </div>
+                      {tip.status === 'pending' && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-green-600 hover:bg-green-50"
+                            onClick={async () => {
+                              try {
+                                await adminApi(pin, "update_tip_status", { id: tip.id, status: "approved" });
+                                setTips(tips.map(t => t.id === tip.id ? { ...t, status: "approved" } : t));
+                                toast({ title: "승인 완료 ✅" });
+                              } catch (err: any) {
+                                toast({ title: "실패", description: err.message, variant: "destructive" });
+                              }
+                            }}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={async () => {
+                              try {
+                                await adminApi(pin, "update_tip_status", { id: tip.id, status: "rejected" });
+                                setTips(tips.map(t => t.id === tip.id ? { ...t, status: "rejected" } : t));
+                                toast({ title: "거절됨" });
+                              } catch (err: any) {
+                                toast({ title: "실패", description: err.message, variant: "destructive" });
+                              }
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={async () => {
+                              if (!confirm("이 제보를 삭제하시겠습니까?")) return;
+                              try {
+                                await adminApi(pin, "delete_tip", { id: tip.id });
+                                setTips(tips.filter(t => t.id !== tip.id));
+                                toast({ title: "삭제됨" });
+                              } catch (err: any) {
+                                toast({ title: "실패", description: err.message, variant: "destructive" });
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}

@@ -6,6 +6,7 @@ import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
 import CategoryTabs, { CategoryId } from "@/components/CategoryTabs";
+import TipForm from "@/components/TipForm";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
@@ -60,27 +61,30 @@ const Index = () => {
   // Mobile layout
   if (isMobile) {
     return (
-      <div className="relative h-dvh w-screen overflow-hidden bg-background">
-        <div className="absolute inset-0 z-0">
-          <MapView
+      <>
+        <div className="relative h-dvh w-screen overflow-hidden bg-background">
+          <div className="absolute inset-0 z-0">
+            <MapView
+              restaurants={filtered}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          </div>
+          <MobileBottomSheet
             restaurants={filtered}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            query={query}
+            onQueryChange={setQuery}
+            totalCount={categoryRestaurants.length}
+            category={category}
+            onCategoryChange={handleCategoryChange}
+            isVisited={isVisited}
+            onToggleVisited={toggleVisited}
           />
         </div>
-        <MobileBottomSheet
-          restaurants={filtered}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          query={query}
-          onQueryChange={setQuery}
-          totalCount={categoryRestaurants.length}
-          category={category}
-          onCategoryChange={handleCategoryChange}
-          isVisited={isVisited}
-          onToggleVisited={toggleVisited}
-        />
-      </div>
+        <TipForm />
+      </>
     );
   }
 
@@ -152,6 +156,7 @@ const Index = () => {
           onSelect={setSelectedId}
         />
       </div>
+      <TipForm />
     </div>
   );
 };

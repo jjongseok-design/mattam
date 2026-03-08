@@ -91,6 +91,33 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "list_tips": {
+        const { data: tips, error } = await supabase
+          .from("tips")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        result = { success: true, tips };
+        break;
+      }
+
+      case "delete_tip": {
+        const { error } = await supabase.from("tips").delete().eq("id", data.id);
+        if (error) throw error;
+        result = { success: true };
+        break;
+      }
+
+      case "update_tip_status": {
+        const { error } = await supabase
+          .from("tips")
+          .update({ status: data.status })
+          .eq("id", data.id);
+        if (error) throw error;
+        result = { success: true };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ success: false, error: "Unknown action" }),

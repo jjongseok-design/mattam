@@ -86,6 +86,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tips: {
+        Row: {
+          address: string | null
+          category: string
+          created_at: string
+          id: string
+          reason: string | null
+          restaurant_name: string
+          status: string
+        }
+        Insert: {
+          address?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          restaurant_name: string
+          status?: string
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          restaurant_name?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
