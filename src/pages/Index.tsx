@@ -7,6 +7,7 @@ import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
 import CategoryTabs, { CategoryId } from "@/components/CategoryTabs";
 import TipForm from "@/components/TipForm";
+import JsonLd from "@/components/JsonLd";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
@@ -84,6 +85,7 @@ const Index = () => {
           />
         </div>
         <TipForm />
+        <JsonLd />
       </>
     );
   }
@@ -157,6 +159,7 @@ const Index = () => {
         />
       </div>
       <TipForm />
+      <JsonLd />
     </div>
   );
 };
