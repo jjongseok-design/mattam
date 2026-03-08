@@ -35,6 +35,26 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     suggestions: ["갈비탕", "소갈비탕", "왕갈비탕", "설렁탕", "도가니탕", "한식", "수육", "갈비찜"],
     idPrefix: "gb",
   },
+  "삼계탕": {
+    placeholder: "삼계탕, 한방삼계탕, 옻닭",
+    suggestions: ["삼계탕", "한방삼계탕", "옻닭", "백숙", "녹두삼계탕", "전복삼계탕", "인삼주", "수정과"],
+    idPrefix: "sg",
+  },
+  "칼국수": {
+    placeholder: "칼국수, 손칼국수, 샤브샤브",
+    suggestions: ["칼국수", "손칼국수", "샤브샤브", "바지락칼국수", "해물칼국수", "수제비", "만두", "들깨칼국수"],
+    idPrefix: "kk",
+  },
+  "수제버거": {
+    placeholder: "수제버거, 치즈버거, 감자튀김",
+    suggestions: ["수제버거", "치즈버거", "베이컨버거", "감자튀김", "어니언링", "쉐이크", "핫도그", "치킨버거"],
+    idPrefix: "bg",
+  },
+  "삼겹살": {
+    placeholder: "삼겹살, 목살, 구이",
+    suggestions: ["삼겹살", "목살", "항정살", "껍데기", "냉삼", "숯불구이", "된장찌개", "파김치", "미나리"],
+    idPrefix: "sp",
+  },
 };
 
 const getEmptyForm = (category: CategoryId) => ({
@@ -318,12 +338,12 @@ const Admin = () => {
 
       <div className="max-w-5xl mx-auto px-4 py-4">
         {/* Admin Category Tabs */}
-        <div className="flex gap-1 bg-muted rounded-lg p-1 mb-4">
+        <div className="flex gap-1 bg-muted rounded-lg p-1 mb-4 overflow-x-auto scrollbar-thin">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => { setAdminCategory(cat.id); setSearch(""); }}
-              className="relative flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors"
+              className="relative flex-shrink-0 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap"
             >
               {adminCategory === cat.id && (
                 <motion.div
