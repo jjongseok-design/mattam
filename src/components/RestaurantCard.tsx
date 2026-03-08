@@ -1,6 +1,8 @@
-import { Star, MapPin, Phone, CheckCircle2, ExternalLink } from "lucide-react";
+import { Star, MapPin, Phone, CheckCircle2, ExternalLink, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
+import { useToast } from "@/hooks/use-toast";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -15,11 +17,27 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "삼계탕": "🐔", "칼국수": "🍜", "수제버거": "🍔", "삼겹살": "🥓",
   "초밥": "🍣", "일식": "🍱", "감자탕": "🥘", "한우": "🥩",
   "돼지갈비": "🍖", "이탈리안": "🍝", "베이커리": "🥐", "설렁탕/곰탕": "🍲",
-  "보쌈/족발": "🐷", "돈까스": "🍛",
+  "보쌈/족발": "🐷", "돈까스": "🍛", "찌개류": "🍲", "국밥류": "🍜",
+  "생선구이": "🐟", "통닭": "🍗", "카페": "☕", "기타": "🍴",
 };
 
 const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVisited }: RestaurantCardProps) => {
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
+  const { toast } = useToast();
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/restaurant/${restaurant.id}`;
+    const text = `${restaurant.name} - 춘천 맛집`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: text, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "링크가 복사되었습니다 📋" });
+    }
+  };
 
   return (
     <motion.button
@@ -56,6 +74,13 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button
+            onClick={handleShare}
+            className="p-1 rounded-full text-muted-foreground/30 hover:text-primary/70 transition-all duration-200"
+            title="공유"
+          >
+            <Share2 className="h-[16px] w-[16px]" />
+          </button>
           <button
             onClick={onToggleVisited}
             className={`p-1 rounded-full transition-all duration-200 ${
@@ -108,14 +133,23 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
         <span className="text-[11px] text-muted-foreground/70">
           리뷰 {restaurant.reviewCount.toLocaleString()}개
         </span>
-        <a
-          href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + ' 춘천')}`}
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary font-medium transition-colors"
-        >
-          네이버지도 <ExternalLink className="h-3 w-3" />
-        </a>
+        <div className="flex items-center gap-3">
+          <Link
+            to={`/restaurant/${restaurant.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="text-[11px] text-primary/70 hover:text-primary font-medium transition-colors"
+          >
+            상세보기
+          </Link>
+          <a
+            href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + ' 춘천')}`}
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary font-medium transition-colors"
+          >
+            네이버지도 <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
       </div>
     </motion.button>
   );
