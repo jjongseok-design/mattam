@@ -100,12 +100,17 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
       const link = document.createElement("a");
       link.href = naverUrl;
       link.rel = "noopener noreferrer";
-      link.style.cssText = "text-decoration:none;font-weight:700;display:block;color:#e84118;font-size:14px;";
+      link.style.cssText = "text-decoration:none;font-weight:700;display:block;";
       link.textContent = r.name;
-      link.addEventListener("click", (e) => {
+
+      const goToNaver = (e: Event) => {
+        e.preventDefault();
         e.stopPropagation();
-        window.location.href = naverUrl;
-      });
+        window.location.assign(naverUrl);
+      };
+
+      link.addEventListener("click", goToNaver);
+      link.addEventListener("touchend", goToNaver);
 
       const desc = document.createElement("div");
       desc.style.cssText = "font-size:12px;opacity:0.7;margin-top:2px;";
@@ -113,6 +118,7 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
       popupEl.appendChild(link);
       popupEl.appendChild(desc);
+      L.DomEvent.disableClickPropagation(popupEl);
 
       marker.bindPopup(popupEl, { closeButton: false, autoPan: true });
 
