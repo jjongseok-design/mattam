@@ -93,15 +93,28 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
         zIndexOffset: isSelected ? 1000 : 0,
       }).addTo(map);
 
-      const popupContent = `
-        <div style="min-width:170px;line-height:1.4">
-          <a href="${naverUrl}" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;display:block;">
-            ${r.name}
-          </a>
-          <div style="font-size:12px;opacity:0.8;">클릭해서 네이버 지도 검색 결과 보기</div>
-        </div>`;
+      const popupEl = document.createElement("div");
+      popupEl.style.minWidth = "170px";
+      popupEl.style.lineHeight = "1.4";
 
-      marker.bindPopup(popupContent, { closeButton: false, autoPan: true });
+      const link = document.createElement("a");
+      link.href = naverUrl;
+      link.rel = "noopener noreferrer";
+      link.style.cssText = "text-decoration:none;font-weight:700;display:block;color:#e84118;font-size:14px;";
+      link.textContent = r.name;
+      link.addEventListener("click", (e) => {
+        e.stopPropagation();
+        window.location.href = naverUrl;
+      });
+
+      const desc = document.createElement("div");
+      desc.style.cssText = "font-size:12px;opacity:0.7;margin-top:2px;";
+      desc.textContent = "탭하면 네이버지도로 이동";
+
+      popupEl.appendChild(link);
+      popupEl.appendChild(desc);
+
+      marker.bindPopup(popupEl, { closeButton: false, autoPan: true });
 
       if (isSelected) {
         marker.openPopup();
