@@ -61,8 +61,8 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     idPrefix: "sb",
   },
   "일식": {
-    placeholder: "라멘, 돈카츠, 우동",
-    suggestions: ["라멘", "돈카츠", "우동", "소바", "텐동", "카레", "규동", "타코야끼", "오코노미야끼"],
+    placeholder: "라멘, 소바, 초밥, 횟집",
+    suggestions: ["라멘", "소바", "우동", "스시", "초밥", "사케동", "이자카야", "오마카세", "텐동", "카레", "송어회", "활어회", "매운탕", "향어회"],
     idPrefix: "jp",
   },
   "감자탕": {
