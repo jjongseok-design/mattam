@@ -56,9 +56,15 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = L.map(containerRef.current).setView(CHUNCHEON_CENTER, DEFAULT_ZOOM);
+    const map = L.map(containerRef.current, {
+      maxBounds: CHUNCHEON_BOUNDS,
+      maxBoundsViscosity: 1.0,
+      minZoom: 11,
+      maxZoom: 18,
+    }).setView(CHUNCHEON_CENTER, DEFAULT_ZOOM);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      bounds: CHUNCHEON_BOUNDS,
     }).addTo(map);
 
     mapRef.current = map;
