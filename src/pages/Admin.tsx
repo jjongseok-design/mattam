@@ -80,6 +80,26 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     suggestions: ["돼지갈비", "양념갈비", "생갈비", "갈비찜", "냉면", "된장찌개", "공기밥"],
     idPrefix: "dg",
   },
+  "이탈리안": {
+    placeholder: "파스타, 피자, 리조또",
+    suggestions: ["파스타", "피자", "화덕피자", "리조또", "스테이크", "샐러드", "크림파스타", "알리오올리오", "마르게리타"],
+    idPrefix: "it",
+  },
+  "베이커리": {
+    placeholder: "크루아상, 앙버터, 식빵",
+    suggestions: ["크루아상", "앙버터", "소금빵", "식빵", "케이크", "마카롱", "보리빵", "맘모스빵", "타르트"],
+    idPrefix: "bk",
+  },
+  "설렁탕/곰탕": {
+    placeholder: "설렁탕, 곰탕, 도가니탕",
+    suggestions: ["설렁탕", "곰탕", "도가니탕", "소꼬리탕", "사골국", "수육", "선지국"],
+    idPrefix: "sg2",
+  },
+  "보쌈/족발": {
+    placeholder: "보쌈, 족발, 수육",
+    suggestions: ["보쌈", "족발", "수육", "막국수", "냉채족발", "마늘보쌈", "쟁반국수"],
+    idPrefix: "bj",
+  },
 };
 
 const getEmptyForm = (category: CategoryId) => ({
