@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 
 export const CATEGORIES = [
+  { id: "닭갈비", label: "🍗 닭갈비" },
+  { id: "막국수", label: "🍜 막국수" },
   { id: "중국집", label: "🥟 중국집" },
   { id: "갈비탕", label: "🍖 갈비탕" },
   { id: "삼계탕", label: "🐔 삼계탕" },

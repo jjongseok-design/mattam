@@ -25,6 +25,16 @@ interface RestaurantRow {
 }
 
 const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestions: string[]; idPrefix: string }> = {
+  "닭갈비": {
+    placeholder: "닭갈비, 숯불닭갈비, 철판닭갈비",
+    suggestions: ["닭갈비", "숯불닭갈비", "철판닭갈비", "닭내장", "닭목살", "막국수", "볶음밥", "우동사리", "간장닭갈비", "삼색닭갈비"],
+    idPrefix: "dc",
+  },
+  "막국수": {
+    placeholder: "막국수, 비빔막국수, 편육",
+    suggestions: ["물막국수", "비빔막국수", "순메밀막국수", "편육", "메밀전병", "감자전", "녹두전", "보쌈", "메밀전", "들기름막국수"],
+    idPrefix: "mk",
+  },
   "중국집": {
     placeholder: "짬뽕, 탕수육, 짜장면",
     suggestions: ["짜장면", "짬뽕", "탕수육", "볶음밥", "군만두", "간짜장", "울면", "마라탕", "코스요리", "해물짬뽕"],
