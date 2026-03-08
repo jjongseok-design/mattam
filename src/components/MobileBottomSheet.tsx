@@ -59,7 +59,7 @@ const MobileBottomSheet = ({
 
   return (
     <motion.div
-      className="fixed bottom-0 left-0 right-0 z-30 bg-card rounded-t-2xl shadow-panel border-t border-border"
+      className="fixed bottom-0 left-0 right-0 z-[1000] bg-card rounded-t-2xl shadow-panel border-t border-border pb-[env(safe-area-inset-bottom)]"
       animate={{ height: heights[state] }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       drag="y"
