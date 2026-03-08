@@ -31,15 +31,6 @@ interface CategoryTabsProps {
 }
 
 const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
-  const { data: restaurants = [] } = useRestaurants();
-
-  const counts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const r of restaurants) {
-      map[r.category] = (map[r.category] || 0) + 1;
-    }
-    return map;
-  }, [restaurants]);
 
   return (
     <div className="overflow-x-auto scrollbar-thin -mx-1 px-1">
