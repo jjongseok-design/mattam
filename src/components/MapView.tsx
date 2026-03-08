@@ -6,6 +6,12 @@ import type { Restaurant } from "@/hooks/useRestaurants";
 const CHUNCHEON_CENTER: L.LatLngExpression = [37.8813, 127.73];
 const DEFAULT_ZOOM = 13;
 
+// 춘천시 행정구역 경계 (대략적인 범위)
+const CHUNCHEON_BOUNDS = L.latLngBounds(
+  L.latLng(37.7340, 127.5800), // 남서쪽
+  L.latLng(38.0200, 127.9200)  // 북동쪽
+);
+
 interface MapViewProps {
   restaurants: Restaurant[];
   selectedId: string | null;
@@ -50,9 +56,15 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = L.map(containerRef.current).setView(CHUNCHEON_CENTER, DEFAULT_ZOOM);
+    const map = L.map(containerRef.current, {
+      maxBounds: CHUNCHEON_BOUNDS,
+      maxBoundsViscosity: 1.0,
+      minZoom: 11,
+      maxZoom: 18,
+    }).setView(CHUNCHEON_CENTER, DEFAULT_ZOOM);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      bounds: CHUNCHEON_BOUNDS,
     }).addTo(map);
 
     mapRef.current = map;
