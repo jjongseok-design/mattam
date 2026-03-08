@@ -59,11 +59,13 @@ const Index = () => {
   if (isMobile) {
     return (
       <div className="relative h-dvh w-screen overflow-hidden bg-background">
-        <MapView
-          restaurants={filtered}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
+        <div className="absolute inset-0 z-0">
+          <MapView
+            restaurants={filtered}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        </div>
         <MobileBottomSheet
           restaurants={filtered}
           selectedId={selectedId}
