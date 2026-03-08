@@ -173,7 +173,7 @@ const Admin = () => {
     setForm({
       id: r.id,
       name: r.name,
-      category: r.category,
+      category: r.category as CategoryId,
       address: r.address,
       phone: r.phone ?? "",
       rating: r.rating,
@@ -416,7 +416,7 @@ const Admin = () => {
                     value={form.category}
                     onChange={(e) => {
                       const newCat = e.target.value;
-                      setForm({ ...form, category: newCat, tags: [] });
+                      setForm({ ...form, category: newCat as CategoryId, tags: [] });
                     }}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
