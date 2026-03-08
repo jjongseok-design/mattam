@@ -85,7 +85,7 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
           리뷰 {restaurant.reviewCount.toLocaleString()}개
         </div>
         <a
-          href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + ' ' + restaurant.address)}`}
+          href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + ' 춘천')}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
