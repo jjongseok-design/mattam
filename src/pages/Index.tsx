@@ -86,6 +86,7 @@ const Index = () => {
         <TipForm />
       </>
     );
+  }
 
   // Desktop layout
   return (
