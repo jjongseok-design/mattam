@@ -120,6 +120,11 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     suggestions: ["커피", "라떼", "아메리카노", "디저트", "케이크", "브런치", "베이글", "스콘", "감자빵", "루프탑", "뷰맛집", "대형카페"],
     idPrefix: "cf",
   },
+  "기타": {
+    placeholder: "한정식, 백반, 분식, 동남아",
+    suggestions: ["한정식", "백반", "분식", "떡볶이", "쌀국수", "태국음식", "베트남음식", "김밥", "라면", "팟타이", "냉면"],
+    idPrefix: "etc",
+  },
 };
 
 const getEmptyForm = (category: CategoryId) => ({
