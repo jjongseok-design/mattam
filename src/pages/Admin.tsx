@@ -398,12 +398,12 @@ const Admin = () => {
 
       <div className="max-w-5xl mx-auto px-4 py-4">
         {/* Admin Category Tabs */}
-        <div className="flex gap-1 bg-muted rounded-lg p-1 mb-4 overflow-x-auto scrollbar-thin">
+        <div className="grid grid-cols-11 gap-1 bg-muted rounded-lg p-1.5 mb-4">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => { setAdminCategory(cat.id); setSearch(""); }}
-              className="relative flex-shrink-0 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+              className="relative px-1 py-1.5 text-xs font-medium rounded-md transition-colors text-center"
             >
               {adminCategory === cat.id && (
                 <motion.div
@@ -412,9 +412,10 @@ const Admin = () => {
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <span className={`relative z-10 flex items-center justify-center gap-1.5 ${adminCategory === cat.id ? "text-foreground" : "text-muted-foreground"}`}>
-                {cat.label}
-                <span className="text-xs opacity-70">({categoryCount(cat.id)})</span>
+              <span className={`relative z-10 flex flex-col items-center gap-0.5 ${adminCategory === cat.id ? "text-foreground" : "text-muted-foreground"}`}>
+                <span>{cat.emoji}</span>
+                <span className="text-[10px] leading-tight">{cat.label}</span>
+                <span className="text-[9px] opacity-60">({categoryCount(cat.id)})</span>
               </span>
             </button>
           ))}
