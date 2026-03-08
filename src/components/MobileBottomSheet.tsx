@@ -20,6 +20,13 @@ interface MobileBottomSheetProps {
 }
 
 type SheetState = "half" | "full";
+const CATEGORY_LABELS: Record<string, string> = {
+  "닭갈비": "🍗", "막국수": "🍜", "중국집": "🥟", "갈비탕": "🍖",
+  "삼계탕": "🐔", "칼국수": "🍜", "수제버거": "🍔", "삼겹살": "🥓",
+  "초밥": "🍣", "일식": "🍱", "감자탕": "🥘", "한우": "🥩",
+  "돼지갈비": "🍖", "이탈리안": "🍝", "베이커리": "🥐", "설렁탕/곰탕": "🍲",
+  "보쌈/족발": "🐷", "돈까스": "🍛",
+};
 
 const MobileBottomSheet = ({
   restaurants,
