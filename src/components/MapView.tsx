@@ -91,11 +91,13 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
         zIndexOffset: isSelected ? 1000 : 0,
       }).addTo(map);
 
+      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(r.name + ' ' + r.address)}`;
       const popupContent = `
-        <div style="min-width:140px">
+        <div style="min-width:160px">
           <strong>🥟 ${r.name}</strong><br/>
           ⭐ ${r.rating} (${r.reviewCount.toLocaleString()}개 리뷰)<br/>
-          <span style="font-size:11px;color:#888">${r.address}</span>
+          <span style="font-size:11px;color:#888">${r.address}</span><br/>
+          <a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#e84118;text-decoration:none;font-weight:600">네이버지도에서 보기 →</a>
         </div>`;
 
       marker.bindPopup(popupContent);
