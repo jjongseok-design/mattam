@@ -35,26 +35,26 @@ interface CategoryTabsProps {
 const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
 
   return (
-    <div className="overflow-x-auto scrollbar-thin -mx-1 px-1">
-      <div className="grid grid-cols-5 gap-1.5 min-w-0">
+    <div className="-mx-1 px-1">
+      <div className="grid grid-cols-11 gap-1 min-w-0">
         {CATEGORIES.map((cat) => {
           const isActive = active === cat.id;
           return (
             <button
               key={cat.id}
               onClick={() => onChange(cat.id)}
-              className="relative flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl transition-all duration-200"
+              className="relative flex flex-col items-center gap-0.5 py-1.5 px-0.5 rounded-lg transition-all duration-200"
             >
               {isActive && (
                 <motion.div
                   layoutId="category-tab"
-                  className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-xl"
+                  className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-lg"
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <span className="relative z-10 text-base">{cat.emoji}</span>
+              <span className="relative z-10 text-sm">{cat.emoji}</span>
               <span
-                className={`relative z-10 text-[10px] font-medium leading-tight ${
+                className={`relative z-10 text-[9px] font-medium leading-tight truncate w-full text-center ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
