@@ -3,38 +3,40 @@
 @tailwind utilities;
 
 @import "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 220 20% 10%;
+    --background: 0 0% 97%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 4 80% 52%;
+    --primary: 0 72% 51%;
     --primary-foreground: 0 0% 100%;
+    --primary-glow: 15 80% 58%;
 
-    --secondary: 30 70% 95%;
-    --secondary-foreground: 20 60% 30%;
+    --secondary: 25 60% 96%;
+    --secondary-foreground: 20 50% 28%;
 
-    --muted: 220 10% 94%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 25 90% 55%;
+    --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 90%;
-    --input: 220 13% 90%;
-    --ring: 4 80% 52%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 0 72% 51%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -46,44 +48,53 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Custom tokens */
-    --rating-star: 45 95% 55%;
-    --map-highlight: 4 80% 52%;
-    --panel-shadow: 0 4px 24px -4px hsl(220 20% 10% / 0.08);
-    --card-hover-shadow: 0 8px 32px -8px hsl(4 80% 52% / 0.15);
+    --rating-star: 45 93% 47%;
+    --map-highlight: 0 72% 51%;
+    --gradient-primary: linear-gradient(135deg, hsl(0 72% 51%), hsl(15 80% 58%));
+    --panel-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 8px 24px -4px hsl(0 0% 0% / 0.06);
+    --card-hover-shadow: 0 4px 16px -2px hsl(0 72% 51% / 0.1), 0 12px 40px -8px hsl(0 0% 0% / 0.08);
+    --card-selected-shadow: 0 0 0 2px hsl(0 72% 51% / 0.15), 0 8px 32px -4px hsl(0 72% 51% / 0.12);
+    --glass-bg: hsl(0 0% 100% / 0.8);
+    --glass-border: hsl(0 0% 100% / 0.6);
   }
 
   .dark {
-    --background: 220 20% 8%;
+    --background: 224 30% 6%;
     --foreground: 0 0% 95%;
-    --card: 220 20% 12%;
+    --card: 224 25% 10%;
     --card-foreground: 0 0% 95%;
-    --popover: 220 20% 12%;
+    --popover: 224 25% 10%;
     --popover-foreground: 0 0% 95%;
-    --primary: 4 80% 58%;
+    --primary: 0 72% 56%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 20 30% 18%;
+    --primary-glow: 15 80% 62%;
+    --secondary: 20 25% 15%;
     --secondary-foreground: 30 50% 85%;
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 224 20% 14%;
+    --muted-foreground: 220 10% 55%;
     --accent: 25 90% 55%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 4 80% 58%;
-    --sidebar-background: 220 20% 10%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 224 20% 18%;
+    --input: 224 20% 18%;
+    --ring: 0 72% 56%;
+    --sidebar-background: 224 25% 8%;
     --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 4 80% 58%;
+    --sidebar-primary: 0 72% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 15%;
+    --sidebar-accent: 224 20% 13%;
     --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 220 15% 18%;
-    --sidebar-ring: 4 80% 58%;
-    --rating-star: 45 95% 55%;
-    --map-highlight: 4 80% 58%;
-    --panel-shadow: 0 4px 24px -4px hsl(0 0% 0% / 0.3);
-    --card-hover-shadow: 0 8px 32px -8px hsl(4 80% 58% / 0.25);
+    --sidebar-border: 224 20% 16%;
+    --sidebar-ring: 0 72% 56%;
+    --rating-star: 45 93% 50%;
+    --map-highlight: 0 72% 56%;
+    --gradient-primary: linear-gradient(135deg, hsl(0 72% 56%), hsl(15 80% 62%));
+    --panel-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.2), 0 8px 24px -4px hsl(0 0% 0% / 0.3);
+    --card-hover-shadow: 0 4px 16px -2px hsl(0 72% 56% / 0.15), 0 12px 40px -8px hsl(0 0% 0% / 0.3);
+    --card-selected-shadow: 0 0 0 2px hsl(0 72% 56% / 0.2), 0 8px 32px -4px hsl(0 72% 56% / 0.15);
+    --glass-bg: hsl(224 25% 10% / 0.8);
+    --glass-border: hsl(224 25% 15% / 0.6);
   }
 }
 
@@ -102,8 +113,11 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-feature-settings: 'ss01', 'ss02';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -112,13 +126,24 @@
     color: hsl(var(--rating-star));
   }
 
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid var(--glass-border);
+  }
+
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
@@ -128,5 +153,9 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
     border-radius: 9999px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.3);
   }
 }
