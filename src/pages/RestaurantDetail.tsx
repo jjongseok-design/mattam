@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, Phone, ExternalLink, Share2, Loader2, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewList from "@/components/ReviewList";
 import MapView from "@/components/MapView";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
@@ -230,6 +232,13 @@ const RestaurantDetail = () => {
             <Button onClick={handleShare} className="flex-1">
               <Share2 className="h-3.5 w-3.5 mr-1.5" /> 공유하기
             </Button>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="space-y-4 pt-2">
+            <h3 className="text-base font-bold text-foreground">💬 리뷰</h3>
+            <ReviewForm restaurantId={restaurant.id} />
+            <ReviewList restaurantId={restaurant.id} />
           </div>
         </div>
       </div>
