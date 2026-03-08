@@ -52,9 +52,9 @@ const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <span className="relative z-10 text-lg">{cat.emoji}</span>
+              <span className="relative z-10 text-xl">{cat.emoji}</span>
               <span
-                className={`relative z-10 text-[11px] font-medium leading-tight truncate w-full text-center ${
+                className={`relative z-10 text-xs font-medium leading-tight truncate w-full text-center ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
