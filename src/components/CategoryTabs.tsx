@@ -36,7 +36,7 @@ const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
 
   return (
     <div className="-mx-1 px-1">
-      <div className="grid grid-cols-11 gap-1 min-w-0">
+      <div className="grid grid-cols-7 gap-1 min-w-0">
         {CATEGORIES.map((cat) => {
           const isActive = active === cat.id;
           return (
