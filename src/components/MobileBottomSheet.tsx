@@ -126,8 +126,6 @@ const MobileBottomSheet = ({
               )}
             </AnimatePresence>
 
-            <SearchBar query={query} onQueryChange={onQueryChange} />
-
             <p className="text-xs text-muted-foreground px-1 mb-1">
               {restaurants.length}개 · 평점 높은 순
             </p>
