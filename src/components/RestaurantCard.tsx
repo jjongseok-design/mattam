@@ -86,7 +86,6 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
         </div>
         <a
           href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + ' 춘천')}`}
-          target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
           className="flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 font-medium"
