@@ -1,6 +1,4 @@
 import { motion } from "framer-motion";
-import { useRestaurants } from "@/hooks/useRestaurants";
-import { useMemo } from "react";
 
 export const CATEGORIES = [
   { id: "닭갈비", label: "닭갈비", emoji: "🍗" },
@@ -31,22 +29,12 @@ interface CategoryTabsProps {
 }
 
 const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
-  const { data: restaurants = [] } = useRestaurants();
-
-  const counts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const r of restaurants) {
-      map[r.category] = (map[r.category] || 0) + 1;
-    }
-    return map;
-  }, [restaurants]);
 
   return (
     <div className="overflow-x-auto scrollbar-thin -mx-1 px-1">
       <div className="grid grid-cols-5 gap-1.5 min-w-0">
         {CATEGORIES.map((cat) => {
           const isActive = active === cat.id;
-          const count = counts[cat.id] || 0;
           return (
             <button
               key={cat.id}
@@ -68,15 +56,6 @@ const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
               >
                 {cat.label}
               </span>
-              {count > 0 && (
-                <span
-                  className={`relative z-10 text-[9px] font-semibold ${
-                    isActive ? "text-primary/70" : "text-muted-foreground/50"
-                  }`}
-                >
-                  {count}
-                </span>
-              )}
             </button>
           );
         })}
