@@ -55,6 +55,31 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     suggestions: ["삼겹살", "목살", "항정살", "껍데기", "냉삼", "숯불구이", "된장찌개", "파김치", "미나리"],
     idPrefix: "sp",
   },
+  "초밥": {
+    placeholder: "초밥, 사시미, 오마카세",
+    suggestions: ["초밥", "사시미", "연어초밥", "광어초밥", "오마카세", "모듬초밥", "우동", "미소시루"],
+    idPrefix: "sb",
+  },
+  "일식": {
+    placeholder: "라멘, 돈카츠, 우동",
+    suggestions: ["라멘", "돈카츠", "우동", "소바", "텐동", "카레", "규동", "타코야끼", "오코노미야끼"],
+    idPrefix: "jp",
+  },
+  "감자탕": {
+    placeholder: "감자탕, 뼈해장국, 등뼈찜",
+    suggestions: ["감자탕", "뼈해장국", "등뼈찜", "해장국", "수육", "볶음밥", "우거지탕"],
+    idPrefix: "gj",
+  },
+  "한우": {
+    placeholder: "한우, 등심, 안심",
+    suggestions: ["한우", "등심", "안심", "채끝", "꽃등심", "육회", "한우국밥", "불고기"],
+    idPrefix: "hw",
+  },
+  "돼지갈비": {
+    placeholder: "돼지갈비, 양념갈비, 생갈비",
+    suggestions: ["돼지갈비", "양념갈비", "생갈비", "갈비찜", "냉면", "된장찌개", "공기밥"],
+    idPrefix: "dg",
+  },
 };
 
 const getEmptyForm = (category: CategoryId) => ({
