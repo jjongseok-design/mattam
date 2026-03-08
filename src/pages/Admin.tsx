@@ -338,12 +338,12 @@ const Admin = () => {
 
       <div className="max-w-5xl mx-auto px-4 py-4">
         {/* Admin Category Tabs */}
-        <div className="flex gap-1 bg-muted rounded-lg p-1 mb-4">
+        <div className="flex gap-1 bg-muted rounded-lg p-1 mb-4 overflow-x-auto scrollbar-thin">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => { setAdminCategory(cat.id); setSearch(""); }}
-              className="relative flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors"
+              className="relative flex-shrink-0 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap"
             >
               {adminCategory === cat.id && (
                 <motion.div
