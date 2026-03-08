@@ -6,6 +6,7 @@ import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
 import CategoryTabs, { CategoryId } from "@/components/CategoryTabs";
+import TipForm from "@/components/TipForm";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
@@ -80,9 +81,9 @@ const Index = () => {
           isVisited={isVisited}
           onToggleVisited={toggleVisited}
         />
+        <TipForm />
       </div>
     );
-  }
 
   // Desktop layout
   return (
@@ -152,6 +153,7 @@ const Index = () => {
           onSelect={setSelectedId}
         />
       </div>
+      <TipForm />
     </div>
   );
 };
