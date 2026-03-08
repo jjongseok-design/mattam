@@ -38,28 +38,28 @@ const MobileBottomSheet = ({
 
   const heights: Record<SheetState, string> = {
     peek: "calc(132px + env(safe-area-inset-bottom))",
-    half: "58dvh",
-    full: "88dvh",
+    half: "58vh",
+    full: "88vh",
   };
 
   const handleDragEnd = (_: any, info: PanInfo) => {
     const vy = info.velocity.y;
     if (vy < -200) {
-      setState(state === "peek" ? "half" : "full");
+      setState("full");
     } else if (vy > 200) {
-      setState(state === "full" ? "half" : "peek");
+      setState("half");
     }
   };
 
   const toggle = () => {
-    setState(state === "peek" ? "half" : state === "half" ? "full" : "peek");
+    setState(state === "full" ? "half" : "full");
   };
 
   const categoryLabel = category === "중국집" ? "🥟" : "🍖";
 
   return (
     <motion.div
-      className="fixed bottom-0 left-0 right-0 z-[1000] bg-card rounded-t-2xl shadow-panel border-t border-border pb-[env(safe-area-inset-bottom)] max-h-[90dvh]"
+      className="fixed bottom-0 left-0 right-0 z-[5000] bg-card rounded-t-2xl shadow-panel border-t border-border pb-[env(safe-area-inset-bottom)] max-h-[90vh]"
       animate={{ height: heights[state] }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       drag="y"
@@ -72,7 +72,7 @@ const MobileBottomSheet = ({
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Utensils className="h-3 w-3" />
           <span>{categoryLabel} {totalCount}개 {category}</span>
-          {state === "peek" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {state === "full" ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
         </div>
       </button>
 
@@ -101,7 +101,7 @@ const MobileBottomSheet = ({
                   isVisited={isVisited(restaurant.id)}
                   onClick={() => {
                     onSelect(restaurant.id);
-                    setState("peek");
+                    setState("half");
                   }}
                   onToggleVisited={(e) => { e.stopPropagation(); onToggleVisited(restaurant.id); }}
                 />
