@@ -358,7 +358,14 @@ const Admin = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium">카테고리</label>
-                  <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="중국집">🥟 중국집</option>
+                    <option value="갈비탕">🍖 갈비탕</option>
+                  </select>
                 </div>
                 <div>
                   <label className="text-sm font-medium">평점</label>
