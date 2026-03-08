@@ -20,6 +20,13 @@ interface MobileBottomSheetProps {
 }
 
 type SheetState = "half" | "full";
+const CATEGORY_LABELS: Record<string, string> = {
+  "닭갈비": "🍗", "막국수": "🍜", "중국집": "🥟", "갈비탕": "🍖",
+  "삼계탕": "🐔", "칼국수": "🍜", "수제버거": "🍔", "삼겹살": "🥓",
+  "초밥": "🍣", "일식": "🍱", "감자탕": "🥘", "한우": "🥩",
+  "돼지갈비": "🍖", "이탈리안": "🍝", "베이커리": "🥐", "설렁탕/곰탕": "🍲",
+  "보쌈/족발": "🐷", "돈까스": "🍛",
+};
 
 const MobileBottomSheet = ({
   restaurants,
@@ -34,6 +41,7 @@ const MobileBottomSheet = ({
   onToggleVisited,
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("half");
+  const [showCategories, setShowCategories] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   const heights: Record<SheetState, string> = {
@@ -56,7 +64,13 @@ const MobileBottomSheet = ({
     setState((prev) => (prev === "full" ? "half" : "full"));
   };
 
-  const categoryLabel = category === "중국집" ? "🥟" : "🍖";
+  const handleCategorySelect = (cat: CategoryId) => {
+    onCategoryChange(cat);
+    setShowCategories(false);
+    setState("half");
+  };
+
+  const categoryLabel = CATEGORY_LABELS[category] || "🍽️";
 
   return (
     <div className="absolute inset-x-0 bottom-0 z-[1400] pointer-events-none">
@@ -73,7 +87,7 @@ const MobileBottomSheet = ({
           <div className="w-10 h-1 rounded-full bg-border mb-1" />
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Utensils className="h-3 w-3" />
-            <span>{categoryLabel} {totalCount}개 {category} · 2026.03.08-r1</span>
+            <span>{categoryLabel} {totalCount}개 {category}</span>
             {state === "full" ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
           </div>
         </button>
@@ -86,10 +100,31 @@ const MobileBottomSheet = ({
             exit={{ opacity: 0 }}
             className="px-3 pb-2 flex flex-col h-[calc(100%-48px)]"
           >
-            <div className="mb-2">
-              <CategoryTabs active={category} onChange={onCategoryChange} />
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={() => setShowCategories(!showCategories)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground whitespace-nowrap"
+              >
+                {categoryLabel} {category} ▾
+              </button>
+              <div className="flex-1">
+                <SearchBar query={query} onQueryChange={onQueryChange} />
+              </div>
             </div>
-            <SearchBar query={query} onQueryChange={onQueryChange} />
+
+            <AnimatePresence>
+              {showCategories && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden mb-2"
+                >
+                  <CategoryTabs active={category} onChange={handleCategorySelect} />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <p className="text-xs text-muted-foreground px-1 mb-1">
               {restaurants.length}개 · 평점 높은 순
