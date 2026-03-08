@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronUp, ChevronDown, Utensils } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
@@ -35,12 +34,7 @@ const MobileBottomSheet = ({
   onToggleVisited,
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("half");
-  const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const heights: Record<SheetState, string> = {
     half: "58vh",
@@ -64,10 +58,8 @@ const MobileBottomSheet = ({
 
   const categoryLabel = category === "중국집" ? "🥟" : "🍖";
 
-  if (!mounted) return null;
-
-  return createPortal(
-    <div className="fixed inset-x-0 bottom-0 z-[9999] pointer-events-none">
+  return (
+    <div className="absolute inset-x-0 bottom-0 z-[1400] pointer-events-none">
       <motion.div
         className="pointer-events-auto bg-card rounded-t-2xl shadow-panel border-t border-border pb-[env(safe-area-inset-bottom)]"
         animate={{ height: heights[state] }}
@@ -129,8 +121,7 @@ const MobileBottomSheet = ({
           </motion.div>
         </AnimatePresence>
       </motion.div>
-    </div>,
-    document.body
+    </div>
   );
 };
 
