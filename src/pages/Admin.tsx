@@ -569,47 +569,30 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Table */}
+        {/* Restaurant Grid */}
         {loading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="border border-border rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-medium">ID</th>
-                    <th className="text-left px-3 py-2 font-medium">이름</th>
-                    <th className="text-left px-3 py-2 font-medium hidden md:table-cell">주소</th>
-                    <th className="text-center px-3 py-2 font-medium">평점</th>
-                    <th className="text-center px-3 py-2 font-medium hidden sm:table-cell">리뷰</th>
-                    <th className="text-center px-3 py-2 font-medium">관리</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((r) => (
-                    <tr key={r.id} className="border-t border-border hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2 text-muted-foreground text-xs">{r.id}</td>
-                      <td className="px-3 py-2 font-medium">{r.name}</td>
-                      <td className="px-3 py-2 text-muted-foreground hidden md:table-cell text-xs">{r.address}</td>
-                      <td className="px-3 py-2 text-center">⭐ {r.rating}</td>
-                      <td className="px-3 py-2 text-center text-muted-foreground hidden sm:table-cell">{r.review_count}</td>
-                      <td className="px-3 py-2 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(r.id, r.name)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div>
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-2">
+              {filtered.map((r) => (
+                <div
+                  key={r.id}
+                  className="border border-border rounded-lg p-2 bg-card hover:bg-muted/30 transition-colors cursor-pointer group relative"
+                  onClick={() => openEdit(r)}
+                >
+                  <div className="text-xs font-medium truncate">{r.name}</div>
+                  <div className="text-[10px] text-muted-foreground">⭐ {r.rating}</div>
+                  <button
+                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/80"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(r.id, r.name); }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
             </div>
             {filtered.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">검색 결과가 없습니다</div>
