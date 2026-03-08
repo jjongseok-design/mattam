@@ -3,6 +3,7 @@ import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronUp, ChevronDown, Utensils } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
+import CategoryTabs, { CategoryId } from "./CategoryTabs";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
 interface MobileBottomSheetProps {
@@ -12,6 +13,8 @@ interface MobileBottomSheetProps {
   query: string;
   onQueryChange: (q: string) => void;
   totalCount: number;
+  category: CategoryId;
+  onCategoryChange: (cat: CategoryId) => void;
   isVisited: (id: string) => boolean;
   onToggleVisited: (id: string) => void;
 }
@@ -25,6 +28,8 @@ const MobileBottomSheet = ({
   query,
   onQueryChange,
   totalCount,
+  category,
+  onCategoryChange,
   isVisited,
   onToggleVisited,
 }: MobileBottomSheetProps) => {
@@ -50,6 +55,8 @@ const MobileBottomSheet = ({
     setState(state === "peek" ? "half" : state === "half" ? "full" : "peek");
   };
 
+  const categoryLabel = category === "중국집" ? "🥟" : "🍖";
+
   return (
     <motion.div
       className="fixed bottom-0 left-0 right-0 z-30 bg-card rounded-t-2xl shadow-panel border-t border-border"
@@ -64,7 +71,7 @@ const MobileBottomSheet = ({
         <div className="w-10 h-1 rounded-full bg-border mb-1" />
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Utensils className="h-3 w-3" />
-          <span>🥟 {totalCount}개 중국집</span>
+          <span>{categoryLabel} {totalCount}개 {category}</span>
           {state === "peek" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </div>
       </button>
@@ -77,6 +84,9 @@ const MobileBottomSheet = ({
             exit={{ opacity: 0 }}
             className="px-3 pb-2 flex flex-col h-[calc(100%-48px)]"
           >
+            <div className="mb-2">
+              <CategoryTabs active={category} onChange={onCategoryChange} />
+            </div>
             <SearchBar query={query} onQueryChange={onQueryChange} />
 
             <p className="text-xs text-muted-foreground px-1 mb-1">
