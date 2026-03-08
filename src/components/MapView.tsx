@@ -6,6 +6,12 @@ import type { Restaurant } from "@/hooks/useRestaurants";
 const CHUNCHEON_CENTER: L.LatLngExpression = [37.8813, 127.73];
 const DEFAULT_ZOOM = 13;
 
+// 춘천시 행정구역 경계 (대략적인 범위)
+const CHUNCHEON_BOUNDS = L.latLngBounds(
+  L.latLng(37.7340, 127.5800), // 남서쪽
+  L.latLng(38.0200, 127.9200)  // 북동쪽
+);
+
 interface MapViewProps {
   restaurants: Restaurant[];
   selectedId: string | null;
