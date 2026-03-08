@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronUp, ChevronDown, Utensils } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
@@ -19,7 +20,7 @@ interface MobileBottomSheetProps {
   onToggleVisited: (id: string) => void;
 }
 
-type SheetState = "peek" | "half" | "full";
+type SheetState = "half" | "full";
 
 const MobileBottomSheet = ({
   restaurants,
@@ -34,51 +35,60 @@ const MobileBottomSheet = ({
   onToggleVisited,
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("half");
+  const [mounted, setMounted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const heights: Record<SheetState, string> = {
-    peek: "calc(132px + env(safe-area-inset-bottom))",
     half: "58vh",
     full: "88vh",
   };
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
     const vy = info.velocity.y;
-    if (vy < -200) {
+    if (vy < -180) {
       setState("full");
-    } else if (vy > 200) {
+      return;
+    }
+    if (vy > 180) {
       setState("half");
     }
   };
 
   const toggle = () => {
-    setState(state === "full" ? "half" : "full");
+    setState((prev) => (prev === "full" ? "half" : "full"));
   };
 
   const categoryLabel = category === "중국집" ? "🥟" : "🍖";
 
-  return (
-    <motion.div
-      className="fixed bottom-0 left-0 right-0 z-[5000] bg-card rounded-t-2xl shadow-panel border-t border-border pb-[env(safe-area-inset-bottom)] max-h-[90vh]"
-      animate={{ height: heights[state] }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      drag="y"
-      dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={0.1}
-      onDragEnd={handleDragEnd}
-    >
-      <button onClick={toggle} className="w-full flex flex-col items-center pt-2 pb-1">
-        <div className="w-10 h-1 rounded-full bg-border mb-1" />
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Utensils className="h-3 w-3" />
-          <span>{categoryLabel} {totalCount}개 {category}</span>
-          {state === "full" ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
-        </div>
-      </button>
+  if (!mounted) return null;
 
-      <AnimatePresence>
-        {state !== "peek" && (
+  return createPortal(
+    <div className="fixed inset-x-0 bottom-0 z-[9999] pointer-events-none">
+      <motion.div
+        className="pointer-events-auto bg-card rounded-t-2xl shadow-panel border-t border-border pb-[env(safe-area-inset-bottom)]"
+        animate={{ height: heights[state] }}
+        transition={{ type: "spring", stiffness: 280, damping: 30 }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={0.1}
+        onDragEnd={handleDragEnd}
+      >
+        <button onClick={toggle} className="w-full flex flex-col items-center pt-2 pb-1">
+          <div className="w-10 h-1 rounded-full bg-border mb-1" />
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Utensils className="h-3 w-3" />
+            <span>{categoryLabel} {totalCount}개 {category}</span>
+            {state === "full" ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
+          </div>
+        </button>
+
+        <AnimatePresence>
           <motion.div
+            key="sheet-content"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -103,7 +113,10 @@ const MobileBottomSheet = ({
                     onSelect(restaurant.id);
                     setState("half");
                   }}
-                  onToggleVisited={(e) => { e.stopPropagation(); onToggleVisited(restaurant.id); }}
+                  onToggleVisited={(e) => {
+                    e.stopPropagation();
+                    onToggleVisited(restaurant.id);
+                  }}
                 />
               ))}
               {restaurants.length === 0 && (
@@ -114,9 +127,10 @@ const MobileBottomSheet = ({
               )}
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+        </AnimatePresence>
+      </motion.div>
+    </div>,
+    document.body
   );
 };
 

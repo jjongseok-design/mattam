@@ -86,21 +86,22 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
     restaurants.forEach((r) => {
       const isSelected = r.id === selectedId;
+      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} ${r.address}`)}`;
+
       const marker = L.marker([r.lat, r.lng], {
         icon: isSelected ? selectedIcon : defaultIcon,
         zIndexOffset: isSelected ? 1000 : 0,
       }).addTo(map);
 
-      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(r.name + ' ' + r.address)}`;
       const popupContent = `
-        <div style="min-width:160px">
-          <strong>🥟 ${r.name}</strong><br/>
-          ⭐ ${r.rating} (${r.reviewCount.toLocaleString()}개 리뷰)<br/>
-          <span style="font-size:11px;color:#888">${r.address}</span><br/>
-          <a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#e84118;text-decoration:none;font-weight:600">네이버지도에서 보기 →</a>
+        <div style="min-width:170px;line-height:1.4">
+          <a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;display:block;">
+            ${r.name}
+          </a>
+          <div style="font-size:12px;opacity:0.8;">클릭해서 네이버 지도 검색 결과 보기</div>
         </div>`;
 
-      marker.bindPopup(popupContent);
+      marker.bindPopup(popupContent, { closeButton: false, autoPan: true });
 
       if (isSelected) {
         marker.openPopup();
@@ -108,6 +109,7 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
       marker.on("click", () => {
         onSelectCb(r.id);
+        marker.openPopup();
       });
 
       markersRef.current.push(marker);
