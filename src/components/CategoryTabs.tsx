@@ -24,6 +24,7 @@ export const CATEGORIES = [
   { id: "생선구이", label: "생선구이", emoji: "🐟" },
   { id: "통닭", label: "통닭", emoji: "🍗" },
   { id: "카페", label: "카페", emoji: "☕" },
+  { id: "기타", label: "기타", emoji: "🍴" },
 ] as const;
 
 export type CategoryId = (typeof CATEGORIES)[number]["id"];
