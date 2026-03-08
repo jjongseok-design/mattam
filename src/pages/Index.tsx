@@ -5,6 +5,7 @@ import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
+import CategoryTabs, { CategoryId } from "@/components/CategoryTabs";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
@@ -13,13 +14,25 @@ import { AnimatePresence } from "framer-motion";
 const Index = () => {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [category, setCategory] = useState<CategoryId>("중국집");
   
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading } = useRestaurants();
   const { isVisited, toggle: toggleVisited } = useVisited();
 
+  const handleCategoryChange = useCallback((cat: CategoryId) => {
+    setCategory(cat);
+    setSelectedId(null);
+    setQuery("");
+  }, []);
+
+  const categoryRestaurants = useMemo(
+    () => restaurants.filter((r) => r.category === category),
+    [restaurants, category]
+  );
+
   const filtered = useMemo(() => {
-    let list = restaurants;
+    let list = categoryRestaurants;
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
@@ -32,7 +45,7 @@ const Index = () => {
     }
 
     return [...list].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
-  }, [query, restaurants]);
+  }, [query, categoryRestaurants]);
 
   if (isLoading) {
     return (
@@ -57,7 +70,9 @@ const Index = () => {
           onSelect={setSelectedId}
           query={query}
           onQueryChange={setQuery}
-          totalCount={restaurants.length}
+          totalCount={categoryRestaurants.length}
+          category={category}
+          onCategoryChange={handleCategoryChange}
           isVisited={isVisited}
           onToggleVisited={toggleVisited}
         />
@@ -72,15 +87,15 @@ const Index = () => {
       <div className="w-[420px] flex-shrink-0 h-full flex flex-col border-r border-border bg-card shadow-panel z-10">
         {/* Header */}
         <div className="p-5 border-b border-border">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Utensils className="h-4 w-4 text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <h1 className="text-lg font-bold text-foreground">🥟 춘천 중국집 지도</h1>
+              <h1 className="text-lg font-bold text-foreground">춘천 맛집 지도</h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                강원특별자치도 춘천시 · {restaurants.length}개 중국집
+                강원특별자치도 춘천시 · {categoryRestaurants.length}개 식당
               </p>
             </div>
             <Link to="/admin">
@@ -89,13 +104,16 @@ const Index = () => {
               </button>
             </Link>
           </div>
-          <SearchBar query={query} onQueryChange={setQuery} />
+          <CategoryTabs active={category} onChange={handleCategoryChange} />
+          <div className="mt-3">
+            <SearchBar query={query} onQueryChange={setQuery} />
+          </div>
         </div>
 
         {/* Results */}
         <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
           <p className="text-xs text-muted-foreground px-1 mb-1">
-            {filtered.length}개 중국집 · 평점 높은 순
+            {filtered.length}개 {category} · 평점 높은 순
           </p>
           <AnimatePresence mode="popLayout">
             {filtered.map((restaurant) => (
