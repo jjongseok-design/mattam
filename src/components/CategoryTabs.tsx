@@ -30,29 +30,31 @@ interface CategoryTabsProps {
 
 const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
   return (
-    <div className="grid grid-cols-5 gap-1 bg-muted rounded-lg p-1">
-      {CATEGORIES.map((cat) => (
-        <button
-          key={cat.id}
-          onClick={() => onChange(cat.id)}
-          className="relative px-1 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap text-center"
-        >
-          {active === cat.id && (
-            <motion.div
-              layoutId="category-tab"
-              className="absolute inset-0 bg-background rounded-md shadow-sm"
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-          )}
-          <span
-            className={`relative z-10 ${
-              active === cat.id ? "text-foreground" : "text-muted-foreground"
-            }`}
+    <div className="overflow-x-auto scrollbar-thin -mx-1 px-1">
+      <div className="flex flex-wrap gap-1 bg-muted rounded-lg p-1 min-w-0">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => onChange(cat.id)}
+            className="relative px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap"
           >
-            {cat.label}
-          </span>
-        </button>
-      ))}
+            {active === cat.id && (
+              <motion.div
+                layoutId="category-tab"
+                className="absolute inset-0 bg-background rounded-md shadow-sm"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span
+              className={`relative z-10 ${
+                active === cat.id ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {cat.label}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
