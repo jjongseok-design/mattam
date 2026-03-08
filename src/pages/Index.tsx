@@ -5,6 +5,7 @@ import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
+import CategoryTabs, { CategoryId } from "@/components/CategoryTabs";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
@@ -13,13 +14,25 @@ import { AnimatePresence } from "framer-motion";
 const Index = () => {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [category, setCategory] = useState<CategoryId>("중국집");
   
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading } = useRestaurants();
   const { isVisited, toggle: toggleVisited } = useVisited();
 
+  const handleCategoryChange = useCallback((cat: CategoryId) => {
+    setCategory(cat);
+    setSelectedId(null);
+    setQuery("");
+  }, []);
+
+  const categoryRestaurants = useMemo(
+    () => restaurants.filter((r) => r.category === category),
+    [restaurants, category]
+  );
+
   const filtered = useMemo(() => {
-    let list = restaurants;
+    let list = categoryRestaurants;
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
@@ -32,7 +45,7 @@ const Index = () => {
     }
 
     return [...list].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
-  }, [query, restaurants]);
+  }, [query, categoryRestaurants]);
 
   if (isLoading) {
     return (
