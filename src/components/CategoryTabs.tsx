@@ -8,7 +8,7 @@ export const CATEGORIES = [
   { id: "수제버거", label: "🍔 수제버거" },
   { id: "삼겹살", label: "🥓 삼겹살" },
   { id: "초밥", label: "🍣 초밥" },
-  { id: "일식", label: "🍱 일식" },
+  { id: "일식", label: "🍱 일식/횟집" },
   { id: "감자탕", label: "🥘 감자탕" },
   { id: "한우", label: "🥩 한우" },
   { id: "돼지갈비", label: "🍖 돼지갈비" },
