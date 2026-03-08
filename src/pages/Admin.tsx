@@ -158,7 +158,7 @@ const Admin = () => {
   const categoryCount = (catId: string) => restaurants.filter((r) => r.category === catId).length;
 
   const openNew = () => {
-    const prefix = CATEGORY_TAG_SUGGESTIONS[adminCategory]?.idPrefix ?? "xx";
+    const prefix = (CATEGORY_TAG_SUGGESTIONS[adminCategory]?.idPrefix) ?? "xx";
     const maxNum = restaurants.reduce((max, r) => {
       const m = r.id.match(new RegExp(`^${prefix}(\\d+)$`));
       return m ? Math.max(max, parseInt(m[1])) : max;
