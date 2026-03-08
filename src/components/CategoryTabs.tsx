@@ -18,12 +18,12 @@ interface CategoryTabsProps {
 
 const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
   return (
-    <div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto scrollbar-thin">
+    <div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto scrollbar-thin min-w-0 w-full">
       {CATEGORIES.map((cat) => (
         <button
           key={cat.id}
           onClick={() => onChange(cat.id)}
-          className="relative flex-shrink-0 px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+          className="relative flex-shrink-0 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap"
         >
           {active === cat.id && (
             <motion.div
