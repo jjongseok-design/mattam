@@ -11,7 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
 import { AnimatePresence } from "framer-motion";
 
-const BUILD_TAG = "2026.03.08-r1";
+const BUILD_TAG = "2026.03.08-r2";
 
 const Index = () => {
   const [query, setQuery] = useState("");
