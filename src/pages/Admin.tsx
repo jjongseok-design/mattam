@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CATEGORIES, type CategoryId } from "@/components/CategoryTabs";
+import { motion } from "framer-motion";
 
 interface RestaurantRow {
   id: string;
@@ -22,10 +24,23 @@ interface RestaurantRow {
   description: string | null;
 }
 
-const emptyForm: Omit<RestaurantRow, "id"> & { id: string } = {
+const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestions: string[]; idPrefix: string }> = {
+  "중국집": {
+    placeholder: "짬뽕, 탕수육, 짜장면",
+    suggestions: ["짜장면", "짬뽕", "탕수육", "볶음밥", "군만두", "간짜장", "울면", "마라탕", "코스요리", "해물짬뽕"],
+    idPrefix: "cn",
+  },
+  "갈비탕": {
+    placeholder: "갈비탕, 소갈비탕, 한식",
+    suggestions: ["갈비탕", "소갈비탕", "왕갈비탕", "설렁탕", "도가니탕", "한식", "수육", "갈비찜"],
+    idPrefix: "gb",
+  },
+};
+
+const getEmptyForm = (category: CategoryId) => ({
   id: "",
   name: "",
-  category: "중국집",
+  category,
   address: "",
   phone: "",
   rating: 0,
@@ -33,9 +48,9 @@ const emptyForm: Omit<RestaurantRow, "id"> & { id: string } = {
   lat: 37.8813,
   lng: 127.7298,
   price_range: "",
-  tags: [],
+  tags: [] as string[],
   description: "",
-};
+});
 
 const adminApi = async (pin: string, action: string, data?: any) => {
   const { data: result, error } = await supabase.functions.invoke("admin-api", {
@@ -55,14 +70,14 @@ const Admin = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<RestaurantRow | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(getEmptyForm("중국집"));
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showPinChange, setShowPinChange] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [adminCategory, setAdminCategory] = useState<CategoryId>("중국집");
 
-  // Restore session
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_pin");
     if (saved) {
@@ -131,20 +146,25 @@ const Admin = () => {
     }
   };
 
+  // Filter by admin category tab + search
   const filtered = restaurants.filter(
     (r) =>
-      r.name.includes(search) ||
-      r.address.includes(search) ||
-      (r.tags ?? []).some((t) => t.includes(search))
+      r.category === adminCategory &&
+      (r.name.includes(search) ||
+        r.address.includes(search) ||
+        (r.tags ?? []).some((t) => t.includes(search)))
   );
 
+  const categoryCount = (catId: string) => restaurants.filter((r) => r.category === catId).length;
+
   const openNew = () => {
+    const prefix = (CATEGORY_TAG_SUGGESTIONS[adminCategory]?.idPrefix) ?? "xx";
     const maxNum = restaurants.reduce((max, r) => {
-      const m = r.id.match(/^cn(\d+)$/);
+      const m = r.id.match(new RegExp(`^${prefix}(\\d+)$`));
       return m ? Math.max(max, parseInt(m[1])) : max;
     }, 0);
-    const nextId = `cn${String(maxNum + 1).padStart(2, "0")}`;
-    setForm({ ...emptyForm, id: nextId });
+    const nextId = `${prefix}${String(maxNum + 1).padStart(2, "0")}`;
+    setForm({ ...getEmptyForm(adminCategory), id: nextId });
     setEditing(null);
     setShowForm(true);
   };
@@ -153,7 +173,7 @@ const Admin = () => {
     setForm({
       id: r.id,
       name: r.name,
-      category: r.category,
+      category: r.category as CategoryId,
       address: r.address,
       phone: r.phone ?? "",
       rating: r.rating,
@@ -218,6 +238,17 @@ const Admin = () => {
       fetchAll();
     } catch (err: any) {
       toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const currentTagConfig = CATEGORY_TAG_SUGGESTIONS[form.category] ?? CATEGORY_TAG_SUGGESTIONS["중국집"];
+
+  const toggleSuggestionTag = (tag: string) => {
+    const currentTags = Array.isArray(form.tags) ? form.tags : (form.tags as string).split(",").map(t => t.trim()).filter(Boolean);
+    if (currentTags.includes(tag)) {
+      setForm({ ...form, tags: currentTags.filter(t => t !== tag) });
+    } else {
+      setForm({ ...form, tags: [...currentTags, tag] });
     }
   };
 
@@ -286,6 +317,29 @@ const Admin = () => {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-4">
+        {/* Admin Category Tabs */}
+        <div className="flex gap-1 bg-muted rounded-lg p-1 mb-4">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => { setAdminCategory(cat.id); setSearch(""); }}
+              className="relative flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors"
+            >
+              {adminCategory === cat.id && (
+                <motion.div
+                  layoutId="admin-category-tab"
+                  className="absolute inset-0 bg-background rounded-md shadow-sm"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+              <span className={`relative z-10 flex items-center justify-center gap-1.5 ${adminCategory === cat.id ? "text-foreground" : "text-muted-foreground"}`}>
+                {cat.label}
+                <span className="text-xs opacity-70">({categoryCount(cat.id)})</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
         {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -360,11 +414,15 @@ const Admin = () => {
                   <label className="text-sm font-medium">카테고리</label>
                   <select
                     value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    onChange={(e) => {
+                      const newCat = e.target.value;
+                      setForm({ ...form, category: newCat as CategoryId, tags: [] });
+                    }}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <option value="중국집">🥟 중국집</option>
-                    <option value="갈비탕">🍖 갈비탕</option>
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -392,8 +450,28 @@ const Admin = () => {
                   <Input
                     value={Array.isArray(form.tags) ? form.tags.join(", ") : form.tags}
                     onChange={(e) => setForm({ ...form, tags: e.target.value as any })}
-                    placeholder="짬뽕, 탕수육, 짜장면"
+                    placeholder={currentTagConfig.placeholder}
                   />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {currentTagConfig.suggestions.map((tag) => {
+                      const currentTags = Array.isArray(form.tags) ? form.tags : (form.tags as string).split(",").map(t => t.trim()).filter(Boolean);
+                      const isSelected = currentTags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => toggleSuggestionTag(tag)}
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                            isSelected
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-muted text-muted-foreground border-border hover:bg-accent"
+                          }`}
+                        >
+                          {isSelected ? "✓ " : "+ "}{tag}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium">설명</label>
