@@ -86,7 +86,7 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
     restaurants.forEach((r) => {
       const isSelected = r.id === selectedId;
-      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} ${r.address}`)}`;
+      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
 
       const marker = L.marker([r.lat, r.lng], {
         icon: isSelected ? selectedIcon : defaultIcon,
