@@ -73,7 +73,7 @@ const MobileBottomSheet = ({
           <div className="w-10 h-1 rounded-full bg-border mb-1" />
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Utensils className="h-3 w-3" />
-            <span>{categoryLabel} {totalCount}개 {category}</span>
+            <span>{categoryLabel} {totalCount}개 {category} · 2026.03.08-r1</span>
             {state === "full" ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
           </div>
         </button>

@@ -11,6 +11,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
 import { AnimatePresence } from "framer-motion";
 
+const BUILD_TAG = "2026.03.08-r1";
+
 const Index = () => {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -94,7 +96,7 @@ const Index = () => {
               <Utensils className="h-4 w-4 text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <h1 className="text-lg font-bold text-foreground">춘천 맛집 지도</h1>
+              <h1 className="text-lg font-bold text-foreground">춘천 맛집 지도 <span className="text-[11px] text-muted-foreground align-middle">({BUILD_TAG})</span></h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
                 강원특별자치도 춘천시 · {categoryRestaurants.length}개 식당
