@@ -19,6 +19,10 @@ export const CATEGORIES = [
   { id: "설렁탕/곰탕", label: "설렁탕/곰탕", emoji: "🍲" },
   { id: "보쌈/족발", label: "보쌈/족발", emoji: "🐷" },
   { id: "돈까스", label: "돈까스", emoji: "🍛" },
+  { id: "찌개류", label: "찌개류", emoji: "🍲" },
+  { id: "국밥류", label: "국밥류", emoji: "🍜" },
+  { id: "생선구이", label: "생선구이", emoji: "🐟" },
+  { id: "통닭", label: "통닭", emoji: "🍗" },
 ] as const;
 
 export type CategoryId = (typeof CATEGORIES)[number]["id"];
