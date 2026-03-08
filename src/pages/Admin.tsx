@@ -100,6 +100,11 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     suggestions: ["보쌈", "족발", "수육", "막국수", "냉채족발", "마늘보쌈", "쟁반국수"],
     idPrefix: "bj",
   },
+  "돈까스": {
+    placeholder: "돈까스, 왕돈까스, 카츠",
+    suggestions: ["돈까스", "왕돈까스", "카츠", "경양식", "치즈돈까스", "카레", "소바", "냉모밀", "함박스테이크", "가성비"],
+    idPrefix: "dk",
+  },
 };
 
 const getEmptyForm = (category: CategoryId) => ({
