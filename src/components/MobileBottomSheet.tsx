@@ -37,9 +37,9 @@ const MobileBottomSheet = ({
   const listRef = useRef<HTMLDivElement>(null);
 
   const heights: Record<SheetState, string> = {
-    peek: "120px",
-    half: "50vh",
-    full: "85vh",
+    peek: "calc(132px + env(safe-area-inset-bottom))",
+    half: "58dvh",
+    full: "88dvh",
   };
 
   const handleDragEnd = (_: any, info: PanInfo) => {
@@ -59,7 +59,7 @@ const MobileBottomSheet = ({
 
   return (
     <motion.div
-      className="fixed bottom-0 left-0 right-0 z-[1000] bg-card rounded-t-2xl shadow-panel border-t border-border pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 left-0 right-0 z-[1000] bg-card rounded-t-2xl shadow-panel border-t border-border pb-[env(safe-area-inset-bottom)] max-h-[90dvh]"
       animate={{ height: heights[state] }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       drag="y"

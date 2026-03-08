@@ -58,7 +58,7 @@ const Index = () => {
   // Mobile layout
   if (isMobile) {
     return (
-      <div className="relative h-screen w-screen overflow-hidden bg-background">
+      <div className="relative h-dvh w-screen overflow-hidden bg-background">
         <MapView
           restaurants={filtered}
           selectedId={selectedId}
