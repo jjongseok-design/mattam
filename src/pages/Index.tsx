@@ -14,7 +14,7 @@ import { AnimatePresence } from "framer-motion";
 const Index = () => {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [category, setCategory] = useState<CategoryId>("중국집");
+  const [category, setCategory] = useState<CategoryId>("닭갈비");
   
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading } = useRestaurants();

@@ -33,7 +33,7 @@ const MobileBottomSheet = ({
   isVisited,
   onToggleVisited,
 }: MobileBottomSheetProps) => {
-  const [state, setState] = useState<SheetState>("peek");
+  const [state, setState] = useState<SheetState>("half");
   const listRef = useRef<HTMLDivElement>(null);
 
   const heights: Record<SheetState, string> = {
