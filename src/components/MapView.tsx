@@ -95,7 +95,7 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
       const popupContent = `
         <div style="min-width:170px;line-height:1.4">
-          <a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;display:block;">
+          <a href="${naverUrl}" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;display:block;">
             ${r.name}
           </a>
           <div style="font-size:12px;opacity:0.8;">클릭해서 네이버 지도 검색 결과 보기</div>
