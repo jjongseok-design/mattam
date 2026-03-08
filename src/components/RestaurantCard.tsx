@@ -1,4 +1,4 @@
-import { Star, MapPin, Phone, CheckCircle2 } from "lucide-react";
+import { Star, MapPin, Phone, CheckCircle2, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
@@ -80,8 +80,19 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
         ))}
       </div>
 
-      <div className="text-[11px] text-muted-foreground">
-        리뷰 {restaurant.reviewCount.toLocaleString()}개
+      <div className="flex items-center justify-between">
+        <div className="text-[11px] text-muted-foreground">
+          리뷰 {restaurant.reviewCount.toLocaleString()}개
+        </div>
+        <a
+          href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + ' ' + restaurant.address)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 font-medium"
+        >
+          네이버지도 <ExternalLink className="h-3 w-3" />
+        </a>
       </div>
     </motion.button>
   );
