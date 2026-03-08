@@ -16,6 +16,7 @@ export const CATEGORIES = [
   { id: "베이커리", label: "🥐 베이커리" },
   { id: "설렁탕/곰탕", label: "🍲 설렁탕/곰탕" },
   { id: "보쌈/족발", label: "🐷 보쌈/족발" },
+  { id: "돈까스", label: "🍛 돈까스" },
 ] as const;
 
 export type CategoryId = (typeof CATEGORIES)[number]["id"];
