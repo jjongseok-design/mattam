@@ -115,6 +115,11 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     suggestions: ["돈까스", "왕돈까스", "카츠", "경양식", "치즈돈까스", "카레", "소바", "냉모밀", "함박스테이크", "가성비"],
     idPrefix: "dk",
   },
+  "카페": {
+    placeholder: "커피, 디저트, 브런치",
+    suggestions: ["커피", "라떼", "아메리카노", "디저트", "케이크", "브런치", "베이글", "스콘", "감자빵", "루프탑", "뷰맛집", "대형카페"],
+    idPrefix: "cf",
+  },
 };
 
 const getEmptyForm = (category: CategoryId) => ({
