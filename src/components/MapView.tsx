@@ -21,12 +21,17 @@ const useKakaoMapReady = () => {
     let timeoutId: number | undefined;
 
     const markError = (message: string) => {
+      console.error("[KakaoMap]", message, {
+        origin: window.location.origin,
+        href: window.location.href,
+      });
       setError(message);
       setReady(false);
     };
 
     const loadMapApi = () => {
       if (window.kakao?.maps) {
+        console.info("[KakaoMap] SDK already loaded", window.location.origin);
         kakao.maps.load(() => setReady(true));
         return;
       }
@@ -34,15 +39,16 @@ const useKakaoMapReady = () => {
       let script = document.getElementById(KAKAO_SCRIPT_ID) as HTMLScriptElement | null;
 
       const onLoad = () => {
+        console.info("[KakaoMap] script loaded");
         if (!window.kakao?.maps) {
-          markError("지도 SDK 초기화에 실패했습니다.");
+          markError("지도 SDK 초기화에 실패했습니다 (kakao.maps 없음)");
           return;
         }
         kakao.maps.load(() => setReady(true));
       };
 
       const onError = () => {
-        markError("지도 SDK 스크립트 로드에 실패했습니다.");
+        markError("지도 SDK 스크립트 로드 실패 (도메인 허용/키 확인 필요)");
       };
 
       if (!script) {
@@ -60,7 +66,7 @@ const useKakaoMapReady = () => {
 
       timeoutId = window.setTimeout(() => {
         if (!window.kakao?.maps) {
-          markError(`도메인 허용 설정을 확인해주세요: ${window.location.origin}`);
+          markError(`10초 경과: 현재 도메인(${window.location.origin})이 허용 도메인에 등록됐는지 확인하세요`);
         }
       }, 10000);
 
@@ -174,6 +180,9 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
           <AlertTriangle className="h-5 w-5 text-destructive" />
           <p className="text-sm font-medium">지도를 불러오지 못했습니다</p>
           <p className="text-xs text-muted-foreground">{error}</p>
+          <p className="text-[11px] text-muted-foreground/80 break-all">
+            현재 도메인: {typeof window !== "undefined" ? window.location.origin : "-"}
+          </p>
         </div>
       </div>
     );
