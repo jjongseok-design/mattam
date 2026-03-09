@@ -262,26 +262,9 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Row 2: Category pills OR selected category header */}
+            {/* Row 2: Category grid (always visible) */}
             <div className="px-4 pb-2">
-              {!showList ? (
-                <CategoryTabs active={category} onChange={handleCategoryChange} variant="pills" />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleCloseList}
-                    className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform shrink-0"
-                    aria-label="카테고리 선택으로 돌아가기"
-                  >
-                    <X className="h-4 w-4 text-foreground" />
-                  </button>
-                  <span className="text-base font-bold text-foreground flex items-center gap-1.5">
-                    <span>{categoryEmoji}</span>
-                    <span>{category}</span>
-                    <span className="text-xs font-normal text-muted-foreground ml-1">{categoryRestaurants.length}개</span>
-                  </span>
-                </div>
-              )}
+              <CategoryTabs active={category} onChange={handleCategoryChange} />
             </div>
           </div>
 
