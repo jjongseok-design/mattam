@@ -134,20 +134,20 @@ const RestaurantDetail = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-card border-b border-border/50">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto safe-area-x py-3 flex items-center justify-between gap-2">
           <Link to="/" aria-label="지도로 돌아가기">
-            <Button variant="ghost" size="icon" aria-label="뒤로가기">
+            <Button variant="ghost" size="icon" className="tap-safe" aria-label="뒤로가기">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           <h1 className="text-sm font-semibold text-foreground truncate">{restaurant.name}</h1>
-          <Button variant="ghost" size="icon" onClick={handleShare} aria-label="공유하기">
+          <Button variant="ghost" size="icon" className="tap-safe" onClick={handleShare} aria-label="공유하기">
             <Share2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl mx-auto safe-area-x py-6 space-y-6">
           {/* Name & Rating summary */}
           <div className="flex items-center gap-3">
             <span className="text-3xl">{emoji}</span>
