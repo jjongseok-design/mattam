@@ -9,11 +9,37 @@ const FALLBACK_CATEGORIES: CategoryRow[] = [
 interface CategoryTabsProps {
   active: string;
   onChange: (id: string) => void;
+  /** Horizontal scrolling pill style (for mobile top bar) */
+  variant?: "grid" | "pills";
 }
 
-const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
+const CategoryTabs = ({ active, onChange, variant = "grid" }: CategoryTabsProps) => {
   const { data: categories } = useCategories();
   const cats = categories && categories.length > 0 ? categories : FALLBACK_CATEGORIES;
+
+  if (variant === "pills") {
+    return (
+      <div className="flex gap-2 overflow-x-auto scrollbar-thin py-1 px-1 -mx-1">
+        {cats.map((cat) => {
+          const isActive = active === cat.id;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => onChange(cat.id)}
+              className={`relative flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
+                isActive
+                  ? "bg-foreground text-background shadow-sm"
+                  : "bg-muted/80 text-foreground hover:bg-muted"
+              }`}
+            >
+              <span className="text-base">{cat.emoji}</span>
+              <span>{cat.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="-mx-1 px-1">
