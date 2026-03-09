@@ -88,7 +88,16 @@ const MobileBottomSheet = memo(({
   }, []);
 
   const handleToggleState = useCallback(() => {
-    setState(prev => prev === "full" ? "half" : "full");
+    setState(prev => {
+      if (prev === "full") return "half";
+      if (prev === "half") return "peek";
+      return "half";
+    });
+  }, []);
+
+  // Ensure drag is always enabled when touching the handle bar area
+  const handleHandleTouchStart = useCallback(() => {
+    setIsDraggable(true);
   }, []);
 
   const handleListScroll = useCallback(() => {
@@ -133,9 +142,10 @@ const MobileBottomSheet = memo(({
         onDragEnd={handleDragEnd}
         style={{ touchAction: isDraggable ? "none" : "auto" }}
       >
-        {/* Handle / Peek bar */}
+        {/* Handle / Peek bar - always enables drag */}
         <button
           onClick={isPeek ? handlePeekTap : handleToggleState}
+          onTouchStart={handleHandleTouchStart}
           className="w-full flex flex-col items-center pt-3 pb-2 flex-shrink-0 touch-none"
           aria-label={isPeek ? "목록 펼치기" : "목록 접기/펼치기"}
         >
@@ -143,7 +153,7 @@ const MobileBottomSheet = memo(({
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 font-medium">
             <span>{emoji}</span>
             <span>{totalCount}개 {category}</span>
-            <ChevronUp className={`h-3 w-3 transition-transform duration-200 ${state === "full" ? "rotate-180" : ""}`} />
+            <ChevronUp className={`h-3 w-3 transition-transform duration-200 ${state === "peek" ? "" : state === "full" ? "rotate-180" : ""}`} />
           </div>
         </button>
 
