@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound, MessageSquarePlus, Check, X, GripVertical, ChevronUp, ChevronDown, Settings2 } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound, MessageSquarePlus, Check, X, Settings2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
 import { motion } from "framer-motion";
@@ -71,11 +71,15 @@ const Admin = () => {
   const [tipsLoading, setTipsLoading] = useState(false);
 
   // Category management state
-  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [catForm, setCatForm] = useState({ id: "", label: "", emoji: "🍴", id_prefix: "", tag_placeholder: "", tag_suggestions: "" });
   const [editingCat, setEditingCat] = useState<CategoryRow | null>(null);
   const [showCatForm, setShowCatForm] = useState(false);
   const [catSaving, setCatSaving] = useState(false);
+
+  // Drag and drop state
+  const dragItem = useRef<string | null>(null);
+  const dragOverItem = useRef<string | null>(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_pin");
