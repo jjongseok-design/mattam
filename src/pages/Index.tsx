@@ -155,14 +155,13 @@ const Index = () => {
     return (
       <>
         <div className="relative h-dvh w-screen overflow-hidden bg-background">
-        {/* Mobile top bar - fixed with solid background for iOS visibility */}
-          <div className="absolute top-0 left-0 right-0 z-[1300] safe-area-top bg-background/90 backdrop-blur-md" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
-            <div className="px-4 pt-2 pb-2 flex items-center gap-2">
-              {/* Tour Progress - compact mobile version */}
+          {/* 당근마켓 스타일 상단 바 */}
+          <div className="absolute top-0 left-0 right-0 z-[1300] safe-area-top bg-background/95 backdrop-blur-md border-b border-border/30" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
+            {/* Row 1: Tour progress + action buttons */}
+            <div className="px-4 pt-2 pb-1.5 flex items-center gap-2">
               <div className="flex-1 min-w-0 overflow-hidden">
                 <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
               </div>
-              {/* Action buttons inline */}
               <div className="flex items-center gap-1.5 shrink-0">
                 {!position && (
                   <button
@@ -181,7 +180,13 @@ const Index = () => {
                 </div>
               </div>
             </div>
+            {/* Row 2: 당근마켓 스타일 카테고리 가로 스크롤 pills */}
+            <div className="px-4 pb-2">
+              <CategoryTabs active={category} onChange={handleCategoryChange} variant="pills" />
+            </div>
           </div>
+
+          {/* Map */}
           <div className="absolute inset-0 z-0">
             <MapView
               restaurants={filtered}
@@ -190,6 +195,8 @@ const Index = () => {
               visitedIds={visited}
             />
           </div>
+
+          {/* Bottom Sheet */}
           <MobileBottomSheet
             restaurants={filtered}
             selectedId={selectedId}

@@ -1,9 +1,8 @@
-import { useRef, useState, useCallback, TouchEvent as ReactTouchEvent } from "react";
+import { useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { ChevronUp, Grid3X3 } from "lucide-react";
+import { ChevronUp } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
-import CategoryTabs from "./CategoryTabs";
 import SortFilterBar, { SortOption, FilterOption } from "./SortFilterBar";
 import RandomPickButton from "./RandomPickButton";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
@@ -42,7 +41,6 @@ const MobileBottomSheet = ({
   onQueryChange,
   totalCount,
   category,
-  onCategoryChange,
   isVisited,
   onToggleVisited,
   isFavorite,
@@ -57,15 +55,13 @@ const MobileBottomSheet = ({
   getDistance,
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("half");
-  const [showCategories, setShowCategories] = useState(false);
   const [isDraggable, setIsDraggable] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
-  const dragHandleRef = useRef<HTMLDivElement>(null);
 
   const heights: Record<SheetState, string> = {
     peek: "56px",
-    half: "55vh",
-    full: "90vh",
+    half: "50vh",
+    full: "85vh",
   };
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
@@ -79,20 +75,11 @@ const MobileBottomSheet = ({
     }
     if (vy > 200 || dy > 80) {
       if (state === "full") setState("half");
-      else {
-        setState("peek");
-        setShowCategories(false);
-      }
+      else setState("peek");
     }
   };
 
   const handlePeekTap = () => {
-    setState("half");
-  };
-
-  const handleCategorySelect = (cat: string) => {
-    onCategoryChange(cat);
-    setShowCategories(false);
     setState("half");
   };
 
@@ -124,59 +111,30 @@ const MobileBottomSheet = ({
         onDragEnd={handleDragEnd}
         style={{ touchAction: "none" }}
       >
-        {/* Handle / Peek bar - always draggable */}
-        <div ref={dragHandleRef}>
-          <button
-            onClick={isPeek ? handlePeekTap : () => setState(state === "full" ? "half" : "full")}
-            className="w-full flex flex-col items-center pt-3 pb-2"
-            aria-label={isPeek ? "목록 펼치기" : "목록 접기/펼치기"}
-          >
-            <div className="w-9 h-[3px] rounded-full bg-muted-foreground/20 mb-2" />
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 font-medium">
-              <span>{emoji}</span>
-              <span>{totalCount}개 {category}</span>
-              <ChevronUp className={`h-3 w-3 transition-transform duration-200 ${state === "full" ? "rotate-180" : ""}`} />
-            </div>
-          </button>
-        </div>
+        {/* Handle / Peek bar */}
+        <button
+          onClick={isPeek ? handlePeekTap : () => setState(state === "full" ? "half" : "full")}
+          className="w-full flex flex-col items-center pt-3 pb-2 flex-shrink-0"
+          aria-label={isPeek ? "목록 펼치기" : "목록 접기/펼치기"}
+        >
+          <div className="w-9 h-[3px] rounded-full bg-muted-foreground/20 mb-2" />
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 font-medium">
+            <span>{emoji}</span>
+            <span>{totalCount}개 {category}</span>
+            <ChevronUp className={`h-3 w-3 transition-transform duration-200 ${state === "full" ? "rotate-180" : ""}`} />
+          </div>
+        </button>
 
         {/* Content - hidden when peek */}
         {!isPeek && (
           <div className="px-4 pb-2 flex flex-col flex-1 min-h-0">
-            {/* Category toggle + Search */}
+            {/* Search + Random */}
             <div className="flex gap-2 mb-2 flex-shrink-0">
-              <button
-                onClick={() => { setShowCategories(!showCategories); if (!showCategories) setState("full"); }}
-                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-all duration-200 ${
-                  showCategories
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted/80 text-foreground hover:bg-muted"
-                }`}
-                aria-label="카테고리 선택"
-              >
-                <Grid3X3 className="h-3.5 w-3.5" />
-                {category}
-              </button>
               <div className="flex-1">
                 <SearchBar query={query} onQueryChange={onQueryChange} />
               </div>
               <RandomPickButton restaurants={restaurants} />
             </div>
-
-            {/* Category grid */}
-            <AnimatePresence>
-              {showCategories && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="overflow-hidden mb-2 flex-shrink-0"
-                >
-                  <CategoryTabs active={category} onChange={handleCategorySelect} />
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             {/* Sort / Filter */}
             <div className="mb-2 flex-shrink-0">
