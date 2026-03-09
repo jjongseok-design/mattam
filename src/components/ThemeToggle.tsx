@@ -25,7 +25,7 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggle}
-      className="w-10 h-10 rounded-xl hover:bg-muted flex items-center justify-center transition-colors active:scale-95"
+      className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl hover:bg-muted flex items-center justify-center transition-colors active:scale-95"
       aria-label={dark ? "라이트 모드로 전환" : "다크 모드로 전환"}
       title={dark ? "라이트 모드" : "다크 모드"}
     >

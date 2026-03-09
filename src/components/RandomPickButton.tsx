@@ -33,7 +33,7 @@ const RandomPickButton = ({ restaurants }: RandomPickButtonProps) => {
       <button
         onClick={handlePick}
         disabled={restaurants.length === 0}
-        className="flex items-center gap-1.5 px-3 py-2 bg-accent/10 hover:bg-accent/20 text-accent rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-40 border border-accent/20"
+        className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] bg-accent/10 hover:bg-accent/20 text-accent rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-40 border border-accent/20"
         aria-label="랜덤 식당 추천"
       >
         <motion.span
@@ -79,7 +79,7 @@ const RandomPickButton = ({ restaurants }: RandomPickButtonProps) => {
             </div>
             <button
               onClick={() => setPicked(null)}
-              className="absolute top-2 right-2 text-muted-foreground/50 hover:text-foreground text-xs"
+              className="absolute top-1 right-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground/50 hover:text-foreground text-xs"
               aria-label="닫기"
             >
               ✕
