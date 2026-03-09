@@ -224,12 +224,12 @@ Deno.serve(async (req) => {
         // 4. Insert restaurant with AI-enriched data
         const restaurant = {
           id: newId,
-          name: data.restaurant_name,
+          name: aiInfo.name || data.restaurant_name,
           category: data.category,
           address: aiInfo.address || data.address || "춘천시",
           phone: aiInfo.phone || null,
-          lat: aiInfo.lat || data.lat || 37.8813,
-          lng: aiInfo.lng || data.lng || 127.7298,
+          lat: (aiInfo.lat && aiInfo.lat > 37.7 && aiInfo.lat < 38.0) ? aiInfo.lat : (data.lat || 37.8813),
+          lng: (aiInfo.lng && aiInfo.lng > 127.5 && aiInfo.lng < 127.9) ? aiInfo.lng : (data.lng || 127.7298),
           rating: aiInfo.rating || 0,
           review_count: aiInfo.review_count || 0,
           price_range: aiInfo.price_range || null,
