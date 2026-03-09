@@ -15,24 +15,7 @@ export interface CategoryRow {
 export function useCategories() {
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const channel = supabase
-      .channel("categories-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "categories" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["categories"] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
-  return useQuery({
+  const query = useQuery({
     queryKey: ["categories"],
     queryFn: async (): Promise<CategoryRow[]> => {
       const { data, error } = await supabase
@@ -52,6 +35,25 @@ export function useCategories() {
     },
     staleTime: 1000 * 60,
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("categories-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "categories" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["categories"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return query;
 }
 
 export function useInvalidateCategories() {
