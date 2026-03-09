@@ -35,6 +35,42 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          id_prefix: string
+          label: string
+          sort_order: number
+          tag_placeholder: string | null
+          tag_suggestions: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string
+          id: string
+          id_prefix?: string
+          label: string
+          sort_order?: number
+          tag_placeholder?: string | null
+          tag_suggestions?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          id_prefix?: string
+          label?: string
+          sort_order?: number
+          tag_placeholder?: string | null
+          tag_suggestions?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       restaurants: {
         Row: {
           address: string
