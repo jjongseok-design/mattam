@@ -35,7 +35,7 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     suggestions: ["물막국수", "비빔막국수", "순메밀막국수", "편육", "메밀전병", "감자전", "녹두전", "보쌈", "메밀전", "들기름막국수"],
     idPrefix: "mk",
   },
-  "중국집": {
+  "중화요리": {
     placeholder: "짬뽕, 탕수육, 짜장면",
     suggestions: ["짜장면", "짬뽕", "탕수육", "볶음밥", "군만두", "간짜장", "울면", "마라탕", "코스요리", "해물짬뽕"],
     idPrefix: "cn",
@@ -100,10 +100,10 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     suggestions: ["크루아상", "앙버터", "소금빵", "식빵", "케이크", "마카롱", "보리빵", "맘모스빵", "타르트"],
     idPrefix: "bk",
   },
-  "설렁탕/곰탕": {
-    placeholder: "설렁탕, 곰탕, 도가니탕",
-    suggestions: ["설렁탕", "곰탕", "도가니탕", "소꼬리탕", "사골국", "수육", "선지국"],
-    idPrefix: "sg2",
+  "한식": {
+    placeholder: "설렁탕, 곰탕, 국밥, 찌개",
+    suggestions: ["설렁탕", "곰탕", "도가니탕", "소꼬리탕", "사골국", "수육", "선지국", "순대국밥", "돼지국밥", "소머리국밥", "김치찌개", "된장찌개", "순두부찌개", "부대찌개", "해장국"],
+    idPrefix: "hs",
   },
   "보쌈/족발": {
     placeholder: "보쌈, 족발, 수육",
@@ -114,6 +114,11 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     placeholder: "돈까스, 왕돈까스, 카츠",
     suggestions: ["돈까스", "왕돈까스", "카츠", "경양식", "치즈돈까스", "카레", "소바", "냉모밀", "함박스테이크", "가성비"],
     idPrefix: "dk",
+  },
+  "샤브샤브": {
+    placeholder: "샤브샤브, 월남쌈, 편백찜",
+    suggestions: ["샤브샤브", "월남쌈", "편백찜", "칼국수", "무한리필", "뷔페", "셀프바", "소고기샤브", "해물샤브", "1인샤브"],
+    idPrefix: "sv",
   },
   "카페": {
     placeholder: "커피, 디저트, 브런치",
@@ -160,13 +165,13 @@ const Admin = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<RestaurantRow | null>(null);
-  const [form, setForm] = useState(getEmptyForm("중국집"));
+  const [form, setForm] = useState(getEmptyForm("중화요리"));
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showPinChange, setShowPinChange] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
-  const [adminCategory, setAdminCategory] = useState<CategoryId>("중국집");
+  const [adminCategory, setAdminCategory] = useState<CategoryId>("중화요리");
   const [tips, setTips] = useState<any[]>([]);
   const [showTips, setShowTips] = useState(false);
   const [tipsLoading, setTipsLoading] = useState(false);
