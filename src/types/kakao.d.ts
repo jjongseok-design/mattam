@@ -12,9 +12,15 @@ declare namespace kakao.maps {
   class Map {
     constructor(container: HTMLElement, options: { center: LatLng; level: number });
     setCenter(latlng: LatLng): void;
+    getCenter(): LatLng;
     setLevel(level: number, options?: { animate?: { duration?: number } }): void;
     panTo(latlng: LatLng): void;
     getLevel(): number;
+  }
+
+  class LatLngBounds {
+    constructor(sw: LatLng, ne: LatLng);
+    contain(latlng: LatLng): boolean;
   }
 
   class Marker {
