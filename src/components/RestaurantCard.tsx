@@ -180,7 +180,7 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, isFavorite, distanc
             onClick={(e) => e.stopPropagation()}
             className="text-[11px] text-primary/70 hover:text-primary font-medium transition-colors"
           >
-            상세보기
+            리뷰
           </Link>
           <a
             href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + ' 춘천')}`}
