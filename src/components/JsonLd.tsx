@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { useRestaurants } from "@/hooks/useRestaurants";
 
-const JsonLd = () => {
+const JsonLd = memo(() => {
   const { data: restaurants = [] } = useRestaurants();
 
   const jsonLd = {
@@ -32,6 +33,8 @@ const JsonLd = () => {
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
-};
+});
+
+JsonLd.displayName = "JsonLd";
 
 export default JsonLd;

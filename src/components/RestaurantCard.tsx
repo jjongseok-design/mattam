@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Star, MapPin, Phone, CheckCircle2, ExternalLink, Share2, Clock, Heart, Navigation, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -11,12 +12,13 @@ interface RestaurantCardProps {
   isVisited: boolean;
   isFavorite?: boolean;
   distance?: number | null;
+  compact?: boolean;
   onClick: () => void;
   onToggleVisited: (e: React.MouseEvent) => void;
   onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
-const RestaurantCard = ({ restaurant, isSelected, isVisited, isFavorite, distance, onClick, onToggleVisited, onToggleFavorite }: RestaurantCardProps) => {
+const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, distance, compact, onClick, onToggleVisited, onToggleFavorite }: RestaurantCardProps) => {
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
   const { toast } = useToast();
 
@@ -38,6 +40,95 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, isFavorite, distanc
     ? distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
     : null;
 
+  // Compact mobile variant
+  if (compact) {
+    return (
+      <motion.button
+        layout
+        data-restaurant-id={restaurant.id}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={onClick}
+        aria-label={`${restaurant.name} - 평점 ${restaurant.rating}`}
+        className={`group w-full text-left rounded-xl transition-all duration-200 border overflow-hidden ${
+          isSelected
+            ? "border-primary/30 bg-card shadow-card-selected"
+            : "border-border/50 bg-card active:bg-muted/50"
+        } ${isVisited ? "ring-1 ring-primary/20" : ""}`}
+      >
+        <div className="p-3.5">
+          {/* Header row */}
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-lg flex-shrink-0">
+              {emoji}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-bold text-foreground text-[14px] leading-tight truncate">
+                  {restaurant.name}
+                </h3>
+                {isVisited && (
+                  <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
+                    방문
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[11px] text-muted-foreground truncate">{restaurant.address}</span>
+              </div>
+            </div>
+            {/* Rating */}
+            <div className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-lg flex-shrink-0">
+              <Star className="h-3 w-3 text-rating fill-current" />
+              <span className="text-xs font-extrabold text-foreground">{restaurant.rating}</span>
+            </div>
+          </div>
+
+          {/* Tags + distance + actions */}
+          <div className="flex items-center gap-1.5 mt-1">
+            {restaurant.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-0.5 bg-muted/80 rounded-md text-[10px] font-medium text-muted-foreground"
+              >
+                #{tag}
+              </span>
+            ))}
+            {distText && (
+              <span className="ml-auto flex items-center gap-0.5 text-[11px] font-semibold text-primary/70 flex-shrink-0">
+                <Navigation className="h-2.5 w-2.5" />
+                {distText}
+              </span>
+            )}
+            <div className="ml-auto flex items-center gap-0.5">
+              {onToggleFavorite && (
+                <button
+                  onClick={onToggleFavorite}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    isFavorite ? "text-destructive" : "text-muted-foreground/30"
+                  }`}
+                  aria-label={isFavorite ? "찜 취소" : "찜하기"}
+                >
+                  <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
+                </button>
+              )}
+              <Link
+                to={`/restaurant/${restaurant.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-[11px] text-primary/70 font-medium px-2 py-1 rounded-lg"
+              >
+                상세
+              </Link>
+            </div>
+          </div>
+        </div>
+      </motion.button>
+    );
+  }
+
+  // Full desktop variant
   return (
     <motion.button
       layout
@@ -215,6 +306,8 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, isFavorite, distanc
       </div>
     </motion.button>
   );
-};
+});
+
+RestaurantCard.displayName = "RestaurantCard";
 
 export default RestaurantCard;
