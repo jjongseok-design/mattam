@@ -1,21 +1,18 @@
 import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Phone, ExternalLink, Share2, Loader2, Utensils, Clock, CalendarOff } from "lucide-react";
+import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList from "@/components/ReviewList";
-import MapView from "@/components/MapView";
 import ErrorState from "@/components/ErrorState";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 const RestaurantDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
-  const isMobile = useIsMobile();
   const { toast } = useToast();
   const { addViewed } = useRecentlyViewed();
 
@@ -150,114 +147,37 @@ const RestaurantDetail = () => {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto">
-        {/* Map */}
-        <div className={`w-full ${isMobile ? "h-48" : "h-64"}`}>
-          <MapView
-            restaurants={[restaurant]}
-            selectedId={restaurant.id}
-            onSelect={() => {}}
-          />
-        </div>
-
-        {/* Content */}
-        <div className="px-4 py-6 space-y-6">
-          {/* Name & Category */}
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-3xl">{emoji}</span>
-              <div>
-                <h2 className="text-xl font-bold text-foreground">{restaurant.name}</h2>
-                <span className="text-sm text-muted-foreground">{restaurant.category}</span>
-              </div>
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+          {/* Name & Rating summary */}
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{emoji}</span>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl font-bold text-foreground">{restaurant.name}</h2>
+              <span className="text-sm text-muted-foreground">{restaurant.category}</span>
             </div>
-            {restaurant.description && (
-              <p className="text-sm text-muted-foreground mt-2">{restaurant.description}</p>
-            )}
-          </div>
-
-          {/* Rating */}
-          <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-2xl">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-2 rounded-xl">
               <Star className="h-5 w-5 text-rating fill-current" />
               <span className="text-2xl font-bold text-foreground">{restaurant.rating}</span>
             </div>
-            <div className="text-sm text-muted-foreground">
-              리뷰 {restaurant.reviewCount.toLocaleString()}개
-            </div>
-            {restaurant.priceRange && (
-              <div className="ml-auto text-sm font-medium text-foreground/70">
-                {restaurant.priceRange}
-              </div>
-            )}
           </div>
 
-          {/* Info */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 text-sm">
-              <MapPin className="h-4 w-4 text-primary/60 flex-shrink-0" />
-              <span className="text-foreground">{restaurant.address}</span>
-            </div>
-            {restaurant.phone && (
-              <div className="flex items-center gap-3 text-sm">
-                <Phone className="h-4 w-4 text-primary/60 flex-shrink-0" />
-                <a href={`tel:${restaurant.phone}`} className="text-foreground hover:text-primary transition-colors">
-                  {restaurant.phone}
-                </a>
-              </div>
-            )}
-            {restaurant.openingHours && (
-              <div className="flex items-center gap-3 text-sm">
-                <Clock className="h-4 w-4 text-primary/60 flex-shrink-0" />
-                <span className="text-foreground">{restaurant.openingHours}</span>
-              </div>
-            )}
-            {restaurant.closedDays && (
-              <div className="flex items-center gap-3 text-sm">
-                <CalendarOff className="h-4 w-4 text-primary/60 flex-shrink-0" />
-                <span className="text-foreground">{restaurant.closedDays}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Tags */}
-          {restaurant.tags.length > 0 && (
-            <div className="flex gap-2 flex-wrap">
-              {restaurant.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 bg-muted rounded-lg text-sm font-medium text-muted-foreground"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <a
-              href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1"
-            >
-              <Button variant="outline" className="w-full">
-                네이버지도 <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
-              </Button>
-            </a>
-            <Button onClick={handleShare} className="flex-1">
-              <Share2 className="h-3.5 w-3.5 mr-1.5" /> 공유하기
+          {/* Naver map link */}
+          <a
+            href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="outline" size="sm" className="w-full">
+              네이버지도에서 상세정보 보기 <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
             </Button>
-          </div>
+          </a>
 
           {/* Reviews Section */}
-          <div className="space-y-4 pt-2">
-            <h3 className="text-base font-bold text-foreground">💬 리뷰</h3>
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-foreground">💬 리뷰 ({restaurant.reviewCount})</h3>
             <ReviewForm restaurantId={restaurant.id} />
             <ReviewList restaurantId={restaurant.id} />
           </div>
-        </div>
       </div>
     </div>
   );
