@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CATEGORIES } from "@/components/CategoryTabs";
+import { useCategories } from "@/hooks/useCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquarePlus, Send, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const TipForm = () => {
+  const { data: categories = [] } = useCategories();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -107,7 +108,7 @@ const TipForm = () => {
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    {CATEGORIES.map((cat) => (
+                    {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.emoji} {cat.label}
                       </option>

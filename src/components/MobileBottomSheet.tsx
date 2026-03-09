@@ -3,7 +3,7 @@ import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronUp, Grid3X3 } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
-import CategoryTabs, { CategoryId } from "./CategoryTabs";
+import CategoryTabs from "./CategoryTabs";
 import SortFilterBar, { SortOption, FilterOption } from "./SortFilterBar";
 import RandomPickButton from "./RandomPickButton";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
@@ -16,8 +16,8 @@ interface MobileBottomSheetProps {
   query: string;
   onQueryChange: (q: string) => void;
   totalCount: number;
-  category: CategoryId;
-  onCategoryChange: (cat: CategoryId) => void;
+  category: string;
+  onCategoryChange: (cat: string) => void;
   isVisited: (id: string) => boolean;
   onToggleVisited: (id: string) => void;
   isFavorite: (id: string) => boolean;
@@ -88,7 +88,7 @@ const MobileBottomSheet = ({
     setState("half");
   };
 
-  const handleCategorySelect = (cat: CategoryId) => {
+  const handleCategorySelect = (cat: string) => {
     onCategoryChange(cat);
     setShowCategories(false);
     setState("half");

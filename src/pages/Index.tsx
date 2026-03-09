@@ -5,7 +5,8 @@ import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
-import CategoryTabs, { CategoryId, CATEGORIES } from "@/components/CategoryTabs";
+import CategoryTabs from "@/components/CategoryTabs";
+import { useCategories } from "@/hooks/useCategories";
 import TipForm from "@/components/TipForm";
 import ThemeToggle from "@/components/ThemeToggle";
 import ErrorState from "@/components/ErrorState";
@@ -23,17 +24,13 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
-const isValidCategory = (val: string): val is CategoryId =>
-  CATEGORIES.some((c) => c.id === val);
-
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCat = searchParams.get("category");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [category, setCategory] = useState<CategoryId>(
-    initialCat && isValidCategory(initialCat) ? initialCat : "닭갈비"
-  );
+  const { data: dbCategories = [] } = useCategories();
+  const [category, setCategory] = useState<string>(initialCat || "닭갈비");
   const [sort, setSort] = useState<SortOption>("rating");
   const [filter, setFilter] = useState<FilterOption>("all");
   const [ratingMin, setRatingMin] = useState(0);
@@ -53,7 +50,7 @@ const Index = () => {
     setSearchParams({ category }, { replace: true });
   }, [category, setSearchParams]);
 
-  const handleCategoryChange = useCallback((cat: CategoryId) => {
+  const handleCategoryChange = useCallback((cat: string) => {
     setCategory(cat);
     setSelectedId(null);
     setQuery("");

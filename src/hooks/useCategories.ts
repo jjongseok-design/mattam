@@ -1,0 +1,40 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+export interface CategoryRow {
+  id: string;
+  label: string;
+  emoji: string;
+  sort_order: number;
+  id_prefix: string;
+  tag_suggestions: string[];
+  tag_placeholder: string;
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ["categories"],
+    queryFn: async (): Promise<CategoryRow[]> => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []).map((d: any) => ({
+        id: d.id,
+        label: d.label,
+        emoji: d.emoji,
+        sort_order: d.sort_order,
+        id_prefix: d.id_prefix,
+        tag_suggestions: d.tag_suggestions ?? [],
+        tag_placeholder: d.tag_placeholder ?? "",
+      }));
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useInvalidateCategories() {
+  const qc = useQueryClient();
+  return () => qc.invalidateQueries({ queryKey: ["categories"] });
+}

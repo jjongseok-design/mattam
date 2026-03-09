@@ -118,6 +118,16 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "bulk_update_category": {
+        const { error } = await supabase
+          .from("restaurants")
+          .update({ category: data.new_category })
+          .eq("category", data.old_category);
+        if (error) throw error;
+        result = { success: true };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ success: false, error: "Unknown action" }),
