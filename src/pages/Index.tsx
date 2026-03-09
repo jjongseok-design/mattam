@@ -12,6 +12,8 @@ import ErrorState from "@/components/ErrorState";
 import JsonLd from "@/components/JsonLd";
 import SortFilterBar, { SortOption, FilterOption } from "@/components/SortFilterBar";
 import RandomPickButton from "@/components/RandomPickButton";
+import TourProgress from "@/components/TourProgress";
+import ShareCard from "@/components/ShareCard";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
