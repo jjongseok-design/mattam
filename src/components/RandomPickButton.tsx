@@ -62,12 +62,14 @@ const RandomPickButton = ({ restaurants }: RandomPickButtonProps) => {
             </div>
             <p className="text-[11px] text-muted-foreground mb-3 truncate">{picked.address}</p>
             <div className="flex gap-2">
-              <Link
-                to={`/restaurant/${picked.id}`}
+              <a
+                href={`https://map.naver.com/v5/search/${encodeURIComponent(picked.name + ' 춘천')}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex-1 text-center px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors"
               >
                 상세보기
-              </Link>
+              </a>
               <button
                 onClick={handlePick}
                 className="px-3 py-1.5 bg-muted text-muted-foreground rounded-lg text-xs font-semibold hover:bg-muted/80 transition-colors"
