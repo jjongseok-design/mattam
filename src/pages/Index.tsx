@@ -241,7 +241,24 @@ const Index = () => {
             {/* Row 1: Tour progress + action buttons */}
             <div className="safe-area-x pt-2 pb-1.5 flex items-center gap-2">
               <div className="flex-1 min-w-0 overflow-hidden">
-                <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
+                {showList ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleCloseList}
+                      className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform shrink-0"
+                      aria-label="카테고리 선택으로 돌아가기"
+                    >
+                      <X className="h-4 w-4 text-foreground" />
+                    </button>
+                    <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                      <span>{categoryEmoji}</span>
+                      <span>{category}</span>
+                      <span className="text-[11px] font-normal text-muted-foreground ml-0.5">{categoryRestaurants.length}개</span>
+                    </span>
+                  </div>
+                ) : (
+                  <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
+                )}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {!position && (
@@ -262,10 +279,12 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Row 2: Category grid (always visible) */}
-            <div className="safe-area-x pb-2">
-              <CategoryTabs active={category} onChange={handleCategoryChange} />
-            </div>
+            {/* Row 2: Category grid - only when NOT in list mode */}
+            {!showList && (
+              <div className="safe-area-x pb-2">
+                <CategoryTabs active={category} onChange={handleCategoryChange} />
+              </div>
+            )}
           </div>
 
           {/* Map */}
