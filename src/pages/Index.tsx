@@ -155,29 +155,27 @@ const Index = () => {
     return (
       <>
         <div className="relative h-dvh w-screen overflow-hidden bg-background">
-        {/* Mobile top bar */}
-          <div className="absolute top-0 left-0 right-0 z-[1300] safe-area-top">
-            <div className="px-4 pt-3 pb-2 flex items-start gap-3">
+        {/* Mobile top bar - fixed with solid background for iOS visibility */}
+          <div className="absolute top-0 left-0 right-0 z-[1300] safe-area-top bg-background/90 backdrop-blur-md" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
+            <div className="px-4 pt-3 pb-2 flex items-center gap-2">
               {/* Tour Progress - compact mobile version */}
               <div className="flex-1 min-w-0">
                 <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} />
               </div>
-            </div>
-            {/* Action buttons row - bigger touch targets, away from edges */}
-            <div className="flex items-center justify-end gap-2 px-4 pb-2">
+              {/* Action buttons inline */}
               {!position && (
                 <button
                   onClick={handleLocationRequest}
-                  className="glass rounded-xl w-10 h-10 flex items-center justify-center active:scale-95 transition-transform"
+                  className="shrink-0 glass rounded-xl w-10 h-10 flex items-center justify-center active:scale-95 transition-transform"
                   aria-label="내 위치 찾기"
                 >
                   <Navigation className="h-5 w-5 text-muted-foreground" />
                 </button>
               )}
-              <Link to="/install" className="glass rounded-xl w-10 h-10 flex items-center justify-center active:scale-95 transition-transform">
+              <Link to="/install" className="shrink-0 glass rounded-xl w-10 h-10 flex items-center justify-center active:scale-95 transition-transform">
                 <Download className="h-5 w-5 text-muted-foreground" />
               </Link>
-              <div className="glass rounded-xl">
+              <div className="shrink-0 glass rounded-xl">
                 <ThemeToggle />
               </div>
             </div>
