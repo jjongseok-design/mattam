@@ -10,14 +10,21 @@ import MapView from "@/components/MapView";
 import ErrorState from "@/components/ErrorState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 const RestaurantDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { addViewed } = useRecentlyViewed();
 
   const restaurant = restaurants.find((r) => r.id === id);
+
+  // Track as recently viewed
+  useEffect(() => {
+    if (id) addViewed(id);
+  }, [id, addViewed]);
 
   // Update document title & meta for SEO
   useEffect(() => {
