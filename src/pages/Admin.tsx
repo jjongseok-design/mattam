@@ -454,11 +454,11 @@ const Admin = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant={showCategoryManager ? "default" : "outline"}
+              variant={editMode ? "default" : "outline"}
               size="sm"
-              onClick={() => setShowCategoryManager(!showCategoryManager)}
+              onClick={() => setEditMode(!editMode)}
             >
-              <Settings2 className="h-3.5 w-3.5 mr-1" /> 카테고리 관리
+              <Settings2 className="h-3.5 w-3.5 mr-1" /> {editMode ? "편집 완료" : "카테고리 편집"}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowPinChange(true)}>
               <KeyRound className="h-3.5 w-3.5 mr-1" /> PIN 변경
@@ -474,58 +474,93 @@ const Admin = () => {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-4">
-        {/* Category Manager Panel */}
-        {showCategoryManager && (
-          <div className="mb-6 border border-border rounded-lg p-4 bg-card">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <Settings2 className="h-5 w-5 text-primary" />
-                카테고리 관리
-              </h2>
-              <Button size="sm" onClick={openNewCategory}>
-                <Plus className="h-4 w-4 mr-1" /> 새 카테고리
+        {/* Unified Category Grid - matches main screen layout */}
+        <div className="border border-border rounded-lg p-3 mb-4 bg-card">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-medium text-muted-foreground">
+              {editMode ? "🔧 드래그하여 순서 변경 | 클릭하여 수정" : "카테고리 선택"}
+            </h2>
+            {editMode && (
+              <Button size="sm" variant="outline" onClick={openNewCategory}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> 새 카테고리
               </Button>
-            </div>
-            <div className="space-y-1">
-              {categories.map((cat, idx) => (
+            )}
+          </div>
+          <div className="grid grid-cols-8 gap-1.5">
+            {categories.map((cat) => {
+              const isActive = adminCategory === cat.id;
+              const count = categoryCount(cat.id);
+              return (
                 <div
                   key={cat.id}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                  draggable={editMode}
+                  onDragStart={() => { dragItem.current = cat.id; }}
+                  onDragEnter={() => { dragOverItem.current = cat.id; }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragEnd={async () => {
+                    if (!dragItem.current || !dragOverItem.current || dragItem.current === dragOverItem.current) return;
+                    const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+                    const fromIdx = sorted.findIndex(c => c.id === dragItem.current);
+                    const toIdx = sorted.findIndex(c => c.id === dragOverItem.current);
+                    if (fromIdx < 0 || toIdx < 0) return;
+                    const reordered = [...sorted];
+                    const [moved] = reordered.splice(fromIdx, 1);
+                    reordered.splice(toIdx, 0, moved);
+                    const updates = reordered.map((c, i) => ({ id: c.id, sort_order: i + 1 }));
+                    try {
+                      await adminApi(pin, "category_reorder", { updates });
+                      invalidateCategories();
+                      toast({ title: "순서 변경 완료 ✅" });
+                    } catch (err: any) {
+                      toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
+                    }
+                    dragItem.current = null;
+                    dragOverItem.current = null;
+                  }}
+                  onClick={() => {
+                    if (editMode) {
+                      openEditCategory(cat);
+                    } else {
+                      setAdminCategory(cat.id);
+                      setSearch("");
+                    }
+                  }}
+                  className={`relative flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg transition-all duration-200 select-none
+                    ${editMode ? "cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-primary/40" : "cursor-pointer"}
+                    ${isActive && !editMode ? "" : ""}
+                  `}
                 >
-                  <div className="flex flex-col gap-0.5">
+                  {isActive && !editMode && (
+                    <motion.div
+                      layoutId="admin-category-tab"
+                      className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-lg"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  {editMode && (
                     <button
-                      onClick={() => handleMoveCategory(cat, "up")}
-                      disabled={idx === 0}
-                      className="p-0.5 rounded hover:bg-muted disabled:opacity-20"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat); }}
+                      className="absolute -top-1 -right-1 z-20 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-[10px] leading-none hover:scale-110 transition-transform"
                     >
-                      <ChevronUp className="h-3 w-3" />
+                      ×
                     </button>
-                    <button
-                      onClick={() => handleMoveCategory(cat, "down")}
-                      disabled={idx === categories.length - 1}
-                      className="p-0.5 rounded hover:bg-muted disabled:opacity-20"
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </div>
-                  <span className="text-xl w-8 text-center">{cat.emoji}</span>
-                  <span className="font-medium flex-1">{cat.label}</span>
-                  <span className="text-xs text-muted-foreground">ID: {cat.id}</span>
-                  <span className="text-xs text-muted-foreground">접두사: {cat.id_prefix}</span>
-                  <span className="text-xs text-muted-foreground">({categoryCount(cat.id)}개)</span>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditCategory(cat)}>
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteCategory(cat)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  )}
+                  <span className="relative z-10 text-xl">{cat.emoji}</span>
+                  <span className={`relative z-10 text-[11px] font-medium leading-tight w-full text-center break-keep ${
+                    isActive && !editMode ? "text-primary" : "text-muted-foreground"
+                  }`}>
+                    {cat.label}
+                  </span>
+                  <span className={`relative z-10 text-[10px] leading-tight ${
+                    isActive && !editMode ? "text-primary/70" : "text-muted-foreground/60"
+                  }`}>
+                    ({count})
+                  </span>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         {/* Category Form Modal */}
         {showCatForm && (
@@ -598,30 +633,6 @@ const Admin = () => {
             </div>
           </div>
         )}
-
-        {/* Admin Category Tabs */}
-        <div className="grid grid-cols-8 gap-1.5 bg-muted rounded-lg p-2 mb-4">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => { setAdminCategory(cat.id); setSearch(""); }}
-              className="relative px-1 py-2 text-sm font-medium rounded-md transition-colors text-center"
-            >
-              {adminCategory === cat.id && (
-                <motion.div
-                  layoutId="admin-category-tab"
-                  className="absolute inset-0 bg-background rounded-md shadow-sm"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              <span className={`relative z-10 flex flex-col items-center gap-0.5 ${adminCategory === cat.id ? "text-foreground" : "text-muted-foreground"}`}>
-                <span className="text-xl">{cat.emoji}</span>
-                <span className="text-[13px] leading-tight">{cat.label}</span>
-                <span className="text-[12px] opacity-60">({categoryCount(cat.id)})</span>
-              </span>
-            </button>
-          ))}
-        </div>
 
         {/* Search */}
         <div className="relative mb-4">
