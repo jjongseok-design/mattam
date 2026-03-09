@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback, TouchEvent as ReactTouchEvent } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronUp, Grid3X3 } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
@@ -58,7 +58,9 @@ const MobileBottomSheet = ({
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("half");
   const [showCategories, setShowCategories] = useState(false);
+  const [isDraggable, setIsDraggable] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
+  const dragHandleRef = useRef<HTMLDivElement>(null);
 
   const heights: Record<SheetState, string> = {
     peek: "56px",
@@ -94,39 +96,55 @@ const MobileBottomSheet = ({
     setState("half");
   };
 
+  const handleListTouchStart = useCallback(() => {
+    const el = listRef.current;
+    if (el && el.scrollTop > 0) {
+      setIsDraggable(false);
+    } else {
+      setIsDraggable(true);
+    }
+  }, []);
+
+  const handleListTouchEnd = useCallback(() => {
+    setIsDraggable(true);
+  }, []);
+
   const emoji = CATEGORY_EMOJI[category] || "🍽️";
   const isPeek = state === "peek";
 
   return (
     <div className="absolute inset-x-0 bottom-0 z-[1400] pointer-events-none">
       <motion.div
-        className="pointer-events-auto bg-card rounded-t-3xl shadow-panel border-t border-border/40 pb-[env(safe-area-inset-bottom)]"
+        className="pointer-events-auto bg-card rounded-t-3xl shadow-panel border-t border-border/40 pb-[env(safe-area-inset-bottom)] flex flex-col"
         animate={{ height: heights[state] }}
         transition={{ type: "spring", stiffness: 300, damping: 32 }}
-        drag="y"
+        drag={isDraggable ? "y" : false}
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={0.08}
         onDragEnd={handleDragEnd}
+        style={{ touchAction: "none" }}
       >
-        {/* Handle / Peek bar */}
-        <button
-          onClick={isPeek ? handlePeekTap : () => setState(state === "full" ? "half" : "full")}
-          className="w-full flex flex-col items-center pt-3 pb-2"
-          aria-label={isPeek ? "목록 펼치기" : "목록 접기/펼치기"}
-        >
-          <div className="w-9 h-[3px] rounded-full bg-muted-foreground/20 mb-2" />
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 font-medium">
-            <span>{emoji}</span>
-            <span>{totalCount}개 {category}</span>
-            <ChevronUp className={`h-3 w-3 transition-transform duration-200 ${state === "full" ? "rotate-180" : ""}`} />
-          </div>
-        </button>
+        {/* Handle / Peek bar - always draggable */}
+        <div ref={dragHandleRef}>
+          <button
+            onClick={isPeek ? handlePeekTap : () => setState(state === "full" ? "half" : "full")}
+            className="w-full flex flex-col items-center pt-3 pb-2"
+            aria-label={isPeek ? "목록 펼치기" : "목록 접기/펼치기"}
+          >
+            <div className="w-9 h-[3px] rounded-full bg-muted-foreground/20 mb-2" />
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 font-medium">
+              <span>{emoji}</span>
+              <span>{totalCount}개 {category}</span>
+              <ChevronUp className={`h-3 w-3 transition-transform duration-200 ${state === "full" ? "rotate-180" : ""}`} />
+            </div>
+          </button>
+        </div>
 
         {/* Content - hidden when peek */}
         {!isPeek && (
-          <div className="px-4 pb-2 flex flex-col h-[calc(100%-52px)]">
+          <div className="px-4 pb-2 flex flex-col flex-1 min-h-0">
             {/* Category toggle + Search */}
-            <div className="flex gap-2 mb-2">
+            <div className="flex gap-2 mb-2 flex-shrink-0">
               <button
                 onClick={() => { setShowCategories(!showCategories); if (!showCategories) setState("full"); }}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-all duration-200 ${
@@ -153,7 +171,7 @@ const MobileBottomSheet = ({
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="overflow-hidden mb-2"
+                  className="overflow-hidden mb-2 flex-shrink-0"
                 >
                   <CategoryTabs active={category} onChange={handleCategorySelect} />
                 </motion.div>
@@ -161,7 +179,7 @@ const MobileBottomSheet = ({
             </AnimatePresence>
 
             {/* Sort / Filter */}
-            <div className="mb-2">
+            <div className="mb-2 flex-shrink-0">
               <SortFilterBar
                 sort={sort}
                 onSortChange={onSortChange}
@@ -174,14 +192,20 @@ const MobileBottomSheet = ({
             </div>
 
             {/* Count */}
-            <p className="text-[11px] text-muted-foreground/50 px-1 mb-1.5 font-medium">
+            <p className="text-[11px] text-muted-foreground/50 px-1 mb-1.5 font-medium flex-shrink-0">
               {restaurants.length}개 ·{" "}
               {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
               {filter !== "all" && ` · ${filter === "favorites" ? "찜" : "방문"}`}
             </p>
 
-            {/* List */}
-            <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin space-y-2 pb-4">
+            {/* List - isolated scroll container */}
+            <div
+              ref={listRef}
+              className="flex-1 min-h-0 overflow-y-auto scrollbar-thin space-y-2 pb-4 overscroll-contain"
+              style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}
+              onTouchStart={handleListTouchStart}
+              onTouchEnd={handleListTouchEnd}
+            >
               {restaurants.map((restaurant) => {
                 const dist = getDistance(restaurant.lat, restaurant.lng);
                 return (
