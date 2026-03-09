@@ -359,25 +359,6 @@ const Admin = () => {
     }
   };
 
-  const handleMoveCategory = async (cat: CategoryRow, direction: "up" | "down") => {
-    const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
-    const idx = sorted.findIndex(c => c.id === cat.id);
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= sorted.length) return;
-
-    const other = sorted[swapIdx];
-    try {
-      await adminApi(pin, "category_reorder", {
-        updates: [
-          { id: cat.id, sort_order: other.sort_order },
-          { id: other.id, sort_order: cat.sort_order },
-        ],
-      });
-      invalidateCategories();
-    } catch (err: any) {
-      toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
-    }
-  };
 
   // --- PIN Login Screen ---
   if (!authenticated) {
