@@ -247,16 +247,16 @@ const Index = () => {
                 {!position && (
                   <button
                     onClick={handleLocationRequest}
-                    className="glass rounded-xl w-10 h-10 flex items-center justify-center active:scale-95 transition-transform"
+                    className="glass rounded-xl w-11 h-11 tap-safe flex items-center justify-center active:scale-95 transition-transform"
                     aria-label="내 위치 찾기"
                   >
                     <Navigation className="h-5 w-5 text-muted-foreground" />
                   </button>
                 )}
-                <Link to="/install" className="glass rounded-xl w-10 h-10 flex items-center justify-center active:scale-95 transition-transform">
+                <Link to="/install" className="glass rounded-xl w-11 h-11 tap-safe flex items-center justify-center active:scale-95 transition-transform">
                   <Download className="h-5 w-5 text-muted-foreground" />
                 </Link>
-                <div className="glass rounded-xl">
+                <div className="glass rounded-xl w-11 h-11 tap-safe flex items-center justify-center">
                   <ThemeToggle />
                 </div>
               </div>
