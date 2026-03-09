@@ -114,16 +114,23 @@ const Admin = () => {
     if (authenticated) fetchAll();
   }, [authenticated, fetchAll]);
 
+  const [loginLocked, setLoginLocked] = useState(false);
+
   const handleLogin = async () => {
-    if (!pinInput.trim()) return;
+    if (!pinInput.trim() || loginLocked) return;
     try {
       await adminApi(pinInput, "verify");
       setPin(pinInput);
       setAuthenticated(true);
       sessionStorage.setItem("admin_pin", pinInput);
       toast({ title: "로그인 성공 ✅" });
-    } catch {
-      toast({ title: "PIN이 틀렸습니다", variant: "destructive" });
+    } catch (err: any) {
+      const msg = err.message || "PIN이 틀렸습니다";
+      if (msg.includes("너무 많은") || msg.includes("locked")) {
+        setLoginLocked(true);
+        setTimeout(() => setLoginLocked(false), 15 * 60 * 1000);
+      }
+      toast({ title: msg, variant: "destructive" });
     }
   };
 

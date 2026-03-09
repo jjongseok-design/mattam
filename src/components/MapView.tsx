@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Restaurant } from "@/hooks/useRestaurants";
+import { useToast } from "@/hooks/use-toast";
 
 const CHUNCHEON_CENTER = { lat: 37.8813, lng: 127.73 };
 const LEAFLET_CENTER: L.LatLngExpression = [37.8813, 127.73];
@@ -60,6 +61,7 @@ const leafSelectedIcon = new L.Icon({
 
 const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: MapViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const kakaoMapRef = useRef<kakao.maps.Map | null>(null);
   const kakaoMarkersRef = useRef<kakao.maps.Marker[]>([]);
@@ -70,14 +72,25 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
 
   const [mode, setMode] = useState<MapMode>("loading");
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const fallbackNotified = useRef(false);
+
+  const handleFallback = useCallback((reason: string) => {
+    setFallbackReason(reason);
+    setMode("leaflet");
+    if (!fallbackNotified.current) {
+      fallbackNotified.current = true;
+      // Show toast after a tick to ensure it renders
+      setTimeout(() => {
+        toast({
+          title: "🗺️ 기본 지도로 전환되었습니다",
+          description: `카카오맵 대신 기본 지도를 표시합니다. (${reason})`,
+        });
+      }, 500);
+    }
+  }, [toast]);
 
   useEffect(() => {
     let timeoutId: number | undefined;
-
-    const fallbackToLeaflet = (reason: string) => {
-      setFallbackReason(reason);
-      setMode("leaflet");
-    };
 
     if (window.kakao?.maps) {
       kakao.maps.load(() => setMode("kakao"));
@@ -95,22 +108,22 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
 
     const onLoad = () => {
       if (!window.kakao?.maps) {
-        fallbackToLeaflet("카카오 SDK 초기화 실패");
+        handleFallback("카카오 SDK 초기화 실패");
         return;
       }
       kakao.maps.load(() => setMode("kakao"));
     };
 
     const onError = () => {
-      fallbackToLeaflet("카카오 SDK 로드 실패");
+      handleFallback("카카오 SDK 로드 실패");
     };
 
     script.addEventListener("load", onLoad);
     script.addEventListener("error", onError);
 
     timeoutId = window.setTimeout(() => {
-      if (mode === "loading" && !window.kakao?.maps) {
-        fallbackToLeaflet("카카오 SDK 로드 타임아웃");
+      if (!window.kakao?.maps) {
+        handleFallback("카카오 SDK 로드 타임아웃");
       }
     }, 7000);
 
@@ -119,7 +132,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
       script?.removeEventListener("load", onLoad);
       script?.removeEventListener("error", onError);
     };
-  }, [mode]);
+  }, [handleFallback]);
 
   useEffect(() => {
     if (mode !== "kakao" || !containerRef.current || kakaoMapRef.current) return;
@@ -127,7 +140,6 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
     const map = new kakao.maps.Map(containerRef.current, { center, level: 7 });
     kakaoMapRef.current = map;
 
-    // 춘천 범위 제한
     const sw = new kakao.maps.LatLng(37.734, 127.58);
     const ne = new kakao.maps.LatLng(38.02, 127.92);
     const chuncheonCenter = new kakao.maps.LatLng(CHUNCHEON_CENTER.lat, CHUNCHEON_CENTER.lng);
@@ -199,7 +211,6 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
       "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
       new kakao.maps.Size(32, 46)
     );
-    // Green checkmark icon for visited restaurants
     const visitedImage = new kakao.maps.MarkerImage(
       "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png",
       new kakao.maps.Size(24, 35)
