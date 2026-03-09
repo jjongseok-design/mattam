@@ -16,8 +16,8 @@ interface MobileBottomSheetProps {
   query: string;
   onQueryChange: (q: string) => void;
   totalCount: number;
-  category: CategoryId;
-  onCategoryChange: (cat: CategoryId) => void;
+  category: string;
+  onCategoryChange: (cat: string) => void;
   isVisited: (id: string) => boolean;
   onToggleVisited: (id: string) => void;
   isFavorite: (id: string) => boolean;
@@ -88,7 +88,7 @@ const MobileBottomSheet = ({
     setState("half");
   };
 
-  const handleCategorySelect = (cat: CategoryId) => {
+  const handleCategorySelect = (cat: string) => {
     onCategoryChange(cat);
     setShowCategories(false);
     setState("half");

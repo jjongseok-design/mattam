@@ -11,7 +11,6 @@ import { motion, AnimatePresence } from "framer-motion";
 const TipForm = () => {
   const { data: categories = [] } = useCategories();
   const { toast } = useToast();
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [form, setForm] = useState({
