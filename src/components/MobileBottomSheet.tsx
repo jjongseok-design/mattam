@@ -88,7 +88,16 @@ const MobileBottomSheet = memo(({
   }, []);
 
   const handleToggleState = useCallback(() => {
-    setState(prev => prev === "full" ? "half" : "full");
+    setState(prev => {
+      if (prev === "full") return "half";
+      if (prev === "half") return "peek";
+      return "half";
+    });
+  }, []);
+
+  // Ensure drag is always enabled when touching the handle bar area
+  const handleHandleTouchStart = useCallback(() => {
+    setIsDraggable(true);
   }, []);
 
   const handleListScroll = useCallback(() => {
