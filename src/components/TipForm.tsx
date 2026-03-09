@@ -49,10 +49,10 @@ const TipForm = () => {
       {/* Floating button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-[45vh] right-3 z-[1300] w-10 h-10 rounded-xl glass flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg"
+        className="fixed bottom-[45vh] right-4 z-[1300] w-12 h-12 rounded-2xl glass flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg"
         aria-label="맛집 제보하기"
       >
-        <MessageSquarePlus className="h-4 w-4 text-primary" />
+        <MessageSquarePlus className="h-5 w-5 text-primary" />
       </button>
 
       {/* Modal */}

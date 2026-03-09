@@ -156,26 +156,28 @@ const Index = () => {
       <>
         <div className="relative h-dvh w-screen overflow-hidden bg-background">
         {/* Mobile top bar */}
-          <div className="absolute top-0 left-0 right-0 z-[1300] p-3 flex items-start gap-2">
-            {/* Tour Progress - compact mobile version */}
-            <div className="flex-1 min-w-0">
-              <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} />
+          <div className="absolute top-0 left-0 right-0 z-[1300] safe-area-top">
+            <div className="px-4 pt-3 pb-2 flex items-start gap-3">
+              {/* Tour Progress - compact mobile version */}
+              <div className="flex-1 min-w-0">
+                <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} />
+              </div>
             </div>
-            {/* Action buttons */}
-            <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
+            {/* Action buttons row - bigger touch targets, away from edges */}
+            <div className="flex items-center justify-end gap-2 px-4 pb-2">
               {!position && (
                 <button
                   onClick={handleLocationRequest}
-                  className="glass rounded-lg w-8 h-8 flex items-center justify-center"
+                  className="glass rounded-xl w-10 h-10 flex items-center justify-center active:scale-95 transition-transform"
                   aria-label="내 위치 찾기"
                 >
-                  <Navigation className="h-4 w-4 text-muted-foreground" />
+                  <Navigation className="h-5 w-5 text-muted-foreground" />
                 </button>
               )}
-              <Link to="/install" className="glass rounded-lg w-8 h-8 flex items-center justify-center">
-                <Download className="h-4 w-4 text-muted-foreground" />
+              <Link to="/install" className="glass rounded-xl w-10 h-10 flex items-center justify-center active:scale-95 transition-transform">
+                <Download className="h-5 w-5 text-muted-foreground" />
               </Link>
-              <div className="glass rounded-lg">
+              <div className="glass rounded-xl">
                 <ThemeToggle />
               </div>
             </div>
