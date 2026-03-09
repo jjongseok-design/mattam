@@ -62,10 +62,10 @@ const TourProgress = ({ restaurants, visited, onShare }: TourProgressProps) => {
               e.stopPropagation();
               onShare();
             }}
-            className="p-2 rounded-lg hover:bg-primary/10 text-primary/70 hover:text-primary transition-colors"
+            className="p-3 rounded-xl hover:bg-primary/10 text-primary/70 hover:text-primary transition-colors active:scale-95"
             aria-label="공유하기"
           >
-            <Share2 className="h-4 w-4" />
+            <Share2 className="h-5 w-5" />
           </button>
           {expanded ? (
             <ChevronUp className="h-5 w-5 text-muted-foreground" />
