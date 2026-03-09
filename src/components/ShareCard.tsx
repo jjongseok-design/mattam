@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, memo } from "react";
 import { X, Download, Share2, Trophy, MapPin, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
@@ -13,7 +13,7 @@ interface ShareCardProps {
   visited: Set<string>;
 }
 
-const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
+const ShareCard = memo(({ open, onClose, restaurants, visited }: ShareCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const stats = useTourStats(restaurants, visited);
   const { toast } = useToast();
@@ -22,7 +22,6 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
     if (!cardRef.current) return;
 
     try {
-      // Use html2canvas dynamically
       const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
@@ -74,7 +73,6 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm relative"
           >
-            {/* Close button - inside card container */}
             <button
               onClick={onClose}
               className="absolute -top-3 -right-1 z-10 p-2 rounded-full bg-foreground/20 hover:bg-foreground/30 text-foreground backdrop-blur-sm transition-colors"
@@ -82,18 +80,15 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
               <X className="h-5 w-5" />
             </button>
 
-            {/* Card Preview */}
             <div
               ref={cardRef}
               className="bg-gradient-to-br from-background via-card to-primary/10 rounded-3xl p-6 text-foreground shadow-2xl border border-border/50"
             >
-              {/* Header */}
               <div className="text-center mb-6">
                 <p className="text-xs text-muted-foreground mb-1">🗺️ 춘천 맛집 지도</p>
                 <h2 className="text-2xl font-black text-foreground">맛집 정복 현황</h2>
               </div>
 
-              {/* Rank */}
               <div className="flex items-center justify-center gap-4 mb-6">
                 <div className="w-20 h-20 rounded-2xl bg-muted/50 backdrop-blur flex items-center justify-center text-5xl">
                   {stats.rankEmoji}
@@ -107,7 +102,6 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
                 </div>
               </div>
 
-              {/* Progress bar */}
               <div className="mb-6">
                 <div className="h-3 bg-muted/50 rounded-full overflow-hidden">
                   <div
@@ -118,7 +112,6 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
                 <p className="text-center text-lg font-bold mt-2 text-foreground">{stats.overallPercent}% 달성</p>
               </div>
 
-              {/* Master badges */}
               {stats.masterCategories.length > 0 && (
                 <div className="bg-muted/30 rounded-2xl p-4 mb-4">
                   <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
@@ -139,7 +132,6 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
                 </div>
               )}
 
-              {/* Top categories */}
               <div className="grid grid-cols-3 gap-2">
                 {stats.categoryStats.slice(0, 6).map((cat) => (
                   <div
@@ -158,13 +150,11 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
                 ))}
               </div>
 
-              {/* Footer */}
               <p className="text-center text-[10px] text-muted-foreground mt-4">
                 restaurantchuncheon.lovable.app
               </p>
             </div>
 
-            {/* Action buttons */}
             <div className="flex gap-3 mt-4">
               <button
                 onClick={handleDownload}
@@ -186,6 +176,8 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
       )}
     </AnimatePresence>
   );
-};
+});
+
+ShareCard.displayName = "ShareCard";
 
 export default ShareCard;

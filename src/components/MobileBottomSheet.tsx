@@ -1,5 +1,5 @@
-import { useRef, useState, useCallback } from "react";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { useRef, useState, useCallback, memo } from "react";
+import { motion, PanInfo } from "framer-motion";
 import { ChevronUp } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
@@ -34,7 +34,13 @@ interface MobileBottomSheetProps {
 
 type SheetState = "peek" | "half" | "full";
 
-const MobileBottomSheet = ({
+const HEIGHTS: Record<SheetState, string> = {
+  peek: "56px",
+  half: "50vh",
+  full: "85vh",
+};
+
+const MobileBottomSheet = memo(({
   restaurants,
   selectedId,
   onSelect,
@@ -58,35 +64,43 @@ const MobileBottomSheet = ({
   const [state, setState] = useState<SheetState>("half");
   const [isDraggable, setIsDraggable] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef(0);
 
-  const heights: Record<SheetState, string> = {
-    peek: "56px",
-    half: "50vh",
-    full: "85vh",
-  };
+  const handleDragStart = useCallback((_: unknown, info: PanInfo) => {
+    dragStartY.current = info.point.y;
+  }, []);
 
-  const handleDragEnd = (_: unknown, info: PanInfo) => {
+  const handleDragEnd = useCallback((_: unknown, info: PanInfo) => {
     const vy = info.velocity.y;
     const dy = info.offset.y;
 
     if (vy < -200 || dy < -80) {
-      if (state === "peek") setState("half");
-      else setState("full");
+      setState(prev => prev === "peek" ? "half" : "full");
       return;
     }
     if (vy > 200 || dy > 80) {
-      if (state === "full") setState("half");
-      else setState("peek");
+      setState(prev => prev === "full" ? "half" : "peek");
     }
-  };
+  }, []);
 
-  const handlePeekTap = () => {
+  const handlePeekTap = useCallback(() => {
     setState("half");
-  };
+  }, []);
+
+  const handleToggleState = useCallback(() => {
+    setState(prev => prev === "full" ? "half" : "full");
+  }, []);
+
+  const handleListScroll = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    // Only allow sheet drag when list is scrolled to top
+    setIsDraggable(el.scrollTop <= 1);
+  }, []);
 
   const handleListTouchStart = useCallback(() => {
     const el = listRef.current;
-    if (el && el.scrollTop > 0) {
+    if (el && el.scrollTop > 1) {
       setIsDraggable(false);
     } else {
       setIsDraggable(true);
@@ -94,7 +108,13 @@ const MobileBottomSheet = ({
   }, []);
 
   const handleListTouchEnd = useCallback(() => {
-    setIsDraggable(true);
+    // Re-enable drag after a short delay to prevent flicker
+    requestAnimationFrame(() => {
+      const el = listRef.current;
+      if (el && el.scrollTop <= 1) {
+        setIsDraggable(true);
+      }
+    });
   }, []);
 
   const emoji = CATEGORY_EMOJI[category] || "🍽️";
@@ -103,19 +123,20 @@ const MobileBottomSheet = ({
   return (
     <div className="absolute inset-x-0 bottom-0 z-[1400] pointer-events-none">
       <motion.div
-        className="pointer-events-auto bg-card rounded-t-3xl shadow-panel border-t border-border/40 pb-[env(safe-area-inset-bottom)] flex flex-col"
-        animate={{ height: heights[state] }}
+        className="pointer-events-auto bg-card rounded-t-3xl shadow-panel border-t border-border/40 pb-[env(safe-area-inset-bottom)] flex flex-col will-change-transform"
+        animate={{ height: HEIGHTS[state] }}
         transition={{ type: "spring", stiffness: 300, damping: 32 }}
         drag={isDraggable ? "y" : false}
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={0.08}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        style={{ touchAction: "none" }}
+        style={{ touchAction: isDraggable ? "none" : "auto" }}
       >
         {/* Handle / Peek bar */}
         <button
-          onClick={isPeek ? handlePeekTap : () => setState(state === "full" ? "half" : "full")}
-          className="w-full flex flex-col items-center pt-3 pb-2 flex-shrink-0"
+          onClick={isPeek ? handlePeekTap : handleToggleState}
+          className="w-full flex flex-col items-center pt-3 pb-2 flex-shrink-0 touch-none"
           aria-label={isPeek ? "목록 펼치기" : "목록 접기/펼치기"}
         >
           <div className="w-9 h-[3px] rounded-full bg-muted-foreground/20 mb-2" />
@@ -161,7 +182,8 @@ const MobileBottomSheet = ({
             <div
               ref={listRef}
               className="flex-1 min-h-0 overflow-y-auto scrollbar-thin space-y-2 pb-4 overscroll-contain"
-              style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}
+              style={{ WebkitOverflowScrolling: "touch" }}
+              onScroll={handleListScroll}
               onTouchStart={handleListTouchStart}
               onTouchEnd={handleListTouchEnd}
             >
@@ -175,6 +197,7 @@ const MobileBottomSheet = ({
                     isVisited={isVisited(restaurant.id)}
                     isFavorite={isFavorite(restaurant.id)}
                     distance={dist}
+                    compact
                     onClick={() => {
                       onSelect(restaurant.id);
                       setState("half");
@@ -203,6 +226,8 @@ const MobileBottomSheet = ({
       </motion.div>
     </div>
   );
-};
+});
+
+MobileBottomSheet.displayName = "MobileBottomSheet";
 
 export default MobileBottomSheet;
