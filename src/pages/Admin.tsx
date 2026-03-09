@@ -339,7 +339,7 @@ const Admin = () => {
     }
   };
 
-  const currentTagConfig = CATEGORY_TAG_SUGGESTIONS[form.category] ?? CATEGORY_TAG_SUGGESTIONS["중국집"];
+  const currentTagConfig = CATEGORY_TAG_SUGGESTIONS[form.category] ?? CATEGORY_TAG_SUGGESTIONS["중화요리"];
 
   const toggleSuggestionTag = (tag: string) => {
     const currentTags = Array.isArray(form.tags) ? form.tags : (form.tags as string).split(",").map(t => t.trim()).filter(Boolean);
