@@ -92,9 +92,18 @@ const Install = () => {
           </p>
         </div>
       ) : (
-        <div className="bg-muted rounded-xl p-6 max-w-sm text-center space-y-3">
-          <Download className="w-8 h-8 mx-auto text-primary" />
-          <p className="font-medium">앱 설치하기</p>
+        <div className="bg-muted rounded-xl p-6 max-w-sm text-center space-y-4">
+          <a
+            href="https://restaurantchuncheon.lovable.app/install"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
+            <Button size="lg" className="gap-2 w-full">
+              <Download className="w-5 h-5" />
+              앱 설치하기
+            </Button>
+          </a>
           <div className="text-sm text-muted-foreground text-left space-y-2">
             {isSamsung ? (
               <ol className="space-y-2">
@@ -103,22 +112,11 @@ const Install = () => {
               </ol>
             ) : (
               <ol className="space-y-2">
-                <li>1. 브라우저 주소창 오른쪽 <strong>⋮ (메뉴)</strong> 탭</li>
-                <li>2. <strong>"앱 설치"</strong> 또는 <strong>"홈 화면에 추가"</strong> 선택</li>
+                <li>1. 위 버튼을 눌러 <strong>배포 URL</strong>로 이동</li>
+                <li>2. 브라우저 주소창 오른쪽 <strong>⋮ (메뉴)</strong> 탭</li>
+                <li>3. <strong>"앱 설치"</strong> 또는 <strong>"홈 화면에 추가"</strong> 선택</li>
               </ol>
             )}
-          </div>
-          <div className="pt-2">
-            <a
-              href="https://restaurantchuncheon.lovable.app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <ExternalLink className="w-4 h-4" />
-                브라우저에서 직접 열기
-              </Button>
-            </a>
           </div>
           <p className="text-xs text-muted-foreground/60">
             ※ 프리뷰가 아닌 <strong>배포 URL</strong>에서 접속해야 설치가 가능합니다.
