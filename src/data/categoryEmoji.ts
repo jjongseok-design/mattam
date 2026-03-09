@@ -22,5 +22,6 @@ export const CATEGORY_EMOJI: Record<string, string> = {
   "생선구이": "🐟",
   "통닭": "🍗",
   "카페": "☕",
+  "분식": "🧆",
   "기타": "🍴",
 };
