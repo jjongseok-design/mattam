@@ -19,6 +19,7 @@ interface MapViewProps {
   restaurants: Restaurant[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  visitedIds?: Set<string>;
 }
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -37,6 +38,16 @@ const leafDefaultIcon = new L.Icon({
   popupAnchor: [1, -34],
 });
 
+const leafVisitedIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  className: "visited-marker",
+});
+
 const leafSelectedIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -47,7 +58,7 @@ const leafSelectedIcon = new L.Icon({
   className: "selected-marker",
 });
 
-const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
+const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: MapViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const kakaoMapRef = useRef<kakao.maps.Map | null>(null);
