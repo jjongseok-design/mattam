@@ -31,8 +31,9 @@ const Index = () => {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data: dbCategories = [] } = useCategories();
-  // null means "category selection mode", string means "list mode"
-  const [category, setCategory] = useState<string | null>(initialCat || null);
+  const [category, setCategory] = useState<string>(initialCat || "닭갈비");
+  // showList: true = categories hidden, full list view; false = categories visible with list below
+  const [showList, setShowList] = useState(false);
   const [sort, setSort] = useState<SortOption>("rating");
   const [filter, setFilter] = useState<FilterOption>("all");
   const [ratingMin, setRatingMin] = useState(0);
@@ -49,21 +50,18 @@ const Index = () => {
 
   // Deep linking: sync category to URL
   useEffect(() => {
-    if (category) {
-      setSearchParams({ category }, { replace: true });
-    } else {
-      setSearchParams({}, { replace: true });
-    }
+    setSearchParams({ category }, { replace: true });
   }, [category, setSearchParams]);
 
   const handleCategoryChange = useCallback((cat: string) => {
     setCategory(cat);
+    setShowList(true);
     setSelectedId(null);
     setQuery("");
   }, []);
 
-  const handleCloseCategory = useCallback(() => {
-    setCategory(null);
+  const handleCloseList = useCallback(() => {
+    setShowList(false);
     setSelectedId(null);
     setQuery("");
   }, []);
@@ -96,14 +94,13 @@ const Index = () => {
   }, [selectedId]);
 
   const categoryRestaurants = useMemo(
-    () => category ? restaurants.filter((r) => r.category === category) : [],
+    () => restaurants.filter((r) => r.category === category),
     [restaurants, category]
   );
 
   const filtered = useMemo(() => {
     let list = categoryRestaurants;
 
-    // Text search
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter(
@@ -114,19 +111,16 @@ const Index = () => {
       );
     }
 
-    // Filter: favorites / visited
     if (filter === "favorites") {
       list = list.filter((r) => isFavorite(r.id));
     } else if (filter === "visited") {
       list = list.filter((r) => isVisited(r.id));
     }
 
-    // Rating filter
     if (ratingMin > 0) {
       list = list.filter((r) => r.rating >= ratingMin);
     }
 
-    // Sort
     return [...list].sort((a, b) => {
       if (sort === "distance" && position) {
         const dA = getDistanceKm(position.lat, position.lng, a.lat, a.lng);
@@ -136,12 +130,10 @@ const Index = () => {
       if (sort === "reviews") {
         return b.reviewCount - a.reviewCount || b.rating - a.rating;
       }
-      // default: rating
       return b.rating - a.rating || b.reviewCount - a.reviewCount;
     });
   }, [query, categoryRestaurants, sort, filter, ratingMin, position, isFavorite, isVisited]);
 
-  // Distance helper for display
   const getDistance = useCallback(
     (lat: number, lng: number) => {
       if (!position) return null;
@@ -162,7 +154,28 @@ const Index = () => {
     return <ErrorState onRetry={() => refetch()} />;
   }
 
-  const categoryEmoji = category ? (CATEGORY_EMOJI[category] || "🍽️") : "";
+  const categoryEmoji = CATEGORY_EMOJI[category] || "🍽️";
+
+  // Shared restaurant list renderer
+  const renderRestaurantList = (maxItems?: number) => {
+    const items = maxItems ? filtered.slice(0, maxItems) : filtered;
+    return items.map((restaurant) => {
+      const dist = getDistance(restaurant.lat, restaurant.lng);
+      return (
+        <RestaurantCard
+          key={restaurant.id}
+          restaurant={restaurant}
+          isSelected={selectedId === restaurant.id}
+          isVisited={isVisited(restaurant.id)}
+          isFavorite={isFavorite(restaurant.id)}
+          distance={dist}
+          onClick={() => handleSelect(restaurant.id)}
+          onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
+          onToggleFavorite={(e) => { e.stopPropagation(); toggleFavorite(restaurant.id); }}
+        />
+      );
+    });
+  };
 
   // Mobile layout
   if (isMobile) {
@@ -195,14 +208,14 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Row 2: Category pills OR selected category header with close */}
+            {/* Row 2: Category pills OR selected category header */}
             <div className="px-4 pb-2">
-              {!category ? (
-                <CategoryTabs active="" onChange={handleCategoryChange} variant="pills" />
+              {!showList ? (
+                <CategoryTabs active={category} onChange={handleCategoryChange} variant="pills" />
               ) : (
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={handleCloseCategory}
+                    onClick={handleCloseList}
                     className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform shrink-0"
                     aria-label="카테고리 선택으로 돌아가기"
                   >
@@ -228,32 +241,30 @@ const Index = () => {
             />
           </div>
 
-          {/* Bottom Sheet - only when category selected */}
-          {category && (
-            <MobileBottomSheet
-              restaurants={filtered}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              query={query}
-              onQueryChange={setQuery}
-              totalCount={categoryRestaurants.length}
-              category={category}
-              onCategoryChange={handleCategoryChange}
-              isVisited={isVisited}
-              onToggleVisited={toggleVisited}
-              isFavorite={isFavorite}
-              onToggleFavorite={toggleFavorite}
-              sort={sort}
-              onSortChange={setSort}
-              filter={filter}
-              onFilterChange={setFilter}
-              hasLocation={!!position}
-              ratingMin={ratingMin}
-              onRatingMinChange={setRatingMin}
-              getDistance={getDistance}
-              onClose={handleCloseCategory}
-            />
-          )}
+          {/* Bottom Sheet */}
+          <MobileBottomSheet
+            restaurants={filtered}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+            query={query}
+            onQueryChange={setQuery}
+            totalCount={categoryRestaurants.length}
+            category={category}
+            onCategoryChange={handleCategoryChange}
+            isVisited={isVisited}
+            onToggleVisited={toggleVisited}
+            isFavorite={isFavorite}
+            onToggleFavorite={toggleFavorite}
+            sort={sort}
+            onSortChange={setSort}
+            filter={filter}
+            onFilterChange={setFilter}
+            hasLocation={!!position}
+            ratingMin={ratingMin}
+            onRatingMinChange={setRatingMin}
+            getDistance={getDistance}
+            onClose={handleCloseList}
+          />
         </div>
         <TipForm />
         <JsonLd />
@@ -277,7 +288,7 @@ const Index = () => {
               <h1 className="text-lg font-bold text-foreground tracking-tight">춘천 맛집 지도</h1>
               <p className="text-[11px] text-muted-foreground/70 flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                강원특별자치도 춘천시 {category ? `· ${categoryRestaurants.length}개 ${category}` : `· ${restaurants.length}개 식당`}
+                강원특별자치도 춘천시 · {categoryRestaurants.length}개 {category}
               </p>
             </div>
             {!position && (
@@ -314,14 +325,15 @@ const Index = () => {
             </Link>
           </div>
 
-          {/* Category selection or active category header */}
-          {!category ? (
-            <CategoryTabs active="" onChange={handleCategoryChange} />
+          {!showList ? (
+            /* Category grid + current category preview */
+            <CategoryTabs active={category} onChange={handleCategoryChange} />
           ) : (
+            /* List mode: category header with close + search/filter */
             <>
               <div className="flex items-center gap-2 mb-3">
                 <button
-                  onClick={handleCloseCategory}
+                  onClick={handleCloseList}
                   className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors shrink-0"
                   aria-label="카테고리 선택으로 돌아가기"
                 >
@@ -357,51 +369,49 @@ const Index = () => {
         {/* Divider */}
         <div className="h-px bg-border/60 mx-4" />
 
-        {/* Results - only when category selected */}
-        {category ? (
-          <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+        {/* Restaurant list */}
+        <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+          {!showList && (
+            /* Preview: show current category restaurants below the grid */
+            <>
+              <div className="flex items-center justify-between px-1.5 mb-1">
+                <p className="text-[11px] text-muted-foreground/60 font-medium">
+                  {categoryEmoji} {category} · {filtered.length}개
+                </p>
+                <button
+                  onClick={() => setShowList(true)}
+                  className="text-[11px] text-primary font-medium hover:underline"
+                >
+                  전체보기 →
+                </button>
+              </div>
+            </>
+          )}
+
+          {showList && (
             <p className="text-[11px] text-muted-foreground/60 px-1.5 mb-1 font-medium">
               {filtered.length}개 {category} ·{" "}
               {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
               {filter !== "all" && ` · ${filter === "favorites" ? "찜한 곳" : "방문한 곳"}`}
             </p>
-            <AnimatePresence mode="popLayout">
-              {filtered.map((restaurant) => {
-                const dist = getDistance(restaurant.lat, restaurant.lng);
-                return (
-                  <RestaurantCard
-                    key={restaurant.id}
-                    restaurant={restaurant}
-                    isSelected={selectedId === restaurant.id}
-                    isVisited={isVisited(restaurant.id)}
-                    isFavorite={isFavorite(restaurant.id)}
-                    distance={dist}
-                    onClick={() => handleSelect(restaurant.id)}
-                    onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
-                    onToggleFavorite={(e) => { e.stopPropagation(); toggleFavorite(restaurant.id); }}
-                  />
-                );
-              })}
-            </AnimatePresence>
-            {filtered.length === 0 && (
-              <div className="text-center py-16 text-muted-foreground">
-                <Utensils className="h-8 w-8 mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-medium">검색 결과가 없습니다</p>
-                <p className="text-xs text-muted-foreground/50 mt-1">다른 키워드로 검색해보세요</p>
-              </div>
-            )}
-            {/* Copyright */}
-            <div className="text-center py-4 text-[10px] text-muted-foreground/40 border-t border-border/30 mt-4">
-              © {new Date().getFullYear()} 춘천 맛집 지도. All rights reserved.
+          )}
+
+          <AnimatePresence mode="popLayout">
+            {renderRestaurantList()}
+          </AnimatePresence>
+
+          {filtered.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              <Utensils className="h-8 w-8 mx-auto mb-3 opacity-30" />
+              <p className="text-sm font-medium">검색 결과가 없습니다</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">다른 키워드로 검색해보세요</p>
             </div>
+          )}
+
+          <div className="text-center py-4 text-[10px] text-muted-foreground/40 border-t border-border/30 mt-4">
+            © {new Date().getFullYear()} 춘천 맛집 지도. All rights reserved.
           </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground px-6">
-            <Utensils className="h-12 w-12 mb-4 opacity-20" />
-            <p className="text-sm font-medium mb-1">카테고리를 선택해주세요</p>
-            <p className="text-xs text-muted-foreground/50 text-center">위에서 원하는 음식 카테고리를 선택하면<br/>해당 식당 목록이 표시됩니다</p>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Map */}
