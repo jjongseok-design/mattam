@@ -75,7 +75,7 @@ const ShareCard = memo(({ open, onClose, restaurants, visited }: ShareCardProps)
           >
             <button
               onClick={onClose}
-              className="absolute -top-3 -right-1 z-10 p-2 rounded-full bg-foreground/20 hover:bg-foreground/30 text-foreground backdrop-blur-sm transition-colors"
+              className="absolute -top-3 -right-1 z-10 p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-foreground/20 hover:bg-foreground/30 text-foreground backdrop-blur-sm transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
