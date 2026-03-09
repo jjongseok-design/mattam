@@ -231,7 +231,7 @@ const Index = () => {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
       {/* Side Panel */}
-      <div className="w-[420px] flex-shrink-0 h-full flex flex-col border-r border-border/50 bg-card shadow-panel z-10">
+      <div className="w-[38.2%] min-w-[380px] max-w-[600px] flex-shrink-0 h-full flex flex-col border-r border-border/50 bg-card shadow-panel z-10">
         {/* Header */}
         <div className="p-5 pb-4">
           <div className="flex items-center gap-3 mb-4">
