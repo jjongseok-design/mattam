@@ -410,7 +410,7 @@ const Admin = () => {
         <div className="max-w-5xl mx-auto safe-area-x-area-x py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="tap-safe">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
