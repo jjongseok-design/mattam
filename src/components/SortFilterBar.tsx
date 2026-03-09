@@ -78,7 +78,7 @@ const SortFilterBar = ({
         {/* Rating filter toggle */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+          className={`flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-lg text-[11px] font-medium transition-all duration-200 ${
             ratingMin > 0
               ? "bg-accent/10 text-accent border border-accent/20"
               : "bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent"

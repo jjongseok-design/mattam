@@ -50,7 +50,7 @@ const CategoryTabs = ({ active, onChange, variant = "grid" }: CategoryTabsProps)
             <button
               key={cat.id}
               onClick={() => onChange(cat.id)}
-              className="relative flex flex-col items-center gap-0.5 py-1.5 px-0.5 rounded-lg transition-all duration-200"
+              className="relative flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg transition-all duration-200 min-h-[48px]"
             >
               {isActive && (
                 <motion.div

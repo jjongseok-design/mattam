@@ -81,7 +81,7 @@ const TipForm = () => {
                   <MessageSquarePlus className="h-5 w-5 text-primary" />
                   맛집 제보
                 </h2>
-                <button onClick={() => setOpen(false)} className="p-2 rounded-xl hover:bg-muted active:scale-95 transition-all" aria-label="닫기">
+                <button onClick={() => setOpen(false)} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-muted active:scale-95 transition-all" aria-label="닫기">
                   <X className="h-5 w-5 text-muted-foreground" />
                 </button>
               </div>

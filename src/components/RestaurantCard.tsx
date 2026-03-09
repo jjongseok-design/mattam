@@ -117,7 +117,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
               <Link
                 to={`/restaurant/${restaurant.id}`}
                 onClick={(e) => e.stopPropagation()}
-                className="text-[11px] text-primary/70 font-medium px-2 py-1 rounded-lg"
+                className="text-[11px] text-primary/70 font-medium px-2.5 py-1.5 min-h-[36px] flex items-center rounded-lg"
               >
                 상세
               </Link>

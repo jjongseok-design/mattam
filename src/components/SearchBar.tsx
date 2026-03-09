@@ -20,10 +20,12 @@ const SearchBar = ({ query, onQueryChange }: SearchBarProps) => {
       {query && (
         <button
           onClick={() => onQueryChange("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-muted-foreground/15 hover:bg-muted-foreground/25 flex items-center justify-center transition-colors"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-colors"
           aria-label="검색어 지우기"
         >
-          <X className="h-3 w-3 text-muted-foreground" />
+          <span className="w-5 h-5 rounded-full bg-muted-foreground/15 hover:bg-muted-foreground/25 flex items-center justify-center">
+            <X className="h-3 w-3 text-muted-foreground" />
+          </span>
         </button>
       )}
     </div>

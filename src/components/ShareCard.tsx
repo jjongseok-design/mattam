@@ -158,14 +158,14 @@ const ShareCard = memo(({ open, onClose, restaurants, visited }: ShareCardProps)
             <div className="flex gap-3 mt-4">
               <button
                 onClick={handleDownload}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/80 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 py-3 min-h-[44px] bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/80 transition-colors"
               >
                 <Download className="h-4 w-4" />
                 이미지 저장
               </button>
               <button
                 onClick={handleShare}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 py-3 min-h-[44px] bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-colors"
               >
                 <Share2 className="h-4 w-4" />
                 공유하기

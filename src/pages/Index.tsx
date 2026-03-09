@@ -245,7 +245,7 @@ const Index = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleCloseList}
-                      className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform shrink-0"
+                      className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform shrink-0"
                       aria-label="카테고리 선택으로 돌아가기"
                     >
                       <X className="h-4 w-4 text-foreground" />

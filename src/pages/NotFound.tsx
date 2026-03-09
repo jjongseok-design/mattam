@@ -9,12 +9,12 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
+    <div className="flex min-h-screen items-center justify-center bg-muted safe-area-x">
       <div className="text-center">
         <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          Return to Home
+        <p className="mb-4 text-xl text-muted-foreground">페이지를 찾을 수 없습니다</p>
+        <a href="/" className="text-primary underline hover:text-primary/90 inline-block min-h-[44px] flex items-center justify-center">
+          지도로 돌아가기
         </a>
       </div>
     </div>

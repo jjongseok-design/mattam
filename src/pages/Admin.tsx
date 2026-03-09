@@ -839,7 +839,7 @@ const Admin = () => {
                     </span>
                   )}
                 </h2>
-                <button onClick={() => setShowTips(false)} className="p-2 rounded-xl hover:bg-muted transition-colors">
+                <button onClick={() => setShowTips(false)} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-muted transition-colors">
                   <X className="h-5 w-5 text-muted-foreground" />
                 </button>
               </div>
