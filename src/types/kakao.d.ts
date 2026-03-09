@@ -1,12 +1,13 @@
-interface Window {
-  kakao: typeof kakao;
-}
-
 declare namespace kakao.maps {
   class LatLng {
     constructor(lat: number, lng: number);
     getLat(): number;
     getLng(): number;
+  }
+
+  class LatLngBounds {
+    constructor(sw: LatLng, ne: LatLng);
+    contain(latlng: LatLng): boolean;
   }
 
   class Map {
@@ -16,11 +17,6 @@ declare namespace kakao.maps {
     setLevel(level: number, options?: { animate?: { duration?: number } }): void;
     panTo(latlng: LatLng): void;
     getLevel(): number;
-  }
-
-  class LatLngBounds {
-    constructor(sw: LatLng, ne: LatLng);
-    contain(latlng: LatLng): boolean;
   }
 
   class Marker {
@@ -60,4 +56,8 @@ declare namespace kakao.maps {
   }
 
   function load(callback: () => void): void;
+}
+
+interface Window {
+  kakao: typeof kakao;
 }
