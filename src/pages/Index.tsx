@@ -239,7 +239,7 @@ const Index = () => {
           {/* 상단 바 */}
           <div className="absolute top-0 left-0 right-0 z-[1300] safe-area-top bg-background/95 backdrop-blur-md border-b border-border/30" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
             {/* Row 1: Tour progress + action buttons */}
-            <div className="px-4 pt-2 pb-1.5 flex items-center gap-2">
+            <div className="safe-area-x pt-2 pb-1.5 flex items-center gap-2">
               <div className="flex-1 min-w-0 overflow-hidden">
                 <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
               </div>
