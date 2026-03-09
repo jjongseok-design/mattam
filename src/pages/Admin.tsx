@@ -100,7 +100,7 @@ const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestion
     suggestions: ["크루아상", "앙버터", "소금빵", "식빵", "케이크", "마카롱", "보리빵", "맘모스빵", "타르트"],
     idPrefix: "bk",
   },
-  "한식": {
+  "국밥/탕류": {
     placeholder: "설렁탕, 곰탕, 국밥, 찌개",
     suggestions: ["설렁탕", "곰탕", "도가니탕", "소꼬리탕", "사골국", "수육", "선지국", "순대국밥", "돼지국밥", "소머리국밥", "김치찌개", "된장찌개", "순두부찌개", "부대찌개", "해장국"],
     idPrefix: "hs",
