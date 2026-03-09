@@ -3,7 +3,7 @@ import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ChevronUp, Grid3X3 } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
-import CategoryTabs, { CategoryId } from "./CategoryTabs";
+import CategoryTabs from "./CategoryTabs";
 import SortFilterBar, { SortOption, FilterOption } from "./SortFilterBar";
 import RandomPickButton from "./RandomPickButton";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
