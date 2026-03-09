@@ -1,14 +1,12 @@
 import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Phone, ExternalLink, Share2, Loader2, Utensils, Clock, CalendarOff } from "lucide-react";
+import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList from "@/components/ReviewList";
-import MapView from "@/components/MapView";
 import ErrorState from "@/components/ErrorState";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
