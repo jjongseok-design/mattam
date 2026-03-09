@@ -181,6 +181,7 @@ const Index = () => {
               restaurants={filtered}
               selectedId={selectedId}
               onSelect={handleSelect}
+              visitedIds={visited}
             />
           </div>
           <MobileBottomSheet
@@ -208,6 +209,7 @@ const Index = () => {
         </div>
         <TipForm />
         <JsonLd />
+        <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} />
       </>
     );
   }
@@ -326,15 +328,20 @@ const Index = () => {
       </div>
 
       {/* Map */}
-      <div className="flex-1 h-full">
+      <div className="flex-1 h-full relative">
+        <div className="absolute top-4 right-4 z-[1000] w-72">
+          <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} />
+        </div>
         <MapView
           restaurants={filtered}
           selectedId={selectedId}
           onSelect={handleSelect}
+          visitedIds={visited}
         />
       </div>
       <TipForm />
       <JsonLd />
+      <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} />
     </div>
   );
 };
