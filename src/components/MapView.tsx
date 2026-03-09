@@ -19,6 +19,7 @@ interface MapViewProps {
   restaurants: Restaurant[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  visitedIds?: Set<string>;
 }
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -37,6 +38,16 @@ const leafDefaultIcon = new L.Icon({
   popupAnchor: [1, -34],
 });
 
+const leafVisitedIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  className: "visited-marker",
+});
+
 const leafSelectedIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -47,7 +58,7 @@ const leafSelectedIcon = new L.Icon({
   className: "selected-marker",
 });
 
-const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
+const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: MapViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const kakaoMapRef = useRef<kakao.maps.Map | null>(null);
@@ -188,22 +199,29 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
       "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
       new kakao.maps.Size(32, 46)
     );
+    // Green checkmark icon for visited restaurants
+    const visitedImage = new kakao.maps.MarkerImage(
+      "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png",
+      new kakao.maps.Size(24, 35)
+    );
 
     restaurants.forEach((r) => {
       const isSelected = r.id === selectedId;
+      const isVisited = visitedIds.has(r.id);
       const position = new kakao.maps.LatLng(r.lat, r.lng);
       const marker = new kakao.maps.Marker({
         position,
         map,
-        image: isSelected ? selectedImage : defaultImage,
-        zIndex: isSelected ? 10 : 1,
+        image: isSelected ? selectedImage : isVisited ? visitedImage : defaultImage,
+        zIndex: isSelected ? 10 : isVisited ? 5 : 1,
       });
 
       kakao.maps.event.addListener(marker, "click", () => onSelect(r.id));
 
       if (isSelected) {
         const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
-        const content = `<div style="padding:8px 12px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:160px;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;color:#111">${r.name}</a><div style="font-size:11px;color:#666;margin-top:3px;">탭하면 네이버지도로 이동</div></div>`;
+        const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px;">✓ 방문완료</span>` : "";
+        const content = `<div style="padding:8px 12px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:160px;"><div style="display:flex;align-items:center;gap:4px;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;color:#111">${r.name}</a>${visitedBadge}</div><div style="font-size:11px;color:#666;margin-top:3px;">탭하면 네이버지도로 이동</div></div>`;
         kakaoOverlayRef.current = new kakao.maps.CustomOverlay({
           content,
           position,
@@ -215,7 +233,7 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
       kakaoMarkersRef.current.push(marker);
     });
-  }, [mode, restaurants, selectedId, onSelect]);
+  }, [mode, restaurants, selectedId, onSelect, visitedIds]);
 
   useEffect(() => {
     if (mode !== "leaflet") return;
@@ -227,14 +245,16 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
     restaurants.forEach((r) => {
       const isSelected = r.id === selectedId;
+      const isVisited = visitedIds.has(r.id);
       const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
       const marker = L.marker([r.lat, r.lng], {
-        icon: isSelected ? leafSelectedIcon : leafDefaultIcon,
-        zIndexOffset: isSelected ? 1000 : 0,
+        icon: isSelected ? leafSelectedIcon : isVisited ? leafVisitedIcon : leafDefaultIcon,
+        zIndexOffset: isSelected ? 1000 : isVisited ? 500 : 0,
       }).addTo(map);
 
+      const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;">✓ 방문완료</span>` : "";
       marker.bindPopup(
-        `<div style="min-width:170px;line-height:1.4;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;display:block;">${r.name}</a><div style="font-size:12px;opacity:.7;margin-top:2px;">탭하면 네이버지도로 이동</div></div>`,
+        `<div style="min-width:170px;line-height:1.4;"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;">${r.name}</a>${visitedBadge}</div><div style="font-size:12px;opacity:.7;">탭하면 네이버지도로 이동</div></div>`,
         { closeButton: false, autoPan: true }
       );
 
@@ -246,7 +266,7 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
       if (isSelected) marker.openPopup();
       leafMarkersRef.current.push(marker);
     });
-  }, [mode, restaurants, selectedId, onSelect]);
+  }, [mode, restaurants, selectedId, onSelect, visitedIds]);
 
   useEffect(() => {
     const selected = restaurants.find((r) => r.id === selectedId);

@@ -12,6 +12,8 @@ import ErrorState from "@/components/ErrorState";
 import JsonLd from "@/components/JsonLd";
 import SortFilterBar, { SortOption, FilterOption } from "@/components/SortFilterBar";
 import RandomPickButton from "@/components/RandomPickButton";
+import TourProgress from "@/components/TourProgress";
+import ShareCard from "@/components/ShareCard";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
@@ -35,10 +37,11 @@ const Index = () => {
   const [sort, setSort] = useState<SortOption>("rating");
   const [filter, setFilter] = useState<FilterOption>("all");
   const [ratingMin, setRatingMin] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
-  const { isVisited, toggle: toggleVisited } = useVisited();
+  const { visited, isVisited, toggle: toggleVisited } = useVisited();
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
   const { position, loading: geoLoading, request: requestGeo } = useGeolocation();
   const { recentIds, addViewed } = useRecentlyViewed();
@@ -178,6 +181,7 @@ const Index = () => {
               restaurants={filtered}
               selectedId={selectedId}
               onSelect={handleSelect}
+              visitedIds={visited}
             />
           </div>
           <MobileBottomSheet
@@ -205,6 +209,7 @@ const Index = () => {
         </div>
         <TipForm />
         <JsonLd />
+        <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} />
       </>
     );
   }
@@ -323,15 +328,20 @@ const Index = () => {
       </div>
 
       {/* Map */}
-      <div className="flex-1 h-full">
+      <div className="flex-1 h-full relative">
+        <div className="absolute top-4 right-4 z-[1000] w-72">
+          <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} />
+        </div>
         <MapView
           restaurants={filtered}
           selectedId={selectedId}
           onSelect={handleSelect}
+          visitedIds={visited}
         />
       </div>
       <TipForm />
       <JsonLd />
+      <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} />
     </div>
   );
 };
