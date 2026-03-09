@@ -1,44 +1,24 @@
 import { motion } from "framer-motion";
+import { useCategories, type CategoryRow } from "@/hooks/useCategories";
 
-export const CATEGORIES = [
-  { id: "닭갈비", label: "닭갈비", emoji: "🍗" },
-  { id: "막국수", label: "막국수", emoji: "🍜" },
-  { id: "중화요리", label: "중화요리", emoji: "🥟" },
-  { id: "갈비탕", label: "갈비탕", emoji: "🍖" },
-  { id: "삼계탕", label: "삼계탕", emoji: "🐔" },
-  { id: "칼국수", label: "칼국수", emoji: "🍜" },
-  { id: "수제버거", label: "수제버거", emoji: "🍔" },
-  { id: "삼겹살", label: "삼겹살", emoji: "🥓" },
-  { id: "초밥", label: "초밥", emoji: "🍣" },
-  { id: "일식", label: "일식/횟집", emoji: "🍱" },
-  { id: "감자탕", label: "감자탕", emoji: "🥘" },
-  { id: "한우", label: "한우", emoji: "🥩" },
-  { id: "돼지갈비", label: "돼지갈비", emoji: "🍖" },
-  { id: "이탈리안", label: "이탈리안", emoji: "🍝" },
-  { id: "베이커리", label: "베이커리", emoji: "🥐" },
-  { id: "국밥/탕류", label: "국밥/탕류", emoji: "🍲" },
-  { id: "보쌈/족발", label: "보쌈/족발", emoji: "🐷" },
-  { id: "돈까스", label: "돈까스", emoji: "🍛" },
-  { id: "샤브샤브", label: "샤브샤브", emoji: "🫕" },
-  { id: "생선구이", label: "생선구이", emoji: "🐟" },
-  { id: "통닭", label: "통닭", emoji: "🍗" },
-  { id: "카페", label: "카페", emoji: "☕" },
-  { id: "기타", label: "기타", emoji: "🍴" },
-] as const;
-
-export type CategoryId = (typeof CATEGORIES)[number]["id"];
+// Fallback categories for when DB is loading
+const FALLBACK_CATEGORIES: CategoryRow[] = [
+  { id: "닭갈비", label: "닭갈비", emoji: "🍗", sort_order: 1, id_prefix: "dc", tag_suggestions: [], tag_placeholder: "" },
+];
 
 interface CategoryTabsProps {
-  active: CategoryId;
-  onChange: (id: CategoryId) => void;
+  active: string;
+  onChange: (id: string) => void;
 }
 
 const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
+  const { data: categories } = useCategories();
+  const cats = categories && categories.length > 0 ? categories : FALLBACK_CATEGORIES;
 
   return (
     <div className="-mx-1 px-1">
-      <div className="grid grid-cols-7 gap-1 min-w-0">
-        {CATEGORIES.map((cat) => {
+      <div className="grid grid-cols-5 gap-1 min-w-0">
+        {cats.map((cat) => {
           const isActive = active === cat.id;
           return (
             <button
@@ -70,3 +50,4 @@ const CategoryTabs = ({ active, onChange }: CategoryTabsProps) => {
 };
 
 export default CategoryTabs;
+export type { CategoryRow };
