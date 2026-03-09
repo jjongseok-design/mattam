@@ -85,22 +85,22 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
             {/* Card Preview */}
             <div
               ref={cardRef}
-              className="bg-gradient-to-br from-slate-900 via-slate-800 to-primary/30 rounded-3xl p-6 text-white shadow-2xl"
+              className="bg-gradient-to-br from-background via-card to-primary/10 rounded-3xl p-6 text-foreground shadow-2xl border border-border/50"
             >
               {/* Header */}
               <div className="text-center mb-6">
-                <p className="text-xs opacity-60 mb-1">🗺️ 춘천 맛집 지도</p>
-                <h2 className="text-2xl font-black">맛집 정복 현황</h2>
+                <p className="text-xs text-muted-foreground mb-1">🗺️ 춘천 맛집 지도</p>
+                <h2 className="text-2xl font-black text-foreground">맛집 정복 현황</h2>
               </div>
 
               {/* Rank */}
               <div className="flex items-center justify-center gap-4 mb-6">
-                <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-5xl">
+                <div className="w-20 h-20 rounded-2xl bg-muted/50 backdrop-blur flex items-center justify-center text-5xl">
                   {stats.rankEmoji}
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.rank}</p>
-                  <p className="text-sm opacity-70 flex items-center gap-1">
+                  <p className="text-2xl font-bold text-foreground">{stats.rank}</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
                     {stats.totalVisited}/{stats.totalRestaurants}곳 정복
                   </p>
@@ -109,30 +109,30 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
 
               {/* Progress bar */}
               <div className="mb-6">
-                <div className="h-3 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-3 bg-muted/50 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-primary to-green-400 rounded-full"
+                    className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full"
                     style={{ width: `${stats.overallPercent}%` }}
                   />
                 </div>
-                <p className="text-center text-lg font-bold mt-2">{stats.overallPercent}% 달성</p>
+                <p className="text-center text-lg font-bold mt-2 text-foreground">{stats.overallPercent}% 달성</p>
               </div>
 
               {/* Master badges */}
               {stats.masterCategories.length > 0 && (
-                <div className="bg-white/10 rounded-2xl p-4 mb-4">
-                  <p className="text-xs opacity-70 mb-2 flex items-center gap-1">
-                    <Crown className="h-3 w-3 text-yellow-400" />
+                <div className="bg-muted/30 rounded-2xl p-4 mb-4">
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <Crown className="h-3 w-3 text-rating" />
                     획득한 마스터 배지
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {stats.masterCategories.map((cat) => (
                       <span
                         key={cat}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-500/20 rounded-lg text-xs font-semibold"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-rating/20 rounded-lg text-xs font-semibold text-rating"
                       >
                         {CATEGORY_EMOJI[cat]} {cat}
-                        <Trophy className="h-3 w-3 text-yellow-400" />
+                        <Trophy className="h-3 w-3 text-rating" />
                       </span>
                     ))}
                   </div>
@@ -145,12 +145,12 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
                   <div
                     key={cat.category}
                     className={`text-center p-2 rounded-xl ${
-                      cat.isMaster ? "bg-yellow-500/20" : "bg-white/10"
+                      cat.isMaster ? "bg-rating/20" : "bg-muted/30"
                     }`}
                   >
                     <span className="text-xl">{CATEGORY_EMOJI[cat.category]}</span>
-                    <p className="text-[10px] font-medium truncate">{cat.category}</p>
-                    <p className="text-xs font-bold">
+                    <p className="text-[10px] font-medium truncate text-foreground">{cat.category}</p>
+                    <p className="text-xs font-bold text-foreground">
                       {cat.visited}/{cat.total}
                       {cat.isMaster && " 🏆"}
                     </p>
@@ -159,7 +159,7 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
               </div>
 
               {/* Footer */}
-              <p className="text-center text-[10px] opacity-40 mt-4">
+              <p className="text-center text-[10px] text-muted-foreground mt-4">
                 restaurantchuncheon.lovable.app
               </p>
             </div>
@@ -168,7 +168,7 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
             <div className="flex gap-3 mt-4">
               <button
                 onClick={handleDownload}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-white text-slate-900 font-semibold rounded-xl hover:bg-white/90 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-secondary text-secondary-foreground font-semibold rounded-xl hover:bg-secondary/80 transition-colors"
               >
                 <Download className="h-4 w-4" />
                 이미지 저장
