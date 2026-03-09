@@ -72,12 +72,12 @@ const ShareCard = ({ open, onClose, restaurants, visited }: ShareCardProps) => {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm"
+            className="w-full max-w-sm relative"
           >
-            {/* Close button */}
+            {/* Close button - inside card container */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              className="absolute -top-3 -right-1 z-10 p-2 rounded-full bg-foreground/20 hover:bg-foreground/30 text-foreground backdrop-blur-sm transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
