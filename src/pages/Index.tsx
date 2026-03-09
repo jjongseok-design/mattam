@@ -37,10 +37,11 @@ const Index = () => {
   const [sort, setSort] = useState<SortOption>("rating");
   const [filter, setFilter] = useState<FilterOption>("all");
   const [ratingMin, setRatingMin] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
-  const { isVisited, toggle: toggleVisited } = useVisited();
+  const { visited, isVisited, toggle: toggleVisited } = useVisited();
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
   const { position, loading: geoLoading, request: requestGeo } = useGeolocation();
   const { recentIds, addViewed } = useRecentlyViewed();
