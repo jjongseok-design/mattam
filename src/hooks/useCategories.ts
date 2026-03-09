@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface CategoryRow {
@@ -12,6 +13,25 @@ export interface CategoryRow {
 }
 
 export function useCategories() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("categories-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "categories" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["categories"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ["categories"],
     queryFn: async (): Promise<CategoryRow[]> => {
@@ -30,7 +50,7 @@ export function useCategories() {
         tag_placeholder: d.tag_placeholder ?? "",
       }));
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60,
   });
 }
 
