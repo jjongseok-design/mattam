@@ -1,34 +1,87 @@
-import { useMemo, useState, useCallback } from "react";
-import { MapPin, Utensils, Loader2, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { MapPin, Utensils, Loader2, Settings, Navigation, Heart } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
-import CategoryTabs, { CategoryId } from "@/components/CategoryTabs";
+import CategoryTabs, { CategoryId, CATEGORIES } from "@/components/CategoryTabs";
 import TipForm from "@/components/TipForm";
 import ThemeToggle from "@/components/ThemeToggle";
 import ErrorState from "@/components/ErrorState";
 import JsonLd from "@/components/JsonLd";
+import SortFilterBar, { SortOption, FilterOption } from "@/components/SortFilterBar";
+import RandomPickButton from "@/components/RandomPickButton";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useGeolocation, getDistanceKm } from "@/hooks/useGeolocation";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+
+const isValidCategory = (val: string): val is CategoryId =>
+  CATEGORIES.some((c) => c.id === val);
 
 const Index = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialCat = searchParams.get("category");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [category, setCategory] = useState<CategoryId>("닭갈비");
-  
+  const [category, setCategory] = useState<CategoryId>(
+    initialCat && isValidCategory(initialCat) ? initialCat : "닭갈비"
+  );
+  const [sort, setSort] = useState<SortOption>("rating");
+  const [filter, setFilter] = useState<FilterOption>("all");
+  const [ratingMin, setRatingMin] = useState(0);
+
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
   const { isVisited, toggle: toggleVisited } = useVisited();
+  const { isFavorite, toggle: toggleFavorite } = useFavorites();
+  const { position, loading: geoLoading, request: requestGeo } = useGeolocation();
+  const { recentIds, addViewed } = useRecentlyViewed();
+  const { toast } = useToast();
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Deep linking: sync category to URL
+  useEffect(() => {
+    setSearchParams({ category }, { replace: true });
+  }, [category, setSearchParams]);
 
   const handleCategoryChange = useCallback((cat: CategoryId) => {
     setCategory(cat);
     setSelectedId(null);
     setQuery("");
   }, []);
+
+  // Request geolocation when user selects distance sort
+  useEffect(() => {
+    if (sort === "distance" && !position) {
+      requestGeo();
+    }
+  }, [sort, position, requestGeo]);
+
+  const handleLocationRequest = useCallback(() => {
+    requestGeo();
+    toast({ title: "📍 현재 위치를 확인하고 있습니다..." });
+  }, [requestGeo, toast]);
+
+  // Track viewed restaurants
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id);
+    addViewed(id);
+  }, [addViewed]);
+
+  // Scroll list to selected card
+  useEffect(() => {
+    if (!selectedId || !listRef.current) return;
+    const el = listRef.current.querySelector(`[data-restaurant-id="${selectedId}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedId]);
 
   const categoryRestaurants = useMemo(
     () => restaurants.filter((r) => r.category === category),
@@ -38,6 +91,7 @@ const Index = () => {
   const filtered = useMemo(() => {
     let list = categoryRestaurants;
 
+    // Text search
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter(
@@ -48,8 +102,41 @@ const Index = () => {
       );
     }
 
-    return [...list].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
-  }, [query, categoryRestaurants]);
+    // Filter: favorites / visited
+    if (filter === "favorites") {
+      list = list.filter((r) => isFavorite(r.id));
+    } else if (filter === "visited") {
+      list = list.filter((r) => isVisited(r.id));
+    }
+
+    // Rating filter
+    if (ratingMin > 0) {
+      list = list.filter((r) => r.rating >= ratingMin);
+    }
+
+    // Sort
+    return [...list].sort((a, b) => {
+      if (sort === "distance" && position) {
+        const dA = getDistanceKm(position.lat, position.lng, a.lat, a.lng);
+        const dB = getDistanceKm(position.lat, position.lng, b.lat, b.lng);
+        return dA - dB;
+      }
+      if (sort === "reviews") {
+        return b.reviewCount - a.reviewCount || b.rating - a.rating;
+      }
+      // default: rating
+      return b.rating - a.rating || b.reviewCount - a.reviewCount;
+    });
+  }, [query, categoryRestaurants, sort, filter, ratingMin, position, isFavorite, isVisited]);
+
+  // Distance helper for display
+  const getDistance = useCallback(
+    (lat: number, lng: number) => {
+      if (!position) return null;
+      return getDistanceKm(position.lat, position.lng, lat, lng);
+    },
+    [position]
+  );
 
   if (isLoading) {
     return (
@@ -68,8 +155,17 @@ const Index = () => {
     return (
       <>
         <div className="relative h-dvh w-screen overflow-hidden bg-background">
-          {/* Mobile theme toggle */}
-          <div className="absolute top-3 right-3 z-[1300]">
+          {/* Mobile top buttons */}
+          <div className="absolute top-3 right-3 z-[1300] flex items-center gap-2">
+            {!position && (
+              <button
+                onClick={handleLocationRequest}
+                className="glass rounded-lg w-8 h-8 flex items-center justify-center"
+                aria-label="내 위치 찾기"
+              >
+                <Navigation className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
             <div className="glass rounded-lg">
               <ThemeToggle />
             </div>
@@ -78,13 +174,13 @@ const Index = () => {
             <MapView
               restaurants={filtered}
               selectedId={selectedId}
-              onSelect={setSelectedId}
+              onSelect={handleSelect}
             />
           </div>
           <MobileBottomSheet
             restaurants={filtered}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handleSelect}
             query={query}
             onQueryChange={setQuery}
             totalCount={categoryRestaurants.length}
@@ -92,6 +188,16 @@ const Index = () => {
             onCategoryChange={handleCategoryChange}
             isVisited={isVisited}
             onToggleVisited={toggleVisited}
+            isFavorite={isFavorite}
+            onToggleFavorite={toggleFavorite}
+            sort={sort}
+            onSortChange={setSort}
+            filter={filter}
+            onFilterChange={setFilter}
+            hasLocation={!!position}
+            ratingMin={ratingMin}
+            onRatingMinChange={setRatingMin}
+            getDistance={getDistance}
           />
         </div>
         <TipForm />
@@ -118,6 +224,19 @@ const Index = () => {
                 강원특별자치도 춘천시 · {categoryRestaurants.length}개 식당
               </p>
             </div>
+            {!position && (
+              <button
+                onClick={handleLocationRequest}
+                className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
+                title="내 위치 찾기"
+                aria-label="내 위치 찾기"
+              >
+                <Navigation className="h-4 w-4 text-muted-foreground/50" />
+              </button>
+            )}
+            {position && (
+              <span className="text-[10px] text-primary/60 font-medium">📍 위치 ON</span>
+            )}
             <ThemeToggle />
             <Link to="/admin">
               <button
@@ -130,8 +249,22 @@ const Index = () => {
             </Link>
           </div>
           <CategoryTabs active={category} onChange={handleCategoryChange} />
-          <div className="mt-3">
-            <SearchBar query={query} onQueryChange={setQuery} />
+          <div className="mt-3 flex gap-2">
+            <div className="flex-1">
+              <SearchBar query={query} onQueryChange={setQuery} />
+            </div>
+            <RandomPickButton restaurants={filtered} />
+          </div>
+          <div className="mt-2.5">
+            <SortFilterBar
+              sort={sort}
+              onSortChange={setSort}
+              filter={filter}
+              onFilterChange={setFilter}
+              hasLocation={!!position}
+              ratingMin={ratingMin}
+              onRatingMinChange={setRatingMin}
+            />
           </div>
         </div>
 
@@ -139,21 +272,29 @@ const Index = () => {
         <div className="h-px bg-border/60 mx-4" />
 
         {/* Results */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+        <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
           <p className="text-[11px] text-muted-foreground/60 px-1.5 mb-1 font-medium">
-            {filtered.length}개 {category} · 평점 높은 순
+            {filtered.length}개 {category} ·{" "}
+            {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
+            {filter !== "all" && ` · ${filter === "favorites" ? "찜한 곳" : "방문한 곳"}`}
           </p>
           <AnimatePresence mode="popLayout">
-            {filtered.map((restaurant) => (
-              <RestaurantCard
-                key={restaurant.id}
-                restaurant={restaurant}
-                isSelected={selectedId === restaurant.id}
-                isVisited={isVisited(restaurant.id)}
-                onClick={() => setSelectedId(restaurant.id)}
-                onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
-              />
-            ))}
+            {filtered.map((restaurant) => {
+              const dist = getDistance(restaurant.lat, restaurant.lng);
+              return (
+                <RestaurantCard
+                  key={restaurant.id}
+                  restaurant={restaurant}
+                  isSelected={selectedId === restaurant.id}
+                  isVisited={isVisited(restaurant.id)}
+                  isFavorite={isFavorite(restaurant.id)}
+                  distance={dist}
+                  onClick={() => handleSelect(restaurant.id)}
+                  onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
+                  onToggleFavorite={(e) => { e.stopPropagation(); toggleFavorite(restaurant.id); }}
+                />
+              );
+            })}
           </AnimatePresence>
           {filtered.length === 0 && (
             <div className="text-center py-16 text-muted-foreground">
@@ -170,7 +311,7 @@ const Index = () => {
         <MapView
           restaurants={filtered}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={handleSelect}
         />
       </div>
       <TipForm />
