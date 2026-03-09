@@ -1,8 +1,9 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { Loader2 } from "lucide-react";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
 const CHUNCHEON_CENTER = { lat: 37.8813, lng: 127.73 };
-const DEFAULT_LEVEL = 7; // Kakao zoom level (smaller = closer)
+const DEFAULT_LEVEL = 7;
 
 interface MapViewProps {
   restaurants: Restaurant[];
@@ -10,42 +11,52 @@ interface MapViewProps {
   onSelect: (id: string) => void;
 }
 
+const useKakaoMapReady = () => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const check = () => {
+      if (window.kakao && window.kakao.maps) {
+        kakao.maps.load(() => setReady(true));
+      } else {
+        setTimeout(check, 200);
+      }
+    };
+    check();
+  }, []);
+
+  return ready;
+};
+
 const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const markersRef = useRef<kakao.maps.Marker[]>([]);
   const overlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const onSelectCb = useCallback(onSelect, [onSelect]);
+  const ready = useKakaoMapReady();
 
   // Init map
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    if (!ready || !containerRef.current || mapRef.current) return;
 
-    const initMap = () => {
-      if (!containerRef.current) return;
-      const center = new kakao.maps.LatLng(CHUNCHEON_CENTER.lat, CHUNCHEON_CENTER.lng);
-      const map = new kakao.maps.Map(containerRef.current, {
-        center,
-        level: DEFAULT_LEVEL,
-      });
-      mapRef.current = map;
-    };
-
-    if (window.kakao && window.kakao.maps) {
-      kakao.maps.load(initMap);
-    }
+    const center = new kakao.maps.LatLng(CHUNCHEON_CENTER.lat, CHUNCHEON_CENTER.lng);
+    const map = new kakao.maps.Map(containerRef.current, {
+      center,
+      level: DEFAULT_LEVEL,
+    });
+    mapRef.current = map;
 
     return () => {
       mapRef.current = null;
     };
-  }, []);
+  }, [ready]);
 
   // Update markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Clear old markers & overlay
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
     if (overlayRef.current) {
@@ -103,7 +114,7 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
       markersRef.current.push(marker);
     });
-  }, [restaurants, selectedId, onSelectCb]);
+  }, [restaurants, selectedId, onSelectCb, ready]);
 
   // Pan to selected
   useEffect(() => {
@@ -116,6 +127,17 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
       map.panTo(new kakao.maps.LatLng(r.lat, r.lng));
     }
   }, [selectedId, restaurants]);
+
+  if (!ready) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-muted/30">
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="text-xs">지도 로딩중...</span>
+        </div>
+      </div>
+    );
+  }
 
   return <div ref={containerRef} className="w-full h-full" />;
 };
