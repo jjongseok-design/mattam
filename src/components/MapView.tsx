@@ -119,10 +119,10 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
     // 춘천 범위 제한
     const sw = new kakao.maps.LatLng(37.734, 127.58);
     const ne = new kakao.maps.LatLng(38.02, 127.92);
-    const bounds = new kakao.maps.LatLngBounds(sw, ne);
+    const bounds = new (kakao.maps as any).LatLngBounds(sw, ne);
 
     kakao.maps.event.addListener(map, "dragend", () => {
-      const center = map.getCenter();
+      const center = (map as any).getCenter();
       if (!bounds.contain(center)) {
         const lat = Math.max(sw.getLat(), Math.min(ne.getLat(), center.getLat()));
         const lng = Math.max(sw.getLng(), Math.min(ne.getLng(), center.getLng()));
