@@ -48,10 +48,10 @@ const RandomPickButton = ({ restaurants }: RandomPickButtonProps) => {
       <AnimatePresence>
         {picked && !isSpinning && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            initial={{ opacity: 0, y: 8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            className="absolute top-full left-0 mt-2 z-50 w-64 bg-card border border-border rounded-2xl shadow-lg p-4"
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            className="absolute bottom-full right-0 mb-2 z-[2000] w-64 bg-card border border-border rounded-2xl shadow-lg p-4"
           >
             <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl">{emoji}</span>
