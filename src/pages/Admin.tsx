@@ -363,10 +363,12 @@ const Admin = () => {
 
     const other = sorted[swapIdx];
     try {
-      await Promise.all([
-        supabase.from("categories").update({ sort_order: other.sort_order } as any).eq("id", cat.id),
-        supabase.from("categories").update({ sort_order: cat.sort_order } as any).eq("id", other.id),
-      ]);
+      await adminApi(pin, "category_reorder", {
+        updates: [
+          { id: cat.id, sort_order: other.sort_order },
+          { id: other.id, sort_order: cat.sort_order },
+        ],
+      });
       invalidateCategories();
     } catch (err: any) {
       toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
