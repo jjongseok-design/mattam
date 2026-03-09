@@ -29,6 +29,7 @@ interface MobileBottomSheetProps {
   ratingMin: number;
   onRatingMinChange: (n: number) => void;
   getDistance: (lat: number, lng: number) => number | null;
+  onClose?: () => void;
 }
 
 type SheetState = "peek" | "half" | "full";
