@@ -158,4 +158,10 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.3);
   }
+
+  /* Leaflet visited marker - green tint */
+  .visited-marker {
+    filter: hue-rotate(100deg) saturate(1.5) brightness(0.9);
+  }
 }
+
