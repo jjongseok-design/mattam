@@ -128,6 +128,42 @@ Deno.serve(async (req) => {
         break;
       }
 
+      // === Category Management ===
+      case "category_insert": {
+        const { error } = await supabase.from("categories").insert(data);
+        if (error) throw error;
+        result = { success: true };
+        break;
+      }
+
+      case "category_update": {
+        const { id, ...rest } = data;
+        const { error } = await supabase.from("categories").update(rest).eq("id", id);
+        if (error) throw error;
+        result = { success: true };
+        break;
+      }
+
+      case "category_delete": {
+        const { error } = await supabase.from("categories").delete().eq("id", data.id);
+        if (error) throw error;
+        result = { success: true };
+        break;
+      }
+
+      case "category_reorder": {
+        // data: { updates: [{ id, sort_order }] }
+        for (const u of data.updates) {
+          const { error } = await supabase
+            .from("categories")
+            .update({ sort_order: u.sort_order })
+            .eq("id", u.id);
+          if (error) throw error;
+        }
+        result = { success: true };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ success: false, error: "Unknown action" }),

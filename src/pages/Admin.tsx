@@ -291,13 +291,12 @@ const Admin = () => {
     try {
       const tags = catForm.tag_suggestions.split(",").map(t => t.trim()).filter(Boolean);
       if (editingCat) {
-        // If ID changed, we need to update restaurants too
         const oldId = editingCat.id;
         const newId = catForm.id.trim();
         
         if (oldId !== newId) {
           // Insert new category, update restaurants, delete old
-          const { error: insertErr } = await supabase.from("categories").insert({
+          await adminApi(pin, "category_insert", {
             id: newId,
             label: catForm.label,
             emoji: catForm.emoji,
@@ -305,27 +304,22 @@ const Admin = () => {
             tag_placeholder: catForm.tag_placeholder,
             tag_suggestions: tags,
             sort_order: editingCat.sort_order,
-          } as any);
-          if (insertErr) throw insertErr;
-
-          // Update restaurants category
+          });
           await adminApi(pin, "bulk_update_category", { old_category: oldId, new_category: newId });
-
-          const { error: delErr } = await supabase.from("categories").delete().eq("id", oldId);
-          if (delErr) throw delErr;
+          await adminApi(pin, "category_delete", { id: oldId });
         } else {
-          const { error } = await supabase.from("categories").update({
+          await adminApi(pin, "category_update", {
+            id: editingCat.id,
             label: catForm.label,
             emoji: catForm.emoji,
             id_prefix: catForm.id_prefix,
             tag_placeholder: catForm.tag_placeholder,
             tag_suggestions: tags,
-          } as any).eq("id", editingCat.id);
-          if (error) throw error;
+          });
         }
       } else {
         const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order), 0);
-        const { error } = await supabase.from("categories").insert({
+        await adminApi(pin, "category_insert", {
           id: catForm.id.trim(),
           label: catForm.label,
           emoji: catForm.emoji,
@@ -333,8 +327,7 @@ const Admin = () => {
           tag_placeholder: catForm.tag_placeholder,
           tag_suggestions: tags,
           sort_order: maxOrder + 1,
-        } as any);
-        if (error) throw error;
+        });
       }
       invalidateCategories();
       fetchAll();
@@ -354,8 +347,7 @@ const Admin = () => {
     }
     if (!confirm(`"${cat.label}" 카테고리를 삭제하시겠습니까?`)) return;
     try {
-      const { error } = await supabase.from("categories").delete().eq("id", cat.id);
-      if (error) throw error;
+      await adminApi(pin, "category_delete", { id: cat.id });
       invalidateCategories();
       toast({ title: "카테고리 삭제 완료 ✅" });
     } catch (err: any) {
@@ -371,10 +363,12 @@ const Admin = () => {
 
     const other = sorted[swapIdx];
     try {
-      await Promise.all([
-        supabase.from("categories").update({ sort_order: other.sort_order } as any).eq("id", cat.id),
-        supabase.from("categories").update({ sort_order: cat.sort_order } as any).eq("id", other.id),
-      ]);
+      await adminApi(pin, "category_reorder", {
+        updates: [
+          { id: cat.id, sort_order: other.sort_order },
+          { id: other.id, sort_order: cat.sort_order },
+        ],
+      });
       invalidateCategories();
     } catch (err: any) {
       toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
