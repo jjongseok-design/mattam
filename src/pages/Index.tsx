@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { MapPin, Utensils, Loader2, Settings, Navigation, Heart, Download, X } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { MapPin, Utensils, Loader2, Settings, Navigation, Download, X } from "lucide-react";
+import { Link, useSearchParams, useLocation } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
@@ -25,17 +25,45 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 
+// Persist scroll & state across navigation
+const INDEX_STATE_KEY = "index_scroll_state";
+
+interface SavedState {
+  category: string;
+  showList: boolean;
+  scrollTop: number;
+  query: string;
+  sort: SortOption;
+  filter: FilterOption;
+}
+
+const saveState = (state: SavedState) => {
+  try { sessionStorage.setItem(INDEX_STATE_KEY, JSON.stringify(state)); } catch {}
+};
+
+const loadState = (): SavedState | null => {
+  try {
+    const s = sessionStorage.getItem(INDEX_STATE_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+};
+
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const initialCat = searchParams.get("category");
-  const [query, setQuery] = useState("");
+  
+  // Restore state on back navigation
+  const saved = useRef(loadState());
+  const isRestored = useRef(false);
+  
+  const [query, setQuery] = useState(saved.current?.query || "");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data: dbCategories = [] } = useCategories();
-  const [category, setCategory] = useState<string>(initialCat || "닭갈비");
-  // showList: true = categories hidden, full list view; false = categories visible with list below
-  const [showList, setShowList] = useState(false);
-  const [sort, setSort] = useState<SortOption>("rating");
-  const [filter, setFilter] = useState<FilterOption>("all");
+  const [category, setCategory] = useState<string>(initialCat || saved.current?.category || "닭갈비");
+  const [showList, setShowList] = useState(saved.current?.showList || false);
+  const [sort, setSort] = useState<SortOption>(saved.current?.sort || "rating");
+  const [filter, setFilter] = useState<FilterOption>(saved.current?.filter || "all");
   const [ratingMin, setRatingMin] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -52,6 +80,32 @@ const Index = () => {
   useEffect(() => {
     setSearchParams({ category }, { replace: true });
   }, [category, setSearchParams]);
+
+  // Save state before navigating away
+  useEffect(() => {
+    return () => {
+      saveState({
+        category,
+        showList,
+        scrollTop: listRef.current?.scrollTop || 0,
+        query,
+        sort,
+        filter,
+      });
+    };
+  }, [category, showList, query, sort, filter]);
+
+  // Restore scroll position after render
+  useEffect(() => {
+    if (!isRestored.current && saved.current && listRef.current && restaurants.length > 0) {
+      isRestored.current = true;
+      requestAnimationFrame(() => {
+        if (listRef.current) {
+          listRef.current.scrollTop = saved.current!.scrollTop;
+        }
+      });
+    }
+  }, [restaurants]);
 
   const handleCategoryChange = useCallback((cat: string) => {
     setCategory(cat);
@@ -326,10 +380,8 @@ const Index = () => {
           </div>
 
           {!showList ? (
-            /* Category grid + current category preview */
             <CategoryTabs active={category} onChange={handleCategoryChange} />
           ) : (
-            /* List mode: category header with close + search/filter */
             <>
               <div className="flex items-center gap-2 mb-3">
                 <button
@@ -372,7 +424,6 @@ const Index = () => {
         {/* Restaurant list */}
         <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
           {!showList && (
-            /* Preview: show current category restaurants below the grid */
             <>
               <div className="flex items-center justify-between px-1.5 mb-1">
                 <p className="text-[11px] text-muted-foreground/60 font-medium">

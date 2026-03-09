@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Star, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +11,10 @@ interface ReviewFormProps {
   restaurantId: string;
 }
 
-const ReviewForm = ({ restaurantId }: ReviewFormProps) => {
+const REVIEW_COOLDOWN_KEY = "last_review_time";
+const REVIEW_COOLDOWN_MS = 60_000; // 1 minute between reviews
+
+const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -25,16 +28,43 @@ const ReviewForm = ({ restaurantId }: ReviewFormProps) => {
       toast({ title: "별점을 선택해주세요 ⭐", variant: "destructive" });
       return;
     }
+
+    // Client-side rate limiting
+    const lastReview = localStorage.getItem(REVIEW_COOLDOWN_KEY);
+    if (lastReview && Date.now() - parseInt(lastReview) < REVIEW_COOLDOWN_MS) {
+      const remaining = Math.ceil((REVIEW_COOLDOWN_MS - (Date.now() - parseInt(lastReview))) / 1000);
+      toast({ title: `${remaining}초 후에 다시 작성할 수 있습니다 ⏳`, variant: "destructive" });
+      return;
+    }
+
+    // Input validation
+    const trimmedComment = comment.trim();
+    const trimmedNickname = nickname.trim();
+
+    if (trimmedComment.length > 200) {
+      toast({ title: "리뷰는 200자 이내로 작성해주세요", variant: "destructive" });
+      return;
+    }
+    if (trimmedNickname.length > 20) {
+      toast({ title: "닉네임은 20자 이내로 작성해주세요", variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     const { error } = await supabase.from("reviews").insert({
       restaurant_id: restaurantId,
       rating,
-      comment: comment.trim() || null,
-      nickname: nickname.trim() || "익명",
+      comment: trimmedComment || null,
+      nickname: trimmedNickname || "익명",
     });
     if (error) {
-      toast({ title: "리뷰 등록 실패", description: error.message, variant: "destructive" });
+      if (error.message?.includes("Too many reviews")) {
+        toast({ title: "리뷰 등록 제한", description: "잠시 후 다시 시도해주세요", variant: "destructive" });
+      } else {
+        toast({ title: "리뷰 등록 실패", description: error.message, variant: "destructive" });
+      }
     } else {
+      localStorage.setItem(REVIEW_COOLDOWN_KEY, Date.now().toString());
       toast({ title: "리뷰가 등록되었습니다 ✅" });
       setRating(0);
       setComment("");
@@ -98,6 +128,8 @@ const ReviewForm = ({ restaurantId }: ReviewFormProps) => {
       </Button>
     </div>
   );
-};
+});
+
+ReviewForm.displayName = "ReviewForm";
 
 export default ReviewForm;

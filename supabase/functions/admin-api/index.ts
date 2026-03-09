@@ -6,6 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,9 +19,33 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
+  // Extract IP hint from headers for rate limiting
+  const ipHint = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("cf-connecting-ip") || "unknown";
+
   try {
     const body = await req.json();
     const { action, pin, data } = body;
+
+    // --- Check brute-force lockout BEFORE PIN verification ---
+    const lockoutCutoff = new Date(Date.now() - LOCKOUT_MINUTES * 60 * 1000).toISOString();
+    const { data: recentAttempts } = await supabase
+      .from("admin_login_attempts")
+      .select("id")
+      .eq("ip_hint", ipHint)
+      .eq("success", false)
+      .gte("attempted_at", lockoutCutoff);
+
+    if (recentAttempts && recentAttempts.length >= MAX_LOGIN_ATTEMPTS) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `너무 많은 로그인 시도입니다. ${LOCKOUT_MINUTES}분 후에 다시 시도해주세요.`,
+          locked: true 
+        }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // --- Verify PIN ---
     const { data: settings, error: settingsErr } = await supabase
@@ -35,11 +62,39 @@ Deno.serve(async (req) => {
     }
 
     if (pin !== settings.pin_hash) {
+      // Log failed attempt
+      await supabase.from("admin_login_attempts").insert({
+        ip_hint: ipHint,
+        success: false,
+      });
+
+      // Count remaining attempts
+      const { data: updatedAttempts } = await supabase
+        .from("admin_login_attempts")
+        .select("id")
+        .eq("ip_hint", ipHint)
+        .eq("success", false)
+        .gte("attempted_at", lockoutCutoff);
+
+      const remaining = MAX_LOGIN_ATTEMPTS - (updatedAttempts?.length || 0);
+
       return new Response(
-        JSON.stringify({ success: false, error: "PIN이 일치하지 않습니다" }),
+        JSON.stringify({ 
+          success: false, 
+          error: remaining > 0 
+            ? `PIN이 일치하지 않습니다 (${remaining}회 남음)` 
+            : `너무 많은 로그인 시도입니다. ${LOCKOUT_MINUTES}분 후에 다시 시도해주세요.`,
+          locked: remaining <= 0,
+        }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Log successful attempt (resets lockout for this IP)
+    await supabase.from("admin_login_attempts").insert({
+      ip_hint: ipHint,
+      success: true,
+    });
 
     // --- Handle actions ---
     let result;
@@ -203,7 +258,6 @@ Deno.serve(async (req) => {
               const aiData = await aiRes.json();
               const content = aiData.choices?.[0]?.message?.content || "";
               console.log("AI raw response:", content);
-              // Extract JSON from response (handle markdown code blocks too)
               const cleaned = content.replace(/```json\s*/g, "").replace(/```\s*/g, "");
               const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
               if (jsonMatch) {
