@@ -1,0 +1,1 @@
+UPDATE categories SET emoji = '🍢' WHERE id = '분식';
