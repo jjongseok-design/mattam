@@ -1,9 +1,11 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
 const CHUNCHEON_CENTER = { lat: 37.8813, lng: 127.73 };
 const DEFAULT_LEVEL = 7;
+const KAKAO_APP_KEY = "9f52e7f69b37432bdec6b14bbd85a56b";
+const KAKAO_SCRIPT_ID = "kakao-maps-sdk";
 
 interface MapViewProps {
   restaurants: Restaurant[];
@@ -13,19 +15,70 @@ interface MapViewProps {
 
 const useKakaoMapReady = () => {
   const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const check = () => {
-      if (window.kakao && window.kakao.maps) {
-        kakao.maps.load(() => setReady(true));
-      } else {
-        setTimeout(check, 200);
-      }
+    let timeoutId: number | undefined;
+
+    const markError = (message: string) => {
+      setError(message);
+      setReady(false);
     };
-    check();
+
+    const loadMapApi = () => {
+      if (window.kakao?.maps) {
+        kakao.maps.load(() => setReady(true));
+        return;
+      }
+
+      let script = document.getElementById(KAKAO_SCRIPT_ID) as HTMLScriptElement | null;
+
+      const onLoad = () => {
+        if (!window.kakao?.maps) {
+          markError("지도 SDK 초기화에 실패했습니다.");
+          return;
+        }
+        kakao.maps.load(() => setReady(true));
+      };
+
+      const onError = () => {
+        markError("지도 SDK 스크립트 로드에 실패했습니다.");
+      };
+
+      if (!script) {
+        script = document.createElement("script");
+        script.id = KAKAO_SCRIPT_ID;
+        script.async = true;
+        script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false`;
+        script.addEventListener("load", onLoad);
+        script.addEventListener("error", onError);
+        document.head.appendChild(script);
+      } else {
+        script.addEventListener("load", onLoad);
+        script.addEventListener("error", onError);
+      }
+
+      timeoutId = window.setTimeout(() => {
+        if (!window.kakao?.maps) {
+          markError(`도메인 허용 설정을 확인해주세요: ${window.location.origin}`);
+        }
+      }, 10000);
+
+      return () => {
+        script?.removeEventListener("load", onLoad);
+        script?.removeEventListener("error", onError);
+      };
+    };
+
+    const cleanup = loadMapApi();
+
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+      cleanup?.();
+    };
   }, []);
 
-  return ready;
+  return { ready, error };
 };
 
 const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
@@ -34,17 +87,13 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
   const markersRef = useRef<kakao.maps.Marker[]>([]);
   const overlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const onSelectCb = useCallback(onSelect, [onSelect]);
-  const ready = useKakaoMapReady();
+  const { ready, error } = useKakaoMapReady();
 
-  // Init map
   useEffect(() => {
     if (!ready || !containerRef.current || mapRef.current) return;
 
     const center = new kakao.maps.LatLng(CHUNCHEON_CENTER.lat, CHUNCHEON_CENTER.lng);
-    const map = new kakao.maps.Map(containerRef.current, {
-      center,
-      level: DEFAULT_LEVEL,
-    });
+    const map = new kakao.maps.Map(containerRef.current, { center, level: DEFAULT_LEVEL });
     mapRef.current = map;
 
     return () => {
@@ -52,17 +101,14 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
     };
   }, [ready]);
 
-  // Update markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
-    if (overlayRef.current) {
-      overlayRef.current.setMap(null);
-      overlayRef.current = null;
-    }
+    overlayRef.current?.setMap(null);
+    overlayRef.current = null;
 
     const defaultImage = new kakao.maps.MarkerImage(
       "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
@@ -85,48 +131,53 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
         zIndex: isSelected ? 10 : 1,
       });
 
-      kakao.maps.event.addListener(marker, "click", () => {
-        onSelectCb(r.id);
-      });
+      kakao.maps.event.addListener(marker, "click", () => onSelectCb(r.id));
 
       if (isSelected) {
         const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
         const content = `
           <div style="padding:8px 12px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:160px;font-family:-apple-system,sans-serif;position:relative;">
-            <a href="${naverUrl}" target="_blank" rel="noopener noreferrer" 
-               style="text-decoration:none;font-weight:700;font-size:14px;color:#333;display:block;">
-              ${r.name}
-            </a>
+            <a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;font-size:14px;color:#333;display:block;">${r.name}</a>
             <div style="font-size:11px;color:#999;margin-top:3px;">탭하면 네이버지도로 이동</div>
             <div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid white;"></div>
           </div>
         `;
 
-        const overlay = new kakao.maps.CustomOverlay({
+        overlayRef.current = new kakao.maps.CustomOverlay({
           content,
           position,
           map,
           yAnchor: 1.4,
           xAnchor: 0.5,
         });
-        overlayRef.current = overlay;
       }
 
       markersRef.current.push(marker);
     });
   }, [restaurants, selectedId, onSelectCb, ready]);
 
-  // Pan to selected
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedId) return;
 
-    const r = restaurants.find((restaurant) => restaurant.id === selectedId);
-    if (r) {
-      map.setLevel(4, { animate: { duration: 300 } });
-      map.panTo(new kakao.maps.LatLng(r.lat, r.lng));
-    }
+    const selected = restaurants.find((restaurant) => restaurant.id === selectedId);
+    if (!selected) return;
+
+    map.setLevel(4, { animate: { duration: 300 } });
+    map.panTo(new kakao.maps.LatLng(selected.lat, selected.lng));
   }, [selectedId, restaurants]);
+
+  if (error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-muted/30 p-4">
+        <div className="flex max-w-sm flex-col items-center gap-2 rounded-lg border border-border bg-background/95 px-4 py-3 text-center">
+          <AlertTriangle className="h-5 w-5 text-destructive" />
+          <p className="text-sm font-medium">지도를 불러오지 못했습니다</p>
+          <p className="text-xs text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!ready) {
     return (
@@ -139,7 +190,7 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
     );
   }
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return <div ref={containerRef} className="h-full w-full" />;
 };
 
 export default MapView;
