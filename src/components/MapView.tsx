@@ -119,20 +119,27 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
     // 춘천 범위 제한
     const sw = new kakao.maps.LatLng(37.734, 127.58);
     const ne = new kakao.maps.LatLng(38.02, 127.92);
+    const chuncheonCenter = new kakao.maps.LatLng(CHUNCHEON_CENTER.lat, CHUNCHEON_CENTER.lng);
     const bounds = new (kakao.maps as any).LatLngBounds(sw, ne);
 
-    kakao.maps.event.addListener(map, "dragend", () => {
-      const center = (map as any).getCenter();
-      if (!bounds.contain(center)) {
-        const lat = Math.max(sw.getLat(), Math.min(ne.getLat(), center.getLat()));
-        const lng = Math.max(sw.getLng(), Math.min(ne.getLng(), center.getLng()));
+    const clampToChuncheon = () => {
+      const c = (map as any).getCenter();
+      if (!bounds.contain(c)) {
+        const lat = Math.max(sw.getLat(), Math.min(ne.getLat(), c.getLat()));
+        const lng = Math.max(sw.getLng(), Math.min(ne.getLng(), c.getLng()));
         map.setCenter(new kakao.maps.LatLng(lat, lng));
       }
-    });
+    };
+
+    kakao.maps.event.addListener(map, "dragend", clampToChuncheon);
+    kakao.maps.event.addListener(map, "idle", clampToChuncheon);
 
     kakao.maps.event.addListener(map, "zoom_changed", () => {
       const level = map.getLevel();
-      if (level > 9) map.setLevel(9);
+      if (level > 7) {
+        map.setLevel(7);
+        map.setCenter(chuncheonCenter);
+      }
     });
 
     return () => {
