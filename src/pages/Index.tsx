@@ -166,6 +166,9 @@ const Index = () => {
                 <Navigation className="h-4 w-4 text-muted-foreground" />
               </button>
             )}
+            <Link to="/install" className="glass rounded-lg w-8 h-8 flex items-center justify-center">
+              <Download className="h-4 w-4 text-muted-foreground" />
+            </Link>
             <div className="glass rounded-lg">
               <ThemeToggle />
             </div>
@@ -238,6 +241,15 @@ const Index = () => {
               <span className="text-[10px] text-primary/60 font-medium">📍 위치 ON</span>
             )}
             <ThemeToggle />
+            <Link to="/install">
+              <button
+                className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
+                title="앱 설치"
+                aria-label="앱 설치"
+              >
+                <Download className="h-4 w-4 text-muted-foreground/50" />
+              </button>
+            </Link>
             <Link to="/admin">
               <button
                 className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
