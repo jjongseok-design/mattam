@@ -118,6 +118,59 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "approve_tip": {
+        // 1. Update tip status to approved
+        const { error: tipErr } = await supabase
+          .from("tips")
+          .update({ status: "approved" })
+          .eq("id", data.tip_id);
+        if (tipErr) throw tipErr;
+
+        // 2. Generate restaurant ID based on category prefix
+        const { data: catData } = await supabase
+          .from("categories")
+          .select("id_prefix")
+          .eq("id", data.category)
+          .single();
+        
+        const prefix = catData?.id_prefix || "xx";
+        
+        // Find max existing id with this prefix
+        const { data: existing } = await supabase
+          .from("restaurants")
+          .select("id")
+          .like("id", `${prefix}%`);
+        
+        let maxNum = 0;
+        if (existing) {
+          for (const r of existing) {
+            const m = r.id.match(new RegExp(`^${prefix}(\\d+)$`));
+            if (m) maxNum = Math.max(maxNum, parseInt(m[1]));
+          }
+        }
+        const newId = `${prefix}${String(maxNum + 1).padStart(2, "0")}`;
+
+        // 3. Insert restaurant
+        const restaurant = {
+          id: newId,
+          name: data.restaurant_name,
+          category: data.category,
+          address: data.address || "춘천시",
+          lat: data.lat || 37.8813,
+          lng: data.lng || 127.7298,
+          rating: 0,
+          review_count: 0,
+          tags: [],
+          description: data.reason || null,
+        };
+
+        const { error: insertErr } = await supabase.from("restaurants").insert(restaurant);
+        if (insertErr) throw insertErr;
+
+        result = { success: true, restaurant };
+        break;
+      }
+
       case "bulk_update_category": {
         const { error } = await supabase
           .from("restaurants")
@@ -152,7 +205,6 @@ Deno.serve(async (req) => {
       }
 
       case "category_reorder": {
-        // data: { updates: [{ id, sort_order }] }
         for (const u of data.updates) {
           const { error } = await supabase
             .from("categories")
