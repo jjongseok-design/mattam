@@ -1,16 +1,8 @@
 import { useEffect, useRef, useCallback } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
-const CHUNCHEON_CENTER: L.LatLngExpression = [37.8813, 127.73];
-const DEFAULT_ZOOM = 13;
-
-// 춘천시 행정구역 경계 (대략적인 범위)
-const CHUNCHEON_BOUNDS = L.latLngBounds(
-  L.latLng(37.7340, 127.5800), // 남서쪽
-  L.latLng(38.0200, 127.9200)  // 북동쪽
-);
+const CHUNCHEON_CENTER = { lat: 37.8813, lng: 127.73 };
+const DEFAULT_LEVEL = 7; // Kakao zoom level (smaller = closer)
 
 interface MapViewProps {
   restaurants: Restaurant[];
@@ -18,59 +10,32 @@ interface MapViewProps {
   onSelect: (id: string) => void;
 }
 
-// Fix default marker icon issue with bundlers
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
-
-const defaultIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-});
-
-const selectedIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [32, 52],
-  iconAnchor: [16, 52],
-  popupAnchor: [1, -40],
-  className: "selected-marker",
-});
-
 const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.Marker[]>([]);
-
+  const mapRef = useRef<kakao.maps.Map | null>(null);
+  const markersRef = useRef<kakao.maps.Marker[]>([]);
+  const overlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const onSelectCb = useCallback(onSelect, [onSelect]);
 
   // Init map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = L.map(containerRef.current, {
-      maxBounds: CHUNCHEON_BOUNDS,
-      maxBoundsViscosity: 1.0,
-      minZoom: 11,
-      maxZoom: 18,
-    }).setView(CHUNCHEON_CENTER, DEFAULT_ZOOM);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      bounds: CHUNCHEON_BOUNDS,
-    }).addTo(map);
+    const initMap = () => {
+      if (!containerRef.current) return;
+      const center = new kakao.maps.LatLng(CHUNCHEON_CENTER.lat, CHUNCHEON_CENTER.lng);
+      const map = new kakao.maps.Map(containerRef.current, {
+        center,
+        level: DEFAULT_LEVEL,
+      });
+      mapRef.current = map;
+    };
 
-    mapRef.current = map;
+    if (window.kakao && window.kakao.maps) {
+      kakao.maps.load(initMap);
+    }
 
     return () => {
-      map.remove();
       mapRef.current = null;
     };
   }, []);
@@ -80,56 +45,61 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Clear old markers
-    markersRef.current.forEach((m) => m.remove());
+    // Clear old markers & overlay
+    markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
+    if (overlayRef.current) {
+      overlayRef.current.setMap(null);
+      overlayRef.current = null;
+    }
+
+    const defaultImage = new kakao.maps.MarkerImage(
+      "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
+      new kakao.maps.Size(24, 35)
+    );
+
+    const selectedImage = new kakao.maps.MarkerImage(
+      "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
+      new kakao.maps.Size(32, 46)
+    );
 
     restaurants.forEach((r) => {
       const isSelected = r.id === selectedId;
-      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
+      const position = new kakao.maps.LatLng(r.lat, r.lng);
 
-      const marker = L.marker([r.lat, r.lng], {
-        icon: isSelected ? selectedIcon : defaultIcon,
-        zIndexOffset: isSelected ? 1000 : 0,
-      }).addTo(map);
+      const marker = new kakao.maps.Marker({
+        position,
+        map,
+        image: isSelected ? selectedImage : defaultImage,
+        zIndex: isSelected ? 10 : 1,
+      });
 
-      const popupEl = document.createElement("div");
-      popupEl.style.minWidth = "170px";
-      popupEl.style.lineHeight = "1.4";
-
-      const link = document.createElement("a");
-      link.href = naverUrl;
-      link.rel = "noopener noreferrer";
-      link.style.cssText = "text-decoration:none;font-weight:700;display:block;";
-      link.textContent = r.name;
-
-      const goToNaver = (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        window.location.assign(naverUrl);
-      };
-
-      link.addEventListener("click", goToNaver);
-      link.addEventListener("touchend", goToNaver);
-
-      const desc = document.createElement("div");
-      desc.style.cssText = "font-size:12px;opacity:0.7;margin-top:2px;";
-      desc.textContent = "탭하면 네이버지도로 이동";
-
-      popupEl.appendChild(link);
-      popupEl.appendChild(desc);
-      L.DomEvent.disableClickPropagation(popupEl);
-
-      marker.bindPopup(popupEl, { closeButton: false, autoPan: true });
+      kakao.maps.event.addListener(marker, "click", () => {
+        onSelectCb(r.id);
+      });
 
       if (isSelected) {
-        marker.openPopup();
-      }
+        const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
+        const content = `
+          <div style="padding:8px 12px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:160px;font-family:-apple-system,sans-serif;position:relative;">
+            <a href="${naverUrl}" target="_blank" rel="noopener noreferrer" 
+               style="text-decoration:none;font-weight:700;font-size:14px;color:#333;display:block;">
+              ${r.name}
+            </a>
+            <div style="font-size:11px;color:#999;margin-top:3px;">탭하면 네이버지도로 이동</div>
+            <div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid white;"></div>
+          </div>
+        `;
 
-      marker.on("click", () => {
-        onSelectCb(r.id);
-        marker.openPopup();
-      });
+        const overlay = new kakao.maps.CustomOverlay({
+          content,
+          position,
+          map,
+          yAnchor: 1.4,
+          xAnchor: 0.5,
+        });
+        overlayRef.current = overlay;
+      }
 
       markersRef.current.push(marker);
     });
@@ -142,7 +112,8 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
 
     const r = restaurants.find((restaurant) => restaurant.id === selectedId);
     if (r) {
-      map.setView([r.lat, r.lng], 15, { animate: true });
+      map.setLevel(4, { animate: { duration: 300 } });
+      map.panTo(new kakao.maps.LatLng(r.lat, r.lng));
     }
   }, [selectedId, restaurants]);
 
