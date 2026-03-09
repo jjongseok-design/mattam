@@ -155,22 +155,29 @@ const Index = () => {
     return (
       <>
         <div className="relative h-dvh w-screen overflow-hidden bg-background">
-          {/* Mobile top buttons */}
-          <div className="absolute top-3 right-3 z-[1300] flex items-center gap-2">
-            {!position && (
-              <button
-                onClick={handleLocationRequest}
-                className="glass rounded-lg w-8 h-8 flex items-center justify-center"
-                aria-label="내 위치 찾기"
-              >
-                <Navigation className="h-4 w-4 text-muted-foreground" />
-              </button>
-            )}
-            <Link to="/install" className="glass rounded-lg w-8 h-8 flex items-center justify-center">
-              <Download className="h-4 w-4 text-muted-foreground" />
-            </Link>
-            <div className="glass rounded-lg">
-              <ThemeToggle />
+        {/* Mobile top bar */}
+          <div className="absolute top-0 left-0 right-0 z-[1300] p-3 flex items-start gap-2">
+            {/* Tour Progress - compact mobile version */}
+            <div className="flex-1 min-w-0">
+              <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} />
+            </div>
+            {/* Action buttons */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
+              {!position && (
+                <button
+                  onClick={handleLocationRequest}
+                  className="glass rounded-lg w-8 h-8 flex items-center justify-center"
+                  aria-label="내 위치 찾기"
+                >
+                  <Navigation className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
+              <Link to="/install" className="glass rounded-lg w-8 h-8 flex items-center justify-center">
+                <Download className="h-4 w-4 text-muted-foreground" />
+              </Link>
+              <div className="glass rounded-lg">
+                <ThemeToggle />
+              </div>
             </div>
           </div>
           <div className="absolute inset-0 z-0">
