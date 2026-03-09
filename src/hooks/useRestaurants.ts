@@ -23,24 +23,7 @@ export interface Restaurant {
 export const useRestaurants = () => {
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const channel = supabase
-      .channel("restaurants-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "restaurants" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["restaurants"] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
-  return useQuery({
+  const query = useQuery({
     queryKey: ["restaurants"],
     queryFn: async (): Promise<Restaurant[]> => {
       const { data, error } = await supabase
@@ -69,4 +52,23 @@ export const useRestaurants = () => {
       }));
     },
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("restaurants-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "restaurants" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["restaurants"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return query;
 };
