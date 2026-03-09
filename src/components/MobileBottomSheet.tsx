@@ -4,6 +4,7 @@ import { ChevronUp, Grid3X3 } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
 import CategoryTabs, { CategoryId } from "./CategoryTabs";
+import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
 interface MobileBottomSheetProps {
@@ -20,14 +21,6 @@ interface MobileBottomSheetProps {
 }
 
 type SheetState = "peek" | "half" | "full";
-
-const CATEGORY_EMOJI: Record<string, string> = {
-  "닭갈비": "🍗", "막국수": "🍜", "중국집": "🥟", "갈비탕": "🍖",
-  "삼계탕": "🐔", "칼국수": "🍜", "수제버거": "🍔", "삼겹살": "🥓",
-  "초밥": "🍣", "일식": "🍱", "감자탕": "🥘", "한우": "🥩",
-  "돼지갈비": "🍖", "이탈리안": "🍝", "베이커리": "🥐", "설렁탕/곰탕": "🍲",
-  "보쌈/족발": "🐷", "돈까스": "🍛",
-};
 
 const MobileBottomSheet = ({
   restaurants,
@@ -56,13 +49,11 @@ const MobileBottomSheet = ({
     const dy = info.offset.y;
 
     if (vy < -200 || dy < -80) {
-      // Swiping up
       if (state === "peek") setState("half");
       else setState("full");
       return;
     }
     if (vy > 200 || dy > 80) {
-      // Swiping down
       if (state === "full") setState("half");
       else {
         setState("peek");
@@ -99,6 +90,7 @@ const MobileBottomSheet = ({
         <button
           onClick={isPeek ? handlePeekTap : () => setState(state === "full" ? "half" : "full")}
           className="w-full flex flex-col items-center pt-3 pb-2"
+          aria-label={isPeek ? "목록 펼치기" : "목록 접기/펼치기"}
         >
           <div className="w-9 h-[3px] rounded-full bg-muted-foreground/20 mb-2" />
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 font-medium">
@@ -120,6 +112,7 @@ const MobileBottomSheet = ({
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-muted/80 text-foreground hover:bg-muted"
                 }`}
+                aria-label="카테고리 선택"
               >
                 <Grid3X3 className="h-3.5 w-3.5" />
                 {category}

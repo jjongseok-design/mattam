@@ -1,7 +1,8 @@
-import { Star, MapPin, Phone, CheckCircle2, ExternalLink, Share2 } from "lucide-react";
+import { Star, MapPin, Phone, CheckCircle2, ExternalLink, Share2, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
+import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import { useToast } from "@/hooks/use-toast";
 
 interface RestaurantCardProps {
@@ -11,15 +12,6 @@ interface RestaurantCardProps {
   onClick: () => void;
   onToggleVisited: (e: React.MouseEvent) => void;
 }
-
-const CATEGORY_EMOJI: Record<string, string> = {
-  "닭갈비": "🍗", "막국수": "🍜", "중국집": "🥟", "갈비탕": "🍖",
-  "삼계탕": "🐔", "칼국수": "🍜", "수제버거": "🍔", "삼겹살": "🥓",
-  "초밥": "🍣", "일식": "🍱", "감자탕": "🥘", "한우": "🥩",
-  "돼지갈비": "🍖", "이탈리안": "🍝", "베이커리": "🥐", "설렁탕/곰탕": "🍲",
-  "보쌈/족발": "🐷", "돈까스": "🍛", "찌개류": "🍲", "국밥류": "🍜",
-  "생선구이": "🐟", "통닭": "🍗", "카페": "☕", "기타": "🍴",
-};
 
 const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVisited }: RestaurantCardProps) => {
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
@@ -47,6 +39,7 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
       exit={{ opacity: 0, scale: 0.97 }}
       whileTap={{ scale: 0.985 }}
       onClick={onClick}
+      aria-label={`${restaurant.name} - 평점 ${restaurant.rating}`}
       className={`group w-full text-left p-4 rounded-2xl transition-all duration-300 border ${
         isSelected
           ? "border-primary/30 bg-card shadow-card-selected"
@@ -77,7 +70,7 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
           <button
             onClick={handleShare}
             className="p-1 rounded-full text-muted-foreground/30 hover:text-primary/70 transition-all duration-200"
-            title="공유"
+            aria-label="공유하기"
           >
             <Share2 className="h-[16px] w-[16px]" />
           </button>
@@ -88,7 +81,7 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
                 ? "text-primary"
                 : "text-muted-foreground/30 hover:text-primary/50"
             }`}
-            title={isVisited ? "방문 취소" : "방문 표시"}
+            aria-label={isVisited ? "방문 취소" : "방문 표시"}
           >
             <CheckCircle2 className={`h-[18px] w-[18px] ${isVisited ? "fill-primary/15" : ""}`} />
           </button>
@@ -112,6 +105,12 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
             {restaurant.priceRange && (
               <span className="ml-auto text-[11px] font-medium text-foreground/60">{restaurant.priceRange}</span>
             )}
+          </div>
+        )}
+        {restaurant.openingHours && (
+          <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <Clock className="h-3 w-3 flex-shrink-0 text-primary/40" />
+            <span className="truncate">{restaurant.openingHours}</span>
           </div>
         )}
       </div>
@@ -143,6 +142,7 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
           </Link>
           <a
             href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + ' 춘천')}`}
+            target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary font-medium transition-colors"

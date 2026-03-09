@@ -49,7 +49,7 @@ const TipForm = () => {
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-5 right-5 z-40 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-        title="맛집 제보"
+        aria-label="맛집 제보하기"
       >
         <MessageSquarePlus className="h-5 w-5" />
       </button>
@@ -63,6 +63,9 @@ const TipForm = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={(e) => e.target === e.currentTarget && setOpen(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="맛집 제보"
           >
             <motion.div
               initial={{ y: 100, opacity: 0 }}
@@ -76,7 +79,7 @@ const TipForm = () => {
                   <MessageSquarePlus className="h-5 w-5 text-primary" />
                   맛집 제보
                 </h2>
-                <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-muted">
+                <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-muted" aria-label="닫기">
                   <X className="h-5 w-5 text-muted-foreground" />
                 </button>
               </div>
@@ -87,8 +90,9 @@ const TipForm = () => {
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium">식당 이름 *</label>
+                  <label className="text-sm font-medium" htmlFor="tip-name">식당 이름 *</label>
                   <Input
+                    id="tip-name"
                     value={form.restaurant_name}
                     onChange={(e) => setForm({ ...form, restaurant_name: e.target.value })}
                     placeholder="예: 홍길동 칼국수"
@@ -96,8 +100,9 @@ const TipForm = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">업종</label>
+                  <label className="text-sm font-medium" htmlFor="tip-category">업종</label>
                   <select
+                    id="tip-category"
                     value={form.category}
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -110,8 +115,9 @@ const TipForm = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">주소 / 위치 설명</label>
+                  <label className="text-sm font-medium" htmlFor="tip-address">주소 / 위치 설명</label>
                   <Input
+                    id="tip-address"
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                     placeholder="예: 후평동 사거리 근처"
@@ -119,8 +125,9 @@ const TipForm = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">추천 이유</label>
+                  <label className="text-sm font-medium" htmlFor="tip-reason">추천 이유</label>
                   <Textarea
+                    id="tip-reason"
                     value={form.reason}
                     onChange={(e) => setForm({ ...form, reason: e.target.value })}
                     placeholder="예: 현지인들만 아는 숨은 맛집, 칼국수가 정말 맛있어요!"

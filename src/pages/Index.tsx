@@ -7,13 +7,13 @@ import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
 import CategoryTabs, { CategoryId } from "@/components/CategoryTabs";
 import TipForm from "@/components/TipForm";
+import ThemeToggle from "@/components/ThemeToggle";
+import ErrorState from "@/components/ErrorState";
 import JsonLd from "@/components/JsonLd";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
 import { AnimatePresence } from "framer-motion";
-
-const BUILD_TAG = "2026.03.08-r2";
 
 const Index = () => {
   const [query, setQuery] = useState("");
@@ -21,7 +21,7 @@ const Index = () => {
   const [category, setCategory] = useState<CategoryId>("닭갈비");
   
   const isMobile = useIsMobile();
-  const { data: restaurants = [], isLoading } = useRestaurants();
+  const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
   const { isVisited, toggle: toggleVisited } = useVisited();
 
   const handleCategoryChange = useCallback((cat: CategoryId) => {
@@ -59,11 +59,21 @@ const Index = () => {
     );
   }
 
+  if (isError) {
+    return <ErrorState onRetry={() => refetch()} />;
+  }
+
   // Mobile layout
   if (isMobile) {
     return (
       <>
         <div className="relative h-dvh w-screen overflow-hidden bg-background">
+          {/* Mobile theme toggle */}
+          <div className="absolute top-3 right-3 z-[1300]">
+            <div className="glass rounded-lg">
+              <ThemeToggle />
+            </div>
+          </div>
           <div className="absolute inset-0 z-0">
             <MapView
               restaurants={filtered}
@@ -108,8 +118,13 @@ const Index = () => {
                 강원특별자치도 춘천시 · {categoryRestaurants.length}개 식당
               </p>
             </div>
+            <ThemeToggle />
             <Link to="/admin">
-              <button className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="관리자">
+              <button
+                className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
+                title="관리자"
+                aria-label="관리자 설정"
+              >
                 <Settings className="h-4 w-4 text-muted-foreground/50" />
               </button>
             </Link>

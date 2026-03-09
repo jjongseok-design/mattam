@@ -39,12 +39,15 @@ export type Database = {
         Row: {
           address: string
           category: string
+          closed_days: string | null
           created_at: string
           description: string | null
           id: string
+          image_url: string | null
           lat: number
           lng: number
           name: string
+          opening_hours: string | null
           phone: string | null
           price_range: string | null
           rating: number
@@ -55,12 +58,15 @@ export type Database = {
         Insert: {
           address: string
           category?: string
+          closed_days?: string | null
           created_at?: string
           description?: string | null
           id: string
+          image_url?: string | null
           lat: number
           lng: number
           name: string
+          opening_hours?: string | null
           phone?: string | null
           price_range?: string | null
           rating?: number
@@ -71,12 +77,15 @@ export type Database = {
         Update: {
           address?: string
           category?: string
+          closed_days?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           lat?: number
           lng?: number
           name?: string
+          opening_hours?: string | null
           phone?: string | null
           price_range?: string | null
           rating?: number

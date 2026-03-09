@@ -14,6 +14,9 @@ export interface Restaurant {
   priceRange: string;
   tags: string[];
   description?: string;
+  imageUrl?: string;
+  openingHours?: string;
+  closedDays?: string;
 }
 
 export const useRestaurants = () => {
@@ -27,7 +30,7 @@ export const useRestaurants = () => {
 
       if (error) throw error;
 
-      return (data ?? []).map((r) => ({
+      return (data ?? []).map((r: any) => ({
         id: r.id,
         name: r.name,
         category: r.category,
@@ -40,6 +43,9 @@ export const useRestaurants = () => {
         priceRange: r.price_range ?? "",
         tags: r.tags ?? [],
         description: r.description ?? undefined,
+        imageUrl: r.image_url ?? undefined,
+        openingHours: r.opening_hours ?? undefined,
+        closedDays: r.closed_days ?? undefined,
       }));
     },
   });
