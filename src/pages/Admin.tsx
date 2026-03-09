@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound, MessageSquarePlus, Check, X } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound, MessageSquarePlus, Check, X, GripVertical, ChevronUp, ChevronDown, Settings2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { CATEGORIES, type CategoryId } from "@/components/CategoryTabs";
+import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
 import { motion } from "framer-motion";
 
 interface RestaurantRow {
@@ -24,115 +24,7 @@ interface RestaurantRow {
   description: string | null;
 }
 
-const CATEGORY_TAG_SUGGESTIONS: Record<string, { placeholder: string; suggestions: string[]; idPrefix: string }> = {
-  "닭갈비": {
-    placeholder: "닭갈비, 숯불닭갈비, 철판닭갈비",
-    suggestions: ["닭갈비", "숯불닭갈비", "철판닭갈비", "닭내장", "닭목살", "막국수", "볶음밥", "우동사리", "간장닭갈비", "삼색닭갈비"],
-    idPrefix: "dc",
-  },
-  "막국수": {
-    placeholder: "막국수, 비빔막국수, 편육",
-    suggestions: ["물막국수", "비빔막국수", "순메밀막국수", "편육", "메밀전병", "감자전", "녹두전", "보쌈", "메밀전", "들기름막국수"],
-    idPrefix: "mk",
-  },
-  "중화요리": {
-    placeholder: "짬뽕, 탕수육, 짜장면",
-    suggestions: ["짜장면", "짬뽕", "탕수육", "볶음밥", "군만두", "간짜장", "울면", "마라탕", "코스요리", "해물짬뽕"],
-    idPrefix: "cn",
-  },
-  "갈비탕": {
-    placeholder: "갈비탕, 소갈비탕, 한식",
-    suggestions: ["갈비탕", "소갈비탕", "왕갈비탕", "설렁탕", "도가니탕", "한식", "수육", "갈비찜"],
-    idPrefix: "gb",
-  },
-  "삼계탕": {
-    placeholder: "삼계탕, 한방삼계탕, 옻닭",
-    suggestions: ["삼계탕", "한방삼계탕", "옻닭", "백숙", "녹두삼계탕", "전복삼계탕", "인삼주", "수정과"],
-    idPrefix: "sg",
-  },
-  "칼국수": {
-    placeholder: "칼국수, 손칼국수, 샤브샤브",
-    suggestions: ["칼국수", "손칼국수", "샤브샤브", "바지락칼국수", "해물칼국수", "수제비", "만두", "들깨칼국수"],
-    idPrefix: "kk",
-  },
-  "수제버거": {
-    placeholder: "수제버거, 치즈버거, 감자튀김",
-    suggestions: ["수제버거", "치즈버거", "베이컨버거", "감자튀김", "어니언링", "쉐이크", "핫도그", "치킨버거"],
-    idPrefix: "bg",
-  },
-  "삼겹살": {
-    placeholder: "삼겹살, 목살, 구이",
-    suggestions: ["삼겹살", "목살", "항정살", "껍데기", "냉삼", "숯불구이", "된장찌개", "파김치", "미나리"],
-    idPrefix: "sp",
-  },
-  "초밥": {
-    placeholder: "초밥, 사시미, 오마카세",
-    suggestions: ["초밥", "사시미", "연어초밥", "광어초밥", "오마카세", "모듬초밥", "우동", "미소시루"],
-    idPrefix: "sb",
-  },
-  "일식": {
-    placeholder: "라멘, 소바, 초밥, 횟집",
-    suggestions: ["라멘", "소바", "우동", "스시", "초밥", "사케동", "이자카야", "오마카세", "텐동", "카레", "송어회", "활어회", "매운탕", "향어회"],
-    idPrefix: "jp",
-  },
-  "감자탕": {
-    placeholder: "감자탕, 뼈해장국, 등뼈찜",
-    suggestions: ["감자탕", "뼈해장국", "등뼈찜", "해장국", "수육", "볶음밥", "우거지탕"],
-    idPrefix: "gj",
-  },
-  "한우": {
-    placeholder: "한우, 등심, 안심",
-    suggestions: ["한우", "등심", "안심", "채끝", "꽃등심", "육회", "한우국밥", "불고기"],
-    idPrefix: "hw",
-  },
-  "돼지갈비": {
-    placeholder: "돼지갈비, 양념갈비, 생갈비",
-    suggestions: ["돼지갈비", "양념갈비", "생갈비", "갈비찜", "냉면", "된장찌개", "공기밥"],
-    idPrefix: "dg",
-  },
-  "이탈리안": {
-    placeholder: "파스타, 피자, 리조또",
-    suggestions: ["파스타", "피자", "화덕피자", "리조또", "스테이크", "샐러드", "크림파스타", "알리오올리오", "마르게리타"],
-    idPrefix: "it",
-  },
-  "베이커리": {
-    placeholder: "크루아상, 앙버터, 식빵",
-    suggestions: ["크루아상", "앙버터", "소금빵", "식빵", "케이크", "마카롱", "보리빵", "맘모스빵", "타르트"],
-    idPrefix: "bk",
-  },
-  "국밥/탕류": {
-    placeholder: "설렁탕, 곰탕, 국밥, 찌개",
-    suggestions: ["설렁탕", "곰탕", "도가니탕", "소꼬리탕", "사골국", "수육", "선지국", "순대국밥", "돼지국밥", "소머리국밥", "김치찌개", "된장찌개", "순두부찌개", "부대찌개", "해장국"],
-    idPrefix: "hs",
-  },
-  "보쌈/족발": {
-    placeholder: "보쌈, 족발, 수육",
-    suggestions: ["보쌈", "족발", "수육", "막국수", "냉채족발", "마늘보쌈", "쟁반국수"],
-    idPrefix: "bj",
-  },
-  "돈까스": {
-    placeholder: "돈까스, 왕돈까스, 카츠",
-    suggestions: ["돈까스", "왕돈까스", "카츠", "경양식", "치즈돈까스", "카레", "소바", "냉모밀", "함박스테이크", "가성비"],
-    idPrefix: "dk",
-  },
-  "샤브샤브": {
-    placeholder: "샤브샤브, 월남쌈, 편백찜",
-    suggestions: ["샤브샤브", "월남쌈", "편백찜", "칼국수", "무한리필", "뷔페", "셀프바", "소고기샤브", "해물샤브", "1인샤브"],
-    idPrefix: "sv",
-  },
-  "카페": {
-    placeholder: "커피, 디저트, 브런치",
-    suggestions: ["커피", "라떼", "아메리카노", "디저트", "케이크", "브런치", "베이글", "스콘", "감자빵", "루프탑", "뷰맛집", "대형카페"],
-    idPrefix: "cf",
-  },
-  "기타": {
-    placeholder: "한정식, 백반, 분식, 동남아",
-    suggestions: ["한정식", "백반", "분식", "떡볶이", "쌀국수", "태국음식", "베트남음식", "김밥", "라면", "팟타이", "냉면"],
-    idPrefix: "etc",
-  },
-};
-
-const getEmptyForm = (category: CategoryId) => ({
+const getEmptyForm = (category: string) => ({
   id: "",
   name: "",
   category,
@@ -158,6 +50,8 @@ const adminApi = async (pin: string, action: string, data?: any) => {
 
 const Admin = () => {
   const { toast } = useToast();
+  const { data: categories = [] } = useCategories();
+  const invalidateCategories = useInvalidateCategories();
   const [pin, setPin] = useState("");
   const [pinInput, setPinInput] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
@@ -165,16 +59,23 @@ const Admin = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<RestaurantRow | null>(null);
-  const [form, setForm] = useState(getEmptyForm("중화요리"));
+  const [form, setForm] = useState(getEmptyForm("닭갈비"));
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showPinChange, setShowPinChange] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
-  const [adminCategory, setAdminCategory] = useState<CategoryId>("중화요리");
+  const [adminCategory, setAdminCategory] = useState<string>("닭갈비");
   const [tips, setTips] = useState<any[]>([]);
   const [showTips, setShowTips] = useState(false);
   const [tipsLoading, setTipsLoading] = useState(false);
+
+  // Category management state
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [catForm, setCatForm] = useState({ id: "", label: "", emoji: "🍴", id_prefix: "", tag_placeholder: "", tag_suggestions: "" });
+  const [editingCat, setEditingCat] = useState<CategoryRow | null>(null);
+  const [showCatForm, setShowCatForm] = useState(false);
+  const [catSaving, setCatSaving] = useState(false);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_pin");
@@ -183,6 +84,13 @@ const Admin = () => {
       setAuthenticated(true);
     }
   }, []);
+
+  // Set initial category when categories load
+  useEffect(() => {
+    if (categories.length > 0 && !categories.find(c => c.id === adminCategory)) {
+      setAdminCategory(categories[0].id);
+    }
+  }, [categories, adminCategory]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -255,8 +163,10 @@ const Admin = () => {
 
   const categoryCount = (catId: string) => restaurants.filter((r) => r.category === catId).length;
 
+  const currentCat = categories.find(c => c.id === adminCategory);
+
   const openNew = () => {
-    const prefix = (CATEGORY_TAG_SUGGESTIONS[adminCategory]?.idPrefix) ?? "xx";
+    const prefix = currentCat?.id_prefix ?? "xx";
     const maxNum = restaurants.reduce((max, r) => {
       const m = r.id.match(new RegExp(`^${prefix}(\\d+)$`));
       return m ? Math.max(max, parseInt(m[1])) : max;
@@ -271,7 +181,7 @@ const Admin = () => {
     setForm({
       id: r.id,
       name: r.name,
-      category: r.category as CategoryId,
+      category: r.category,
       address: r.address,
       phone: r.phone ?? "",
       rating: r.rating,
@@ -339,7 +249,8 @@ const Admin = () => {
     }
   };
 
-  const currentTagConfig = CATEGORY_TAG_SUGGESTIONS[form.category] ?? CATEGORY_TAG_SUGGESTIONS["중화요리"];
+  const currentTagSuggestions = currentCat?.tag_suggestions ?? [];
+  const currentTagPlaceholder = currentCat?.tag_placeholder ?? "";
 
   const toggleSuggestionTag = (tag: string) => {
     const currentTags = Array.isArray(form.tags) ? form.tags : (form.tags as string).split(",").map(t => t.trim()).filter(Boolean);
@@ -347,6 +258,126 @@ const Admin = () => {
       setForm({ ...form, tags: currentTags.filter(t => t !== tag) });
     } else {
       setForm({ ...form, tags: [...currentTags, tag] });
+    }
+  };
+
+  // === Category Management Functions ===
+  const openNewCategory = () => {
+    const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order), 0);
+    setCatForm({ id: "", label: "", emoji: "🍴", id_prefix: "", tag_placeholder: "", tag_suggestions: "" });
+    setEditingCat(null);
+    setShowCatForm(true);
+  };
+
+  const openEditCategory = (cat: CategoryRow) => {
+    setCatForm({
+      id: cat.id,
+      label: cat.label,
+      emoji: cat.emoji,
+      id_prefix: cat.id_prefix,
+      tag_placeholder: cat.tag_placeholder,
+      tag_suggestions: cat.tag_suggestions.join(", "),
+    });
+    setEditingCat(cat);
+    setShowCatForm(true);
+  };
+
+  const handleSaveCategory = async () => {
+    if (!catForm.id.trim() || !catForm.label.trim()) {
+      toast({ title: "ID와 이름은 필수입니다", variant: "destructive" });
+      return;
+    }
+    setCatSaving(true);
+    try {
+      const tags = catForm.tag_suggestions.split(",").map(t => t.trim()).filter(Boolean);
+      if (editingCat) {
+        // If ID changed, we need to update restaurants too
+        const oldId = editingCat.id;
+        const newId = catForm.id.trim();
+        
+        if (oldId !== newId) {
+          // Insert new category, update restaurants, delete old
+          const { error: insertErr } = await supabase.from("categories").insert({
+            id: newId,
+            label: catForm.label,
+            emoji: catForm.emoji,
+            id_prefix: catForm.id_prefix,
+            tag_placeholder: catForm.tag_placeholder,
+            tag_suggestions: tags,
+            sort_order: editingCat.sort_order,
+          } as any);
+          if (insertErr) throw insertErr;
+
+          // Update restaurants category
+          await adminApi(pin, "bulk_update_category", { old_category: oldId, new_category: newId });
+
+          const { error: delErr } = await supabase.from("categories").delete().eq("id", oldId);
+          if (delErr) throw delErr;
+        } else {
+          const { error } = await supabase.from("categories").update({
+            label: catForm.label,
+            emoji: catForm.emoji,
+            id_prefix: catForm.id_prefix,
+            tag_placeholder: catForm.tag_placeholder,
+            tag_suggestions: tags,
+          } as any).eq("id", editingCat.id);
+          if (error) throw error;
+        }
+      } else {
+        const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order), 0);
+        const { error } = await supabase.from("categories").insert({
+          id: catForm.id.trim(),
+          label: catForm.label,
+          emoji: catForm.emoji,
+          id_prefix: catForm.id_prefix || "xx",
+          tag_placeholder: catForm.tag_placeholder,
+          tag_suggestions: tags,
+          sort_order: maxOrder + 1,
+        } as any);
+        if (error) throw error;
+      }
+      invalidateCategories();
+      fetchAll();
+      setShowCatForm(false);
+      toast({ title: editingCat ? "카테고리 수정 완료 ✅" : "카테고리 추가 완료 ✅" });
+    } catch (err: any) {
+      toast({ title: "저장 실패", description: err.message, variant: "destructive" });
+    }
+    setCatSaving(false);
+  };
+
+  const handleDeleteCategory = async (cat: CategoryRow) => {
+    const count = categoryCount(cat.id);
+    if (count > 0) {
+      toast({ title: `이 카테고리에 ${count}개의 식당이 있습니다. 먼저 식당을 이동/삭제해주세요.`, variant: "destructive" });
+      return;
+    }
+    if (!confirm(`"${cat.label}" 카테고리를 삭제하시겠습니까?`)) return;
+    try {
+      const { error } = await supabase.from("categories").delete().eq("id", cat.id);
+      if (error) throw error;
+      invalidateCategories();
+      toast({ title: "카테고리 삭제 완료 ✅" });
+    } catch (err: any) {
+      toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleMoveCategory = async (cat: CategoryRow, direction: "up" | "down") => {
+    const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+    const idx = sorted.findIndex(c => c.id === cat.id);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return;
+
+    const other = sorted[swapIdx];
+    try {
+      await Promise.all([
+        supabase.from("categories").update({ sort_order: other.sort_order } as any).eq("id", cat.id),
+        supabase.from("categories").update({ sort_order: cat.sort_order } as any).eq("id", other.id),
+      ]);
+      invalidateCategories();
+    } catch (err: any) {
+      toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
     }
   };
 
@@ -424,6 +455,13 @@ const Admin = () => {
             </Button>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant={showCategoryManager ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowCategoryManager(!showCategoryManager)}
+            >
+              <Settings2 className="h-3.5 w-3.5 mr-1" /> 카테고리 관리
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowPinChange(true)}>
               <KeyRound className="h-3.5 w-3.5 mr-1" /> PIN 변경
             </Button>
@@ -438,9 +476,134 @@ const Admin = () => {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-4">
+        {/* Category Manager Panel */}
+        {showCategoryManager && (
+          <div className="mb-6 border border-border rounded-lg p-4 bg-card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Settings2 className="h-5 w-5 text-primary" />
+                카테고리 관리
+              </h2>
+              <Button size="sm" onClick={openNewCategory}>
+                <Plus className="h-4 w-4 mr-1" /> 새 카테고리
+              </Button>
+            </div>
+            <div className="space-y-1">
+              {categories.map((cat, idx) => (
+                <div
+                  key={cat.id}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      onClick={() => handleMoveCategory(cat, "up")}
+                      disabled={idx === 0}
+                      className="p-0.5 rounded hover:bg-muted disabled:opacity-20"
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => handleMoveCategory(cat, "down")}
+                      disabled={idx === categories.length - 1}
+                      className="p-0.5 rounded hover:bg-muted disabled:opacity-20"
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <span className="text-xl w-8 text-center">{cat.emoji}</span>
+                  <span className="font-medium flex-1">{cat.label}</span>
+                  <span className="text-xs text-muted-foreground">ID: {cat.id}</span>
+                  <span className="text-xs text-muted-foreground">접두사: {cat.id_prefix}</span>
+                  <span className="text-xs text-muted-foreground">({categoryCount(cat.id)}개)</span>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditCategory(cat)}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteCategory(cat)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Category Form Modal */}
+        {showCatForm && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-lg w-full max-w-md p-6 space-y-4">
+              <h2 className="text-lg font-bold">{editingCat ? "카테고리 수정" : "새 카테고리 추가"}</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium">카테고리 ID (DB 키) *</label>
+                  <Input
+                    value={catForm.id}
+                    onChange={(e) => setCatForm({ ...catForm, id: e.target.value })}
+                    placeholder="예: 중화요리"
+                  />
+                  {editingCat && editingCat.id !== catForm.id && (
+                    <p className="text-xs text-amber-600 mt-1">⚠️ ID 변경 시 해당 카테고리의 모든 식당이 자동으로 이동됩니다</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium">표시 이름 *</label>
+                  <Input
+                    value={catForm.label}
+                    onChange={(e) => setCatForm({ ...catForm, label: e.target.value })}
+                    placeholder="예: 중화요리"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">이모지</label>
+                    <Input
+                      value={catForm.emoji}
+                      onChange={(e) => setCatForm({ ...catForm, emoji: e.target.value })}
+                      placeholder="🍴"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">ID 접두사</label>
+                    <Input
+                      value={catForm.id_prefix}
+                      onChange={(e) => setCatForm({ ...catForm, id_prefix: e.target.value })}
+                      placeholder="예: cn"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">태그 플레이스홀더</label>
+                  <Input
+                    value={catForm.tag_placeholder}
+                    onChange={(e) => setCatForm({ ...catForm, tag_placeholder: e.target.value })}
+                    placeholder="예: 짬뽕, 탕수육, 짜장면"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">추천 태그 (쉼표 구분)</label>
+                  <Textarea
+                    value={catForm.tag_suggestions}
+                    onChange={(e) => setCatForm({ ...catForm, tag_suggestions: e.target.value })}
+                    placeholder="짜장면, 짬뽕, 탕수육"
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowCatForm(false)}>취소</Button>
+                <Button onClick={handleSaveCategory} disabled={catSaving}>
+                  {catSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  {editingCat ? "수정" : "추가"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Admin Category Tabs */}
-        <div className="grid grid-cols-11 gap-1.5 bg-muted rounded-lg p-2 mb-4">
-          {CATEGORIES.map((cat) => (
+        <div className="grid grid-cols-8 gap-1.5 bg-muted rounded-lg p-2 mb-4">
+          {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => { setAdminCategory(cat.id); setSearch(""); }}
@@ -538,11 +701,11 @@ const Admin = () => {
                     value={form.category}
                     onChange={(e) => {
                       const newCat = e.target.value;
-                      setForm({ ...form, category: newCat as CategoryId, tags: [] });
+                      setForm({ ...form, category: newCat, tags: [] });
                     }}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    {CATEGORIES.map((cat) => (
+                    {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>{cat.label}</option>
                     ))}
                   </select>
@@ -572,10 +735,10 @@ const Admin = () => {
                   <Input
                     value={Array.isArray(form.tags) ? form.tags.join(", ") : form.tags}
                     onChange={(e) => setForm({ ...form, tags: e.target.value as any })}
-                    placeholder={currentTagConfig.placeholder}
+                    placeholder={currentTagPlaceholder}
                   />
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {currentTagConfig.suggestions.map((tag) => {
+                    {currentTagSuggestions.map((tag) => {
                       const currentTags = Array.isArray(form.tags) ? form.tags : (form.tags as string).split(",").map(t => t.trim()).filter(Boolean);
                       const isSelected = currentTags.includes(tag);
                       return (
