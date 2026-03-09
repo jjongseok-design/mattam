@@ -19,6 +19,7 @@ const useKakaoMapReady = () => {
 
   useEffect(() => {
     let timeoutId: number | undefined;
+    let intervalId: number | undefined;
 
     const markError = (message: string) => {
       console.error("[KakaoMap]", message, {
@@ -29,58 +30,52 @@ const useKakaoMapReady = () => {
       setReady(false);
     };
 
-    const loadMapApi = () => {
-      if (window.kakao?.maps) {
-        console.info("[KakaoMap] SDK already loaded", window.location.origin);
-        kakao.maps.load(() => setReady(true));
-        return;
-      }
-
+    const ensureScript = () => {
       let script = document.getElementById(KAKAO_SCRIPT_ID) as HTMLScriptElement | null;
+      if (script) return script;
 
-      const onLoad = () => {
-        console.info("[KakaoMap] script loaded");
-        if (!window.kakao?.maps) {
-          markError("지도 SDK 초기화에 실패했습니다 (kakao.maps 없음)");
-          return;
-        }
-        kakao.maps.load(() => setReady(true));
-      };
-
-      const onError = () => {
-        markError("지도 SDK 스크립트 로드 실패 (도메인 허용/키 확인 필요)");
-      };
-
-      if (!script) {
-        script = document.createElement("script");
-        script.id = KAKAO_SCRIPT_ID;
-        script.async = true;
-        script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false`;
-        script.addEventListener("load", onLoad);
-        script.addEventListener("error", onError);
-        document.head.appendChild(script);
-      } else {
-        script.addEventListener("load", onLoad);
-        script.addEventListener("error", onError);
-      }
-
-      timeoutId = window.setTimeout(() => {
-        if (!window.kakao?.maps) {
-          markError(`10초 경과: 현재 도메인(${window.location.origin})이 허용 도메인에 등록됐는지 확인하세요`);
-        }
-      }, 10000);
-
-      return () => {
-        script?.removeEventListener("load", onLoad);
-        script?.removeEventListener("error", onError);
-      };
+      script = document.createElement("script");
+      script.id = KAKAO_SCRIPT_ID;
+      script.async = true;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false`;
+      document.head.appendChild(script);
+      return script;
     };
 
-    const cleanup = loadMapApi();
+    const script = ensureScript();
+
+    const tryInit = () => {
+      if (window.kakao?.maps) {
+        if (intervalId) window.clearInterval(intervalId);
+        if (timeoutId) window.clearTimeout(timeoutId);
+        kakao.maps.load(() => {
+          setError(null);
+          setReady(true);
+        });
+      }
+    };
+
+    const onError = () => {
+      markError("지도 SDK 스크립트 로드 실패 (도메인 허용/키 확인 필요)");
+    };
+
+    script.addEventListener("error", onError);
+
+    // 이벤트 유실을 막기 위해 주기적으로 SDK 준비 상태 확인
+    intervalId = window.setInterval(tryInit, 200);
+    tryInit();
+
+    timeoutId = window.setTimeout(() => {
+      if (!window.kakao?.maps) {
+        if (intervalId) window.clearInterval(intervalId);
+        markError(`10초 경과: 현재 도메인(${window.location.origin})이 허용 도메인에 등록됐는지 확인하세요`);
+      }
+    }, 10000);
 
     return () => {
+      if (intervalId) window.clearInterval(intervalId);
       if (timeoutId) window.clearTimeout(timeoutId);
-      cleanup?.();
+      script.removeEventListener("error", onError);
     };
   }, []);
 
