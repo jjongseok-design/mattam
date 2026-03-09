@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { MapPin, Utensils, Loader2, Settings, Navigation, Heart, Download } from "lucide-react";
+import { MapPin, Utensils, Loader2, Settings, Navigation, Heart, Download, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
@@ -21,8 +21,9 @@ import { useVisited } from "@/hooks/useVisited";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useGeolocation, getDistanceKm } from "@/hooks/useGeolocation";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,7 +31,8 @@ const Index = () => {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data: dbCategories = [] } = useCategories();
-  const [category, setCategory] = useState<string>(initialCat || "닭갈비");
+  // null means "category selection mode", string means "list mode"
+  const [category, setCategory] = useState<string | null>(initialCat || null);
   const [sort, setSort] = useState<SortOption>("rating");
   const [filter, setFilter] = useState<FilterOption>("all");
   const [ratingMin, setRatingMin] = useState(0);
@@ -47,11 +49,21 @@ const Index = () => {
 
   // Deep linking: sync category to URL
   useEffect(() => {
-    setSearchParams({ category }, { replace: true });
+    if (category) {
+      setSearchParams({ category }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
   }, [category, setSearchParams]);
 
   const handleCategoryChange = useCallback((cat: string) => {
     setCategory(cat);
+    setSelectedId(null);
+    setQuery("");
+  }, []);
+
+  const handleCloseCategory = useCallback(() => {
+    setCategory(null);
     setSelectedId(null);
     setQuery("");
   }, []);
@@ -84,7 +96,7 @@ const Index = () => {
   }, [selectedId]);
 
   const categoryRestaurants = useMemo(
-    () => restaurants.filter((r) => r.category === category),
+    () => category ? restaurants.filter((r) => r.category === category) : [],
     [restaurants, category]
   );
 
@@ -150,12 +162,14 @@ const Index = () => {
     return <ErrorState onRetry={() => refetch()} />;
   }
 
+  const categoryEmoji = category ? (CATEGORY_EMOJI[category] || "🍽️") : "";
+
   // Mobile layout
   if (isMobile) {
     return (
       <>
         <div className="relative h-dvh w-screen overflow-hidden bg-background">
-          {/* 당근마켓 스타일 상단 바 */}
+          {/* 상단 바 */}
           <div className="absolute top-0 left-0 right-0 z-[1300] safe-area-top bg-background/95 backdrop-blur-md border-b border-border/30" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
             {/* Row 1: Tour progress + action buttons */}
             <div className="px-4 pt-2 pb-1.5 flex items-center gap-2">
@@ -180,9 +194,27 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            {/* Row 2: 당근마켓 스타일 카테고리 가로 스크롤 pills */}
+
+            {/* Row 2: Category pills OR selected category header with close */}
             <div className="px-4 pb-2">
-              <CategoryTabs active={category} onChange={handleCategoryChange} variant="pills" />
+              {!category ? (
+                <CategoryTabs active="" onChange={handleCategoryChange} variant="pills" />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCloseCategory}
+                    className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform shrink-0"
+                    aria-label="카테고리 선택으로 돌아가기"
+                  >
+                    <X className="h-4 w-4 text-foreground" />
+                  </button>
+                  <span className="text-base font-bold text-foreground flex items-center gap-1.5">
+                    <span>{categoryEmoji}</span>
+                    <span>{category}</span>
+                    <span className="text-xs font-normal text-muted-foreground ml-1">{categoryRestaurants.length}개</span>
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -196,29 +228,32 @@ const Index = () => {
             />
           </div>
 
-          {/* Bottom Sheet */}
-          <MobileBottomSheet
-            restaurants={filtered}
-            selectedId={selectedId}
-            onSelect={handleSelect}
-            query={query}
-            onQueryChange={setQuery}
-            totalCount={categoryRestaurants.length}
-            category={category}
-            onCategoryChange={handleCategoryChange}
-            isVisited={isVisited}
-            onToggleVisited={toggleVisited}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            sort={sort}
-            onSortChange={setSort}
-            filter={filter}
-            onFilterChange={setFilter}
-            hasLocation={!!position}
-            ratingMin={ratingMin}
-            onRatingMinChange={setRatingMin}
-            getDistance={getDistance}
-          />
+          {/* Bottom Sheet - only when category selected */}
+          {category && (
+            <MobileBottomSheet
+              restaurants={filtered}
+              selectedId={selectedId}
+              onSelect={handleSelect}
+              query={query}
+              onQueryChange={setQuery}
+              totalCount={categoryRestaurants.length}
+              category={category}
+              onCategoryChange={handleCategoryChange}
+              isVisited={isVisited}
+              onToggleVisited={toggleVisited}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              sort={sort}
+              onSortChange={setSort}
+              filter={filter}
+              onFilterChange={setFilter}
+              hasLocation={!!position}
+              ratingMin={ratingMin}
+              onRatingMinChange={setRatingMin}
+              getDistance={getDistance}
+              onClose={handleCloseCategory}
+            />
+          )}
         </div>
         <TipForm />
         <JsonLd />
@@ -242,7 +277,7 @@ const Index = () => {
               <h1 className="text-lg font-bold text-foreground tracking-tight">춘천 맛집 지도</h1>
               <p className="text-[11px] text-muted-foreground/70 flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                강원특별자치도 춘천시 · {categoryRestaurants.length}개 식당
+                강원특별자치도 춘천시 {category ? `· ${categoryRestaurants.length}개 ${category}` : `· ${restaurants.length}개 식당`}
               </p>
             </div>
             {!position && (
@@ -278,66 +313,95 @@ const Index = () => {
               </button>
             </Link>
           </div>
-          <CategoryTabs active={category} onChange={handleCategoryChange} />
-          <div className="mt-3 flex gap-2">
-            <div className="flex-1">
-              <SearchBar query={query} onQueryChange={setQuery} />
-            </div>
-            <RandomPickButton restaurants={filtered} />
-          </div>
-          <div className="mt-2.5">
-            <SortFilterBar
-              sort={sort}
-              onSortChange={setSort}
-              filter={filter}
-              onFilterChange={setFilter}
-              hasLocation={!!position}
-              ratingMin={ratingMin}
-              onRatingMinChange={setRatingMin}
-            />
-          </div>
+
+          {/* Category selection or active category header */}
+          {!category ? (
+            <CategoryTabs active="" onChange={handleCategoryChange} />
+          ) : (
+            <>
+              <div className="flex items-center gap-2 mb-3">
+                <button
+                  onClick={handleCloseCategory}
+                  className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors shrink-0"
+                  aria-label="카테고리 선택으로 돌아가기"
+                >
+                  <X className="h-4 w-4 text-foreground" />
+                </button>
+                <span className="text-base font-bold text-foreground flex items-center gap-1.5">
+                  <span className="text-xl">{categoryEmoji}</span>
+                  <span>{category}</span>
+                </span>
+                <span className="text-xs text-muted-foreground ml-auto">{categoryRestaurants.length}개</span>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <SearchBar query={query} onQueryChange={setQuery} />
+                </div>
+                <RandomPickButton restaurants={filtered} />
+              </div>
+              <div className="mt-2.5">
+                <SortFilterBar
+                  sort={sort}
+                  onSortChange={setSort}
+                  filter={filter}
+                  onFilterChange={setFilter}
+                  hasLocation={!!position}
+                  ratingMin={ratingMin}
+                  onRatingMinChange={setRatingMin}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Divider */}
         <div className="h-px bg-border/60 mx-4" />
 
-        {/* Results */}
-        <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
-          <p className="text-[11px] text-muted-foreground/60 px-1.5 mb-1 font-medium">
-            {filtered.length}개 {category} ·{" "}
-            {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
-            {filter !== "all" && ` · ${filter === "favorites" ? "찜한 곳" : "방문한 곳"}`}
-          </p>
-          <AnimatePresence mode="popLayout">
-            {filtered.map((restaurant) => {
-              const dist = getDistance(restaurant.lat, restaurant.lng);
-              return (
-                <RestaurantCard
-                  key={restaurant.id}
-                  restaurant={restaurant}
-                  isSelected={selectedId === restaurant.id}
-                  isVisited={isVisited(restaurant.id)}
-                  isFavorite={isFavorite(restaurant.id)}
-                  distance={dist}
-                  onClick={() => handleSelect(restaurant.id)}
-                  onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
-                  onToggleFavorite={(e) => { e.stopPropagation(); toggleFavorite(restaurant.id); }}
-                />
-              );
-            })}
-          </AnimatePresence>
-          {filtered.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground">
-              <Utensils className="h-8 w-8 mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-medium">검색 결과가 없습니다</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">다른 키워드로 검색해보세요</p>
+        {/* Results - only when category selected */}
+        {category ? (
+          <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+            <p className="text-[11px] text-muted-foreground/60 px-1.5 mb-1 font-medium">
+              {filtered.length}개 {category} ·{" "}
+              {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
+              {filter !== "all" && ` · ${filter === "favorites" ? "찜한 곳" : "방문한 곳"}`}
+            </p>
+            <AnimatePresence mode="popLayout">
+              {filtered.map((restaurant) => {
+                const dist = getDistance(restaurant.lat, restaurant.lng);
+                return (
+                  <RestaurantCard
+                    key={restaurant.id}
+                    restaurant={restaurant}
+                    isSelected={selectedId === restaurant.id}
+                    isVisited={isVisited(restaurant.id)}
+                    isFavorite={isFavorite(restaurant.id)}
+                    distance={dist}
+                    onClick={() => handleSelect(restaurant.id)}
+                    onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
+                    onToggleFavorite={(e) => { e.stopPropagation(); toggleFavorite(restaurant.id); }}
+                  />
+                );
+              })}
+            </AnimatePresence>
+            {filtered.length === 0 && (
+              <div className="text-center py-16 text-muted-foreground">
+                <Utensils className="h-8 w-8 mx-auto mb-3 opacity-30" />
+                <p className="text-sm font-medium">검색 결과가 없습니다</p>
+                <p className="text-xs text-muted-foreground/50 mt-1">다른 키워드로 검색해보세요</p>
+              </div>
+            )}
+            {/* Copyright */}
+            <div className="text-center py-4 text-[10px] text-muted-foreground/40 border-t border-border/30 mt-4">
+              © {new Date().getFullYear()} 춘천 맛집 지도. All rights reserved.
             </div>
-          )}
-          {/* Copyright */}
-          <div className="text-center py-4 text-[10px] text-muted-foreground/40 border-t border-border/30 mt-4">
-            © {new Date().getFullYear()} 춘천 맛집 지도. All rights reserved.
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground px-6">
+            <Utensils className="h-12 w-12 mb-4 opacity-20" />
+            <p className="text-sm font-medium mb-1">카테고리를 선택해주세요</p>
+            <p className="text-xs text-muted-foreground/50 text-center">위에서 원하는 음식 카테고리를 선택하면<br/>해당 식당 목록이 표시됩니다</p>
+          </div>
+        )}
       </div>
 
       {/* Map */}
