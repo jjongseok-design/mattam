@@ -65,7 +65,7 @@ const Install = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 safe-area-x bg-background">
       <img src="/pwa-icon-192.png" alt="앱 아이콘" className="w-24 h-24 rounded-2xl mb-6 shadow-lg" />
       <h1 className="text-2xl font-bold mb-2">춘천 맛집지도</h1>
       <p className="text-muted-foreground text-center mb-8 max-w-sm">
