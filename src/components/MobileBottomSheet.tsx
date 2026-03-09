@@ -4,6 +4,8 @@ import { ChevronUp, Grid3X3 } from "lucide-react";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
 import CategoryTabs, { CategoryId } from "./CategoryTabs";
+import SortFilterBar, { SortOption, FilterOption } from "./SortFilterBar";
+import RandomPickButton from "./RandomPickButton";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
@@ -18,6 +20,16 @@ interface MobileBottomSheetProps {
   onCategoryChange: (cat: CategoryId) => void;
   isVisited: (id: string) => boolean;
   onToggleVisited: (id: string) => void;
+  isFavorite: (id: string) => boolean;
+  onToggleFavorite: (id: string) => void;
+  sort: SortOption;
+  onSortChange: (s: SortOption) => void;
+  filter: FilterOption;
+  onFilterChange: (f: FilterOption) => void;
+  hasLocation: boolean;
+  ratingMin: number;
+  onRatingMinChange: (n: number) => void;
+  getDistance: (lat: number, lng: number) => number | null;
 }
 
 type SheetState = "peek" | "half" | "full";
@@ -33,6 +45,16 @@ const MobileBottomSheet = ({
   onCategoryChange,
   isVisited,
   onToggleVisited,
+  isFavorite,
+  onToggleFavorite,
+  sort,
+  onSortChange,
+  filter,
+  onFilterChange,
+  hasLocation,
+  ratingMin,
+  onRatingMinChange,
+  getDistance,
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("half");
   const [showCategories, setShowCategories] = useState(false);
@@ -104,7 +126,7 @@ const MobileBottomSheet = ({
         {!isPeek && (
           <div className="px-4 pb-2 flex flex-col h-[calc(100%-52px)]">
             {/* Category toggle + Search */}
-            <div className="flex gap-2 mb-2.5">
+            <div className="flex gap-2 mb-2">
               <button
                 onClick={() => { setShowCategories(!showCategories); if (!showCategories) setState("full"); }}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-all duration-200 ${
@@ -120,6 +142,7 @@ const MobileBottomSheet = ({
               <div className="flex-1">
                 <SearchBar query={query} onQueryChange={onQueryChange} />
               </div>
+              <RandomPickButton restaurants={restaurants} />
             </div>
 
             {/* Category grid */}
@@ -137,29 +160,53 @@ const MobileBottomSheet = ({
               )}
             </AnimatePresence>
 
+            {/* Sort / Filter */}
+            <div className="mb-2">
+              <SortFilterBar
+                sort={sort}
+                onSortChange={onSortChange}
+                filter={filter}
+                onFilterChange={onFilterChange}
+                hasLocation={hasLocation}
+                ratingMin={ratingMin}
+                onRatingMinChange={onRatingMinChange}
+              />
+            </div>
+
             {/* Count */}
             <p className="text-[11px] text-muted-foreground/50 px-1 mb-1.5 font-medium">
-              {restaurants.length}개 · 평점 높은 순
+              {restaurants.length}개 ·{" "}
+              {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
+              {filter !== "all" && ` · ${filter === "favorites" ? "찜" : "방문"}`}
             </p>
 
             {/* List */}
             <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin space-y-2 pb-4">
-              {restaurants.map((restaurant) => (
-                <RestaurantCard
-                  key={restaurant.id}
-                  restaurant={restaurant}
-                  isSelected={selectedId === restaurant.id}
-                  isVisited={isVisited(restaurant.id)}
-                  onClick={() => {
-                    onSelect(restaurant.id);
-                    setState("half");
-                  }}
-                  onToggleVisited={(e) => {
-                    e.stopPropagation();
-                    onToggleVisited(restaurant.id);
-                  }}
-                />
-              ))}
+              {restaurants.map((restaurant) => {
+                const dist = getDistance(restaurant.lat, restaurant.lng);
+                return (
+                  <RestaurantCard
+                    key={restaurant.id}
+                    restaurant={restaurant}
+                    isSelected={selectedId === restaurant.id}
+                    isVisited={isVisited(restaurant.id)}
+                    isFavorite={isFavorite(restaurant.id)}
+                    distance={dist}
+                    onClick={() => {
+                      onSelect(restaurant.id);
+                      setState("half");
+                    }}
+                    onToggleVisited={(e) => {
+                      e.stopPropagation();
+                      onToggleVisited(restaurant.id);
+                    }}
+                    onToggleFavorite={(e) => {
+                      e.stopPropagation();
+                      onToggleFavorite(restaurant.id);
+                    }}
+                  />
+                );
+              })}
               {restaurants.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <span className="text-3xl block mb-2">🔍</span>
