@@ -347,8 +347,7 @@ const Admin = () => {
     }
     if (!confirm(`"${cat.label}" 카테고리를 삭제하시겠습니까?`)) return;
     try {
-      const { error } = await supabase.from("categories").delete().eq("id", cat.id);
-      if (error) throw error;
+      await adminApi(pin, "category_delete", { id: cat.id });
       invalidateCategories();
       toast({ title: "카테고리 삭제 완료 ✅" });
     } catch (err: any) {
