@@ -180,6 +180,9 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
           <AlertTriangle className="h-5 w-5 text-destructive" />
           <p className="text-sm font-medium">지도를 불러오지 못했습니다</p>
           <p className="text-xs text-muted-foreground">{error}</p>
+          <p className="text-[11px] text-muted-foreground/80 break-all">
+            현재 도메인: {typeof window !== "undefined" ? window.location.origin : "-"}
+          </p>
         </div>
       </div>
     );
