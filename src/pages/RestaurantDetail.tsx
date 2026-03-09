@@ -1,26 +1,19 @@
 import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Phone, ExternalLink, Share2, Loader2, Utensils } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Phone, ExternalLink, Share2, Loader2, Utensils, Clock, CalendarOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
+import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList from "@/components/ReviewList";
 import MapView from "@/components/MapView";
+import ErrorState from "@/components/ErrorState";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  "닭갈비": "🍗", "막국수": "🍜", "중국집": "🥟", "갈비탕": "🍖",
-  "삼계탕": "🐔", "칼국수": "🍜", "수제버거": "🍔", "삼겹살": "🥓",
-  "초밥": "🍣", "일식": "🍱", "감자탕": "🥘", "한우": "🥩",
-  "돼지갈비": "🍖", "이탈리안": "🍝", "베이커리": "🥐", "설렁탕/곰탕": "🍲",
-  "보쌈/족발": "🐷", "돈까스": "🍛", "찌개류": "🍲", "국밥류": "🍜",
-  "생선구이": "🐟", "통닭": "🍗", "카페": "☕", "기타": "🍴",
-};
-
 const RestaurantDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: restaurants = [], isLoading } = useRestaurants();
+  const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
@@ -83,6 +76,7 @@ const RestaurantDetail = () => {
         bestRating: 5,
       },
       priceRange: restaurant.priceRange || undefined,
+      openingHours: restaurant.openingHours || undefined,
     });
 
     return () => {
@@ -112,6 +106,10 @@ const RestaurantDetail = () => {
     );
   }
 
+  if (isError) {
+    return <ErrorState onRetry={() => refetch()} />;
+  }
+
   if (!restaurant) {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-background gap-4">
@@ -133,13 +131,13 @@ const RestaurantDetail = () => {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-card border-b border-border/50">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/">
-            <Button variant="ghost" size="icon">
+          <Link to="/" aria-label="지도로 돌아가기">
+            <Button variant="ghost" size="icon" aria-label="뒤로가기">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           <h1 className="text-sm font-semibold text-foreground truncate">{restaurant.name}</h1>
-          <Button variant="ghost" size="icon" onClick={handleShare}>
+          <Button variant="ghost" size="icon" onClick={handleShare} aria-label="공유하기">
             <Share2 className="h-4 w-4" />
           </Button>
         </div>
@@ -199,6 +197,18 @@ const RestaurantDetail = () => {
                 <a href={`tel:${restaurant.phone}`} className="text-foreground hover:text-primary transition-colors">
                   {restaurant.phone}
                 </a>
+              </div>
+            )}
+            {restaurant.openingHours && (
+              <div className="flex items-center gap-3 text-sm">
+                <Clock className="h-4 w-4 text-primary/60 flex-shrink-0" />
+                <span className="text-foreground">{restaurant.openingHours}</span>
+              </div>
+            )}
+            {restaurant.closedDays && (
+              <div className="flex items-center gap-3 text-sm">
+                <CalendarOff className="h-4 w-4 text-primary/60 flex-shrink-0" />
+                <span className="text-foreground">{restaurant.closedDays}</span>
               </div>
             )}
           </div>
