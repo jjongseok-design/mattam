@@ -161,10 +161,7 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, isFavorite, distanc
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-border/50">
-        <span className="text-[11px] text-muted-foreground/70">
-          ⭐ {restaurant.rating}
-        </span>
+      <div className="flex items-center justify-end pt-2 border-t border-border/50">
         <div className="flex items-center gap-3">
           {restaurant.phone && (
             <a
