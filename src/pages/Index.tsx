@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { MapPin, Utensils, Loader2, Settings, Navigation, Heart } from "lucide-react";
+import { MapPin, Utensils, Loader2, Settings, Navigation, Heart, Download } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
