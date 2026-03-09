@@ -154,30 +154,37 @@ Deno.serve(async (req) => {
         try {
           const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
           if (lovableApiKey) {
-            const searchQuery = `춘천 ${data.restaurant_name} ${data.address || ""} 식당 정보`;
-            const aiPrompt = `춘천시에 있는 "${data.restaurant_name}" 식당의 실제 정보를 알려줘.
+            const aiPrompt = `너는 한국 춘천시 식당 데이터 조사원이야. 아래 식당의 실제 정보를 최대한 정확하게 알려줘.
+
+식당명: "${data.restaurant_name}"
 카테고리: ${data.category}
-제보된 주소: ${data.address || "없음"}
+제보된 주소 힌트: ${data.address || "춘천시 퇴계동 부근"}
 제보 사유: ${data.reason || "없음"}
 
-다음 JSON 형식으로만 답변해. 정확하지 않은 정보는 null로 해:
+[중요 지침]
+- 춘천시에 실제로 존재하는 식당 기준으로 답변해.
+- 프랜차이즈인 경우 춘천 지점 정보를 찾아줘.
+- 위도(lat)는 37.8~37.95, 경도(lng)는 127.65~127.8 범위 내여야 함 (춘천시 범위).
+- 확실하지 않은 정보는 null로 작성해.
+- 리뷰수는 네이버 기준 방문자리뷰+블로그리뷰 합산 추정치.
+
+아래 JSON 형식으로만 답변해 (마크다운 코드블록 없이 순수 JSON만):
 {
-  "address": "정확한 도로명주소 (강원특별자치도 춘천시 ...)",
-  "phone": "전화번호 (033-xxx-xxxx)",
-  "lat": 위도(숫자),
-  "lng": 경도(숫자),
-  "price_range": "가격대 (예: ₩7,000~₩12,000)",
-  "tags": ["대표메뉴1", "대표메뉴2"],
-  "description": "한줄 설명",
-  "opening_hours": "영업시간 (예: 11:00~21:00)",
-  "closed_days": "휴무일 (예: 매주 월요일)",
-  "rating": 네이버 평점(숫자),
-  "review_count": 네이버 리뷰수(숫자)
-}
+  "name": "정확한 식당명 (지점명 포함)",
+  "address": "정확한 도로명주소",
+  "phone": "전화번호 (033-xxx-xxxx 형식)",
+  "lat": 37.xxxx,
+  "lng": 127.xxxx,
+  "price_range": "₩X,000~₩XX,000",
+  "tags": ["대표메뉴1", "대표메뉴2", "대표메뉴3"],
+  "description": "한줄 설명 (20자 이내)",
+  "opening_hours": "HH:MM~HH:MM",
+  "closed_days": "휴무일 또는 null",
+  "rating": 평점(0~5 소수점 1자리),
+  "review_count": 리뷰수(정수)
+}`;
 
-JSON만 출력하고 다른 텍스트는 쓰지 마.`;
-
-            const aiRes = await fetch("https://ai-gateway.lovable.dev/chat/completions", {
+            const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -195,13 +202,20 @@ JSON만 출력하고 다른 텍스트는 쓰지 마.`;
             if (aiRes.ok) {
               const aiData = await aiRes.json();
               const content = aiData.choices?.[0]?.message?.content || "";
-              // Extract JSON from response
-              const jsonMatch = content.match(/\{[\s\S]*\}/);
+              console.log("AI raw response:", content);
+              // Extract JSON from response (handle markdown code blocks too)
+              const cleaned = content.replace(/```json\s*/g, "").replace(/```\s*/g, "");
+              const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
               if (jsonMatch) {
                 aiInfo = JSON.parse(jsonMatch[0]);
-                console.log("AI restaurant info:", aiInfo);
+                console.log("AI parsed restaurant info:", JSON.stringify(aiInfo));
               }
+            } else {
+              const errText = await aiRes.text();
+              console.error("AI gateway response error:", aiRes.status, errText);
             }
+          } else {
+            console.error("LOVABLE_API_KEY not found");
           }
         } catch (aiErr) {
           console.error("AI search failed, using defaults:", aiErr);
