@@ -16,7 +16,7 @@ export const CATEGORIES = [
   { id: "돼지갈비", label: "돼지갈비", emoji: "🍖" },
   { id: "이탈리안", label: "이탈리안", emoji: "🍝" },
   { id: "베이커리", label: "베이커리", emoji: "🥐" },
-  { id: "한식", label: "한식", emoji: "🍲" },
+  { id: "국밥/탕류", label: "국밥/탕류", emoji: "🍲" },
   { id: "보쌈/족발", label: "보쌈/족발", emoji: "🐷" },
   { id: "돈까스", label: "돈까스", emoji: "🍛" },
   { id: "샤브샤브", label: "샤브샤브", emoji: "🫕" },
