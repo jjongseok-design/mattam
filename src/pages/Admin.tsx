@@ -407,7 +407,7 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto safe-area-x-area-x py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto safe-area-xlex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/">
               <Button variant="ghost" size="icon" className="tap-safe">
@@ -461,7 +461,7 @@ const Admin = () => {
         </div>
       </div>
 
-      <div className="max-w-5xl msafe-area-xto px-4 py-4">
+      <div className="max-w-5xl msafe-arx-au py-4">
         {/* Unified Category Grid - matches main screen layout */}
         <div className="border border-border rounded-lg p-3 mb-4 bg-card">
           <div className="flex items-center justify-between mb-2">
