@@ -9,11 +9,44 @@ interface TourProgressProps {
   restaurants: Restaurant[];
   visited: Set<string>;
   onShare: () => void;
+  compact?: boolean;
 }
 
-const TourProgress = ({ restaurants, visited, onShare }: TourProgressProps) => {
+const TourProgress = ({ restaurants, visited, onShare, compact = false }: TourProgressProps) => {
   const [expanded, setExpanded] = useState(false);
   const stats = useTourStats(restaurants, visited);
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2 py-1">
+        <span className="text-xl">{stats.rankEmoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-foreground truncate">{stats.rank}</span>
+            <span className="text-[10px] text-primary font-bold">{stats.overallPercent}%</span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${stats.overallPercent}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground">{stats.totalVisited}/{stats.totalRestaurants}</span>
+          </div>
+        </div>
+        <button
+          onClick={onShare}
+          className="p-2 rounded-lg hover:bg-primary/10 text-primary/70 active:scale-95 transition-all"
+          aria-label="공유하기"
+        >
+          <Share2 className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-br from-card via-card to-primary/5 border border-border/50 rounded-2xl overflow-hidden">
