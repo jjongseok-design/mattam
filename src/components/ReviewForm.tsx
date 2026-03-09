@@ -57,6 +57,7 @@ const ReviewForm = ({ restaurantId }: ReviewFormProps) => {
             onMouseEnter={() => setHoverRating(star)}
             onMouseLeave={() => setHoverRating(0)}
             className="p-0.5 transition-transform hover:scale-110"
+            aria-label={`${star}점`}
           >
             <Star
               className={`h-6 w-6 transition-colors ${
