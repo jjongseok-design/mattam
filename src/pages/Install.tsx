@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Share, CheckCircle } from "lucide-react";
+import { Download, Share, CheckCircle, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -12,12 +12,17 @@ const Install = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isSamsung, setIsSamsung] = useState(false);
 
   useEffect(() => {
     const ua = navigator.userAgent;
     setIsIOS(/iPad|iPhone|iPod/.test(ua));
+    setIsSamsung(/SamsungBrowser/i.test(ua));
 
-    if (window.matchMedia("(display-mode: standalone)").matches) {
+    if (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true
+    ) {
       setIsInstalled(true);
     }
 
@@ -27,6 +32,12 @@ const Install = () => {
     };
 
     window.addEventListener("beforeinstallprompt", handler);
+
+    window.addEventListener("appinstalled", () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    });
+
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
@@ -69,19 +80,48 @@ const Install = () => {
       ) : isIOS ? (
         <div className="bg-muted rounded-xl p-6 max-w-sm text-center space-y-3">
           <Share className="w-8 h-8 mx-auto text-primary" />
-          <p className="font-medium">iPhone에서 설치하기</p>
+          <p className="font-medium">iPhone / iPad 설치 방법</p>
           <ol className="text-sm text-muted-foreground text-left space-y-2">
-            <li>1. Safari 하단의 <strong>공유 버튼</strong> (□↑) 탭</li>
-            <li>2. <strong>"홈 화면에 추가"</strong> 선택</li>
-            <li>3. <strong>"추가"</strong> 탭</li>
+            <li>1. <strong>Safari</strong>로 이 페이지를 열어주세요</li>
+            <li>2. 하단 <strong>공유 버튼</strong> (□↑) 탭</li>
+            <li>3. <strong>"홈 화면에 추가"</strong> 선택</li>
+            <li>4. <strong>"추가"</strong> 탭</li>
           </ol>
+          <p className="text-xs text-muted-foreground/60 mt-2">
+            ※ Chrome이나 카카오톡 내장 브라우저에서는 설치가 안 됩니다. 반드시 Safari로 접속해주세요.
+          </p>
         </div>
       ) : (
         <div className="bg-muted rounded-xl p-6 max-w-sm text-center space-y-3">
           <Download className="w-8 h-8 mx-auto text-primary" />
           <p className="font-medium">앱 설치하기</p>
-          <p className="text-sm text-muted-foreground">
-            브라우저 메뉴에서 "앱 설치" 또는 "홈 화면에 추가"를 선택하세요.
+          <div className="text-sm text-muted-foreground text-left space-y-2">
+            {isSamsung ? (
+              <ol className="space-y-2">
+                <li>1. 하단 메뉴바에서 <strong>≡ (메뉴)</strong> 탭</li>
+                <li>2. <strong>"현재 페이지 추가"</strong> → <strong>"홈 화면"</strong> 선택</li>
+              </ol>
+            ) : (
+              <ol className="space-y-2">
+                <li>1. 브라우저 주소창 오른쪽 <strong>⋮ (메뉴)</strong> 탭</li>
+                <li>2. <strong>"앱 설치"</strong> 또는 <strong>"홈 화면에 추가"</strong> 선택</li>
+              </ol>
+            )}
+          </div>
+          <div className="pt-2">
+            <a
+              href="https://restaurantchuncheon.lovable.app"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <ExternalLink className="w-4 h-4" />
+                브라우저에서 직접 열기
+              </Button>
+            </a>
+          </div>
+          <p className="text-xs text-muted-foreground/60">
+            ※ 프리뷰가 아닌 <strong>배포 URL</strong>에서 접속해야 설치가 가능합니다.
           </p>
         </div>
       )}
