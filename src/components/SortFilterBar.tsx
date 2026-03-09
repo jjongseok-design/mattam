@@ -46,7 +46,7 @@ const SortFilterBar = ({
           <button
             key={opt.value}
             onClick={() => onSortChange(opt.value)}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-lg text-[11px] font-medium transition-all duration-200 ${
               sort === opt.value
                 ? "bg-primary/10 text-primary border border-primary/20"
                 : "bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent"
