@@ -1,4 +1,4 @@
-import { Star, MapPin, Phone, CheckCircle2, ExternalLink, Share2, Clock } from "lucide-react";
+import { Star, MapPin, Phone, CheckCircle2, ExternalLink, Share2, Clock, Heart, Navigation } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
@@ -9,11 +9,14 @@ interface RestaurantCardProps {
   restaurant: Restaurant;
   isSelected: boolean;
   isVisited: boolean;
+  isFavorite?: boolean;
+  distance?: number | null;
   onClick: () => void;
   onToggleVisited: (e: React.MouseEvent) => void;
+  onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
-const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVisited }: RestaurantCardProps) => {
+const RestaurantCard = ({ restaurant, isSelected, isVisited, isFavorite, distance, onClick, onToggleVisited, onToggleFavorite }: RestaurantCardProps) => {
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
   const { toast } = useToast();
 
@@ -31,9 +34,14 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
     }
   };
 
+  const distText = distance != null
+    ? distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
+    : null;
+
   return (
     <motion.button
       layout
+      data-restaurant-id={restaurant.id}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
@@ -66,7 +74,20 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {onToggleFavorite && (
+            <button
+              onClick={onToggleFavorite}
+              className={`p-1 rounded-full transition-all duration-200 ${
+                isFavorite
+                  ? "text-destructive"
+                  : "text-muted-foreground/30 hover:text-destructive/50"
+              }`}
+              aria-label={isFavorite ? "찜 취소" : "찜하기"}
+            >
+              <Heart className={`h-[16px] w-[16px] ${isFavorite ? "fill-current" : ""}`} />
+            </button>
+          )}
           <button
             onClick={handleShare}
             className="p-1 rounded-full text-muted-foreground/30 hover:text-primary/70 transition-all duration-200"
@@ -97,11 +118,23 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
         <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
           <MapPin className="h-3 w-3 flex-shrink-0 text-primary/40" />
           <span className="truncate">{restaurant.address}</span>
+          {distText && (
+            <span className="ml-auto flex items-center gap-0.5 text-[11px] font-medium text-primary/60 flex-shrink-0">
+              <Navigation className="h-2.5 w-2.5" />
+              {distText}
+            </span>
+          )}
         </div>
         {restaurant.phone && (
           <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
             <Phone className="h-3 w-3 flex-shrink-0 text-primary/40" />
-            <span>{restaurant.phone}</span>
+            <a
+              href={`tel:${restaurant.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="hover:text-primary transition-colors"
+            >
+              {restaurant.phone}
+            </a>
             {restaurant.priceRange && (
               <span className="ml-auto text-[11px] font-medium text-foreground/60">{restaurant.priceRange}</span>
             )}
@@ -133,6 +166,15 @@ const RestaurantCard = ({ restaurant, isSelected, isVisited, onClick, onToggleVi
           리뷰 {restaurant.reviewCount.toLocaleString()}개
         </span>
         <div className="flex items-center gap-3">
+          {restaurant.phone && (
+            <a
+              href={`tel:${restaurant.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary font-medium transition-colors"
+            >
+              <Phone className="h-3 w-3" /> 전화
+            </a>
+          )}
           <Link
             to={`/restaurant/${restaurant.id}`}
             onClick={(e) => e.stopPropagation()}
