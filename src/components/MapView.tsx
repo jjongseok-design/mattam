@@ -116,6 +116,25 @@ const MapView = ({ restaurants, selectedId, onSelect }: MapViewProps) => {
     const map = new kakao.maps.Map(containerRef.current, { center, level: 7 });
     kakaoMapRef.current = map;
 
+    // 춘천 범위 제한
+    const sw = new kakao.maps.LatLng(37.734, 127.58);
+    const ne = new kakao.maps.LatLng(38.02, 127.92);
+    const bounds = new kakao.maps.LatLngBounds(sw, ne);
+
+    kakao.maps.event.addListener(map, "dragend", () => {
+      const center = map.getCenter();
+      if (!bounds.contain(center)) {
+        const lat = Math.max(sw.getLat(), Math.min(ne.getLat(), center.getLat()));
+        const lng = Math.max(sw.getLng(), Math.min(ne.getLng(), center.getLng()));
+        map.setCenter(new kakao.maps.LatLng(lat, lng));
+      }
+    });
+
+    kakao.maps.event.addListener(map, "zoom_changed", () => {
+      const level = map.getLevel();
+      if (level > 9) map.setLevel(9);
+    });
+
     return () => {
       kakaoMapRef.current = null;
     };
