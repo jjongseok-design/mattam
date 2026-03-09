@@ -62,7 +62,7 @@ const TipForm = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 z-[2000] bg-black/50 flex items-center justify-center p-4"
             onClick={(e) => e.target === e.currentTarget && setOpen(false)}
             role="dialog"
             aria-modal="true"
@@ -73,7 +73,7 @@ const TipForm = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-card border-t sm:border border-border rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-5 space-y-4"
+              className="bg-card border border-border rounded-2xl w-full max-w-md p-5 space-y-4 max-h-[85vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold flex items-center gap-2">
