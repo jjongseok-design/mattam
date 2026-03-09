@@ -13,7 +13,6 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 const RestaurantDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
-  const isMobile = useIsMobile();
   const { toast } = useToast();
   const { addViewed } = useRecentlyViewed();
 
