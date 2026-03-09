@@ -79,7 +79,7 @@ const RandomPickButton = ({ restaurants }: RandomPickButtonProps) => {
             </div>
             <button
               onClick={() => setPicked(null)}
-              className="absolute top-2 right-2 text-muted-foreground/50 hover:text-foreground text-xs"
+              className="absolute top-1 right-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground/50 hover:text-foreground text-xs"
               aria-label="닫기"
             >
               ✕
