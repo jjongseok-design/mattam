@@ -315,6 +315,10 @@ const Index = () => {
               <p className="text-xs text-muted-foreground/50 mt-1">다른 키워드로 검색해보세요</p>
             </div>
           )}
+          {/* Copyright */}
+          <div className="text-center py-4 text-[10px] text-muted-foreground/40 border-t border-border/30 mt-4">
+            © {new Date().getFullYear()} 춘천 맛집 지도. All rights reserved.
+          </div>
         </div>
       </div>
 
