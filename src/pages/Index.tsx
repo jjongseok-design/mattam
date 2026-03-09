@@ -263,7 +263,7 @@ const Index = () => {
             </div>
 
             {/* Row 2: Category grid (always visible) */}
-            <div className="px-4 pb-2">
+            <div className="safe-area-x pb-2">
               <CategoryTabs active={category} onChange={handleCategoryChange} />
             </div>
           </div>

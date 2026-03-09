@@ -141,6 +141,16 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
 
+  .safe-area-x {
+    padding-left: calc(env(safe-area-inset-left, 0px) + 12px);
+    padding-right: calc(env(safe-area-inset-right, 0px) + 12px);
+  }
+
+  .tap-safe {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;

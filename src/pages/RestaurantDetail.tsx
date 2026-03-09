@@ -147,7 +147,7 @@ const RestaurantDetail = () => {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl mx-auto safe-area-x py-6 space-y-6">
           {/* Name & Rating summary */}
           <div className="flex items-center gap-3">
             <span className="text-3xl">{emoji}</span>
