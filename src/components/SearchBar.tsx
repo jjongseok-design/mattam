@@ -13,7 +13,7 @@ const SearchBar = ({ query, onQueryChange }: SearchBarProps) => {
         type="text"
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
-        placeholder="음식점, 메뉴 검색..."
+        placeholder="전체 카테고리에서 검색..."
         aria-label="음식점 검색"
         className="w-full pl-10 pr-10 py-2.5 bg-muted/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card transition-all duration-200 border border-transparent focus:border-primary/10"
       />
