@@ -147,6 +147,14 @@ const Index = () => {
     }
   }, [selectedId]);
 
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of restaurants) {
+      counts[r.category] = (counts[r.category] || 0) + 1;
+    }
+    return counts;
+  }, [restaurants]);
+
   const categoryRestaurants = useMemo(
     () => restaurants.filter((r) => r.category === category),
     [restaurants, category]
