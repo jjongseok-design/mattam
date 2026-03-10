@@ -147,6 +147,14 @@ const Index = () => {
     }
   }, [selectedId]);
 
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of restaurants) {
+      counts[r.category] = (counts[r.category] || 0) + 1;
+    }
+    return counts;
+  }, [restaurants]);
+
   const categoryRestaurants = useMemo(
     () => restaurants.filter((r) => r.category === category),
     [restaurants, category]
@@ -296,7 +304,7 @@ const Index = () => {
             {/* Row 2: Category grid - only when NOT in list mode */}
             {!showList && (
               <div className="safe-area-x pb-2">
-                <CategoryTabs active={category} onChange={handleCategoryChange} />
+                <CategoryTabs active={category} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
               </div>
             )}
           </div>
@@ -396,7 +404,7 @@ const Index = () => {
           </div>
 
           {!showList ? (
-            <CategoryTabs active={category} onChange={handleCategoryChange} />
+            <CategoryTabs active={category} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
           ) : (
             <>
               <div className="flex items-center gap-2 mb-3">
