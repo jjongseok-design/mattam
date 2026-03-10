@@ -187,25 +187,6 @@ const RestaurantDetail = () => {
         </div>
       </div>
 
-      {/* Hero Image */}
-      {restaurant.imageUrl ? (
-        <div className="w-full max-w-2xl mx-auto">
-          <div className="aspect-[16/9] bg-muted overflow-hidden">
-            <img
-              src={restaurant.imageUrl}
-              alt={`${restaurant.name} 대표 이미지`}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="w-full max-w-2xl mx-auto">
-          <div className="aspect-[16/9] bg-secondary flex items-center justify-center">
-            <span className="text-7xl">{emoji}</span>
-          </div>
-        </div>
-      )}
 
       <div className="max-w-2xl mx-auto safe-area-x py-6 space-y-5">
         {/* Name & Rating */}
