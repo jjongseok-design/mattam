@@ -440,6 +440,24 @@ const Index = () => {
         <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
           {!showList && (
             <>
+              {/* Recently Viewed */}
+              {recentRestaurants.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[11px] text-muted-foreground/60 font-medium px-1.5 mb-1.5">🕐 최근 본 식당</p>
+                  <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+                    {recentRestaurants.map((r) => (
+                      <Link
+                        key={r.id}
+                        to={`/restaurant/${r.id}`}
+                        className="flex-shrink-0 px-3 py-2 bg-muted/60 hover:bg-muted rounded-xl text-[12px] font-medium text-foreground transition-colors border border-border/30 hover:border-primary/20"
+                      >
+                        <span className="mr-1">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
+                        {r.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between px-1.5 mb-1">
                 <p className="text-[11px] text-muted-foreground/60 font-medium">
                   {categoryEmoji} {category} · {filtered.length}개
