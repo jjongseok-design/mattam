@@ -15,7 +15,7 @@ import SortFilterBar, { SortOption, FilterOption } from "@/components/SortFilter
 import RandomPickButton from "@/components/RandomPickButton";
 import TourProgress from "@/components/TourProgress";
 import ShareCard from "@/components/ShareCard";
-import { useRestaurants } from "@/hooks/useRestaurants";
+import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -152,8 +152,11 @@ const Index = () => {
     [restaurants, category]
   );
 
+  const isGlobalSearch = query.trim().length > 0;
+
   const filtered = useMemo(() => {
-    let list = categoryRestaurants;
+    // When searching, search across ALL restaurants regardless of category
+    let list = isGlobalSearch ? restaurants : categoryRestaurants;
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
@@ -161,7 +164,8 @@ const Index = () => {
         (r) =>
           r.name.toLowerCase().includes(q) ||
           r.tags.some((t) => t.includes(q)) ||
-          r.address.includes(q)
+          r.address.includes(q) ||
+          r.category.includes(q)
       );
     }
 
@@ -186,7 +190,16 @@ const Index = () => {
       }
       return b.rating - a.rating || b.reviewCount - a.reviewCount;
     });
-  }, [query, categoryRestaurants, sort, filter, ratingMin, position, isFavorite, isVisited]);
+  }, [query, categoryRestaurants, restaurants, isGlobalSearch, sort, filter, ratingMin, position, isFavorite, isVisited]);
+
+  // Recently viewed restaurants
+  const recentRestaurants = useMemo(() => {
+    if (recentIds.length === 0) return [];
+    return recentIds
+      .map((id) => restaurants.find((r) => r.id === id))
+      .filter(Boolean)
+      .slice(0, 5) as Restaurant[];
+  }, [recentIds, restaurants]);
 
   const getDistance = useCallback(
     (lat: number, lng: number) => {
@@ -198,8 +211,9 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
+      <div className="flex h-screen w-screen items-center justify-center bg-background flex-col gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground animate-pulse">맛집 데이터를 불러오는 중...</p>
       </div>
     );
   }
@@ -427,6 +441,24 @@ const Index = () => {
         <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
           {!showList && (
             <>
+              {/* Recently Viewed */}
+              {recentRestaurants.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[11px] text-muted-foreground/60 font-medium px-1.5 mb-1.5">🕐 최근 본 식당</p>
+                  <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+                    {recentRestaurants.map((r) => (
+                      <Link
+                        key={r.id}
+                        to={`/restaurant/${r.id}`}
+                        className="flex-shrink-0 px-3 py-2 bg-muted/60 hover:bg-muted rounded-xl text-[12px] font-medium text-foreground transition-colors border border-border/30 hover:border-primary/20"
+                      >
+                        <span className="mr-1">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
+                        {r.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between px-1.5 mb-1">
                 <p className="text-[11px] text-muted-foreground/60 font-medium">
                   {categoryEmoji} {category} · {filtered.length}개
@@ -443,7 +475,8 @@ const Index = () => {
 
           {showList && (
             <p className="text-[11px] text-muted-foreground/60 px-1.5 mb-1 font-medium">
-              {filtered.length}개 {category} ·{" "}
+              {isGlobalSearch && <span className="text-primary mr-1">🔍 전체 검색</span>}
+              {filtered.length}개 {isGlobalSearch ? "결과" : category} ·{" "}
               {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
               {filter !== "all" && ` · ${filter === "favorites" ? "찜한 곳" : "방문한 곳"}`}
             </p>
