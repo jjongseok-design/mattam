@@ -404,7 +404,7 @@ const Index = () => {
           </div>
 
           {!showList ? (
-            <CategoryTabs active={category} onChange={handleCategoryChange} />
+            <CategoryTabs active={category} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
           ) : (
             <>
               <div className="flex items-center gap-2 mb-3">
