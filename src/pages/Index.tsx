@@ -216,8 +216,6 @@ const Index = () => {
         <p className="text-sm text-muted-foreground animate-pulse">맛집 데이터를 불러오는 중...</p>
       </div>
     );
-      </div>
-    );
   }
 
   if (isError) {
