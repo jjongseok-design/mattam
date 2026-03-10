@@ -304,7 +304,7 @@ const Index = () => {
             {/* Row 2: Category grid - only when NOT in list mode */}
             {!showList && (
               <div className="safe-area-x pb-2">
-                <CategoryTabs active={category} onChange={handleCategoryChange} />
+                <CategoryTabs active={category} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
               </div>
             )}
           </div>
