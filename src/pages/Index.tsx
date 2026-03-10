@@ -456,7 +456,8 @@ const Index = () => {
 
           {showList && (
             <p className="text-[11px] text-muted-foreground/60 px-1.5 mb-1 font-medium">
-              {filtered.length}개 {category} ·{" "}
+              {isGlobalSearch && <span className="text-primary mr-1">🔍 전체 검색</span>}
+              {filtered.length}개 {isGlobalSearch ? "결과" : category} ·{" "}
               {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
               {filter !== "all" && ` · ${filter === "favorites" ? "찜한 곳" : "방문한 곳"}`}
             </p>
