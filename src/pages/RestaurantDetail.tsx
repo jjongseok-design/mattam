@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils, MapPin, Phone, Clock, XCircle, Tag, Banknote, Navigation } from "lucide-react";
+import OpenStatusBadge from "@/components/OpenStatusBadge";
 import { Button } from "@/components/ui/button";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
@@ -211,7 +212,10 @@ const RestaurantDetail = () => {
         {/* Name & Rating */}
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-foreground">{restaurant.name}</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold text-foreground">{restaurant.name}</h2>
+              <OpenStatusBadge openingHours={restaurant.openingHours} closedDays={restaurant.closedDays} />
+            </div>
             <span className="text-sm text-muted-foreground">{emoji} {restaurant.category}</span>
           </div>
           <div className="flex flex-col items-center gap-0.5 bg-muted/50 px-3 py-2 rounded-xl">

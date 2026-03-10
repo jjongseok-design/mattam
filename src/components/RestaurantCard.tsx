@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import { useToast } from "@/hooks/use-toast";
+import OpenStatusBadge from "@/components/OpenStatusBadge";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -81,6 +82,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
                   <h3 className="font-bold text-foreground text-[14px] leading-tight truncate">
                     {restaurant.name}
                   </h3>
+                  <OpenStatusBadge openingHours={restaurant.openingHours} closedDays={restaurant.closedDays} compact />
                   {isVisited && (
                     <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                       방문
@@ -203,6 +205,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
                 <h3 className="font-bold text-foreground text-base leading-snug truncate">
                   {restaurant.name}
                 </h3>
+                <OpenStatusBadge openingHours={restaurant.openingHours} closedDays={restaurant.closedDays} />
                 {isVisited && (
                   <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
                     방문완료
