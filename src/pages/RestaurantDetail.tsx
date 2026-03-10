@@ -4,6 +4,7 @@ import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils, MapPin, Phone
 import { Button } from "@/components/ui/button";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
+import { getCategoryImage } from "@/data/categoryImages";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewList from "@/components/ReviewList";
 import ErrorState from "@/components/ErrorState";
