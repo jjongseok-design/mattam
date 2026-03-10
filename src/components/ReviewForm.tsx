@@ -14,11 +14,15 @@ interface ReviewFormProps {
 const REVIEW_COOLDOWN_KEY = "last_review_time";
 const REVIEW_COOLDOWN_MS = 60_000; // 1 minute between reviews
 
+const NICKNAME_KEY = "review_nickname";
+
 const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(() => {
+    try { return localStorage.getItem(NICKNAME_KEY) || ""; } catch { return ""; }
+  });
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
