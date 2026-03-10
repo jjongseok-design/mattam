@@ -292,6 +292,9 @@ const Index = () => {
                     <Navigation className="h-5 w-5 text-muted-foreground" />
                   </button>
                 )}
+                <Link to="/admin" className="glass rounded-xl w-11 h-11 tap-safe flex items-center justify-center active:scale-95 transition-transform">
+                  <Settings className="h-5 w-5 text-muted-foreground/50" />
+                </Link>
                 <Link to="/install" className="glass rounded-xl w-11 h-11 tap-safe flex items-center justify-center active:scale-95 transition-transform">
                   <Download className="h-5 w-5 text-muted-foreground" />
                 </Link>
@@ -342,6 +345,7 @@ const Index = () => {
             onRatingMinChange={setRatingMin}
             getDistance={getDistance}
             onClose={handleCloseList}
+            recentRestaurants={recentRestaurants}
           />
         </div>
         <TipForm />

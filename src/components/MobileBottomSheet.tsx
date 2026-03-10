@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, memo } from "react";
 import { motion, PanInfo } from "framer-motion";
 import { ChevronUp } from "lucide-react";
+import { Link } from "react-router-dom";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
 import SortFilterBar, { SortOption, FilterOption } from "./SortFilterBar";
@@ -30,6 +31,7 @@ interface MobileBottomSheetProps {
   onRatingMinChange: (n: number) => void;
   getDistance: (lat: number, lng: number) => number | null;
   onClose?: () => void;
+  recentRestaurants?: Restaurant[];
 }
 
 type SheetState = "peek" | "half" | "full";
@@ -60,6 +62,7 @@ const MobileBottomSheet = memo(({
   ratingMin,
   onRatingMinChange,
   getDistance,
+  recentRestaurants = [],
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("half");
   const [isDraggable, setIsDraggable] = useState(true);
@@ -198,6 +201,25 @@ const MobileBottomSheet = memo(({
               onTouchStart={handleListTouchStart}
               onTouchEnd={handleListTouchEnd}
             >
+              {/* Recently Viewed */}
+              {recentRestaurants.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[11px] text-muted-foreground/60 font-medium px-1 mb-1.5">🕐 최근 본 식당</p>
+                  <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+                    {recentRestaurants.map((r) => (
+                      <Link
+                        key={r.id}
+                        to={`/restaurant/${r.id}`}
+                        className="flex-shrink-0 px-3 py-2 bg-muted/60 hover:bg-muted rounded-xl text-[12px] font-medium text-foreground transition-colors border border-border/30"
+                      >
+                        <span className="mr-1">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
+                        {r.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {restaurants.map((restaurant) => {
                 const dist = getDistance(restaurant.lat, restaurant.lng);
                 return (
