@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
+import { getCategoryImage } from "@/data/categoryImages";
 import { useToast } from "@/hooks/use-toast";
 
 interface RestaurantCardProps {
