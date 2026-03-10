@@ -41,7 +41,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
     ? distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
     : null;
 
-  const imageThumb = restaurant.imageUrl;
+  
 
   // Compact mobile variant
   if (compact) {
