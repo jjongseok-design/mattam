@@ -152,8 +152,11 @@ const Index = () => {
     [restaurants, category]
   );
 
+  const isGlobalSearch = query.trim().length > 0;
+
   const filtered = useMemo(() => {
-    let list = categoryRestaurants;
+    // When searching, search across ALL restaurants regardless of category
+    let list = isGlobalSearch ? restaurants : categoryRestaurants;
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
@@ -161,7 +164,8 @@ const Index = () => {
         (r) =>
           r.name.toLowerCase().includes(q) ||
           r.tags.some((t) => t.includes(q)) ||
-          r.address.includes(q)
+          r.address.includes(q) ||
+          r.category.includes(q)
       );
     }
 
@@ -186,7 +190,16 @@ const Index = () => {
       }
       return b.rating - a.rating || b.reviewCount - a.reviewCount;
     });
-  }, [query, categoryRestaurants, sort, filter, ratingMin, position, isFavorite, isVisited]);
+  }, [query, categoryRestaurants, restaurants, isGlobalSearch, sort, filter, ratingMin, position, isFavorite, isVisited]);
+
+  // Recently viewed restaurants
+  const recentRestaurants = useMemo(() => {
+    if (recentIds.length === 0) return [];
+    return recentIds
+      .map((id) => restaurants.find((r) => r.id === id))
+      .filter(Boolean)
+      .slice(0, 5) as Restaurant[];
+  }, [recentIds, restaurants]);
 
   const getDistance = useCallback(
     (lat: number, lng: number) => {
