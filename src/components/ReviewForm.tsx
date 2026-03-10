@@ -69,10 +69,10 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
       }
     } else {
       localStorage.setItem(REVIEW_COOLDOWN_KEY, Date.now().toString());
+      if (trimmedNickname) localStorage.setItem(NICKNAME_KEY, trimmedNickname);
       toast({ title: "리뷰가 등록되었습니다 ✅" });
       setRating(0);
       setComment("");
-      setNickname("");
       queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
     }
     setSubmitting(false);

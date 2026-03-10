@@ -132,6 +132,17 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
                 <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
               </button>
             )}
+            <button
+              onClick={onToggleVisited}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isVisited
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground/30"
+              }`}
+              aria-label={isVisited ? "방문 취소" : "방문 표시"}
+            >
+              <CheckCircle2 className={`h-4 w-4 ${isVisited ? "fill-primary/15" : ""}`} />
+            </button>
           </div>
           <Link
             to={`/restaurant/${restaurant.id}`}
