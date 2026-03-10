@@ -133,7 +133,7 @@ const RestaurantDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-card border-b border-border/50">
+      <div className="sticky top-0 z-10 bg-card border-b border-border/50 safe-area-top">
         <div className="max-w-2xl mx-auto safe-area-x py-3 flex items-center justify-between gap-2">
           <Link to="/" aria-label="지도로 돌아가기">
             <Button variant="ghost" size="icon" className="tap-safe" aria-label="뒤로가기">
