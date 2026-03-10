@@ -62,6 +62,7 @@ const MobileBottomSheet = memo(({
   ratingMin,
   onRatingMinChange,
   getDistance,
+  recentRestaurants = [],
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("half");
   const [isDraggable, setIsDraggable] = useState(true);
