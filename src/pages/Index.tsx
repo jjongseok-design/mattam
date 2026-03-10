@@ -211,8 +211,11 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
+      <div className="flex h-screen w-screen items-center justify-center bg-background flex-col gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground animate-pulse">맛집 데이터를 불러오는 중...</p>
+      </div>
+    );
       </div>
     );
   }
