@@ -48,14 +48,15 @@ const CategoryTabs = ({ active, onChange, variant = "grid", categoryCounts = {} 
 
   return (
     <div className="-mx-1 px-1">
-      <div className="grid grid-cols-5 gap-1 min-w-0">
+      <div className="grid grid-cols-5 gap-0.5 min-w-0">
         {cats.map((cat) => {
           const isActive = active === cat.id;
+          const count = categoryCounts[cat.id];
           return (
             <button
               key={cat.id}
               onClick={() => onChange(cat.id)}
-              className="relative flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg transition-all duration-200 min-h-[48px]"
+              className="relative flex flex-col items-center py-1 px-0.5 rounded-lg transition-all duration-200 min-h-[40px]"
             >
               {isActive && (
                 <motion.div
@@ -64,9 +65,16 @@ const CategoryTabs = ({ active, onChange, variant = "grid", categoryCounts = {} 
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <span className="relative z-10 text-xl">{cat.emoji}</span>
+              <div className="relative z-10 flex items-center gap-0.5">
+                <span className="text-lg">{cat.emoji}</span>
+                {count != null && (
+                  <span className={`text-[9px] font-bold -mt-1 ${isActive ? "text-primary" : "text-muted-foreground/70"}`}>
+                    {count}
+                  </span>
+                )}
+              </div>
               <span
-                className={`relative z-10 text-[11px] font-medium leading-tight w-full text-center break-keep ${
+                className={`relative z-10 text-[10px] font-medium leading-tight w-full text-center break-keep ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
