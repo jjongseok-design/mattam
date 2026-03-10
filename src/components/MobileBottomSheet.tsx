@@ -31,6 +31,7 @@ interface MobileBottomSheetProps {
   onRatingMinChange: (n: number) => void;
   getDistance: (lat: number, lng: number) => number | null;
   onClose?: () => void;
+  recentRestaurants?: Restaurant[];
 }
 
 type SheetState = "peek" | "half" | "full";
