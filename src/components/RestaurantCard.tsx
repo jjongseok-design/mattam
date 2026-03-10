@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import { useToast } from "@/hooks/use-toast";
-import OpenStatusBadge from "@/components/OpenStatusBadge";
+
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -41,7 +41,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
     ? distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
     : null;
 
-  const imageThumb = restaurant.imageUrl;
+  
 
   // Compact mobile variant
   if (compact) {
@@ -63,26 +63,17 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
           className="w-full text-left"
           aria-label={`${restaurant.name} - 평점 ${restaurant.rating}`}
         >
-          {/* Image row */}
-          {imageThumb && (
-            <div className="w-full h-28 bg-muted overflow-hidden">
-              <img src={imageThumb} alt={restaurant.name} className="w-full h-full object-cover" loading="lazy" />
-            </div>
-          )}
           <div className="p-3.5">
             {/* Header row */}
             <div className="flex items-center gap-2.5 mb-1.5">
-              {!imageThumb && (
-                <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-lg flex-shrink-0">
-                  {emoji}
-                </div>
-              )}
+              <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-lg flex-shrink-0">
+                {emoji}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h3 className="font-bold text-foreground text-[14px] leading-tight truncate">
                     {restaurant.name}
                   </h3>
-                  <OpenStatusBadge openingHours={restaurant.openingHours} closedDays={restaurant.closedDays} compact />
                   {isVisited && (
                     <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                       방문
@@ -172,40 +163,21 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
           : "border-border/50 bg-card hover:shadow-card-hover hover:border-primary/10"
       } ${isVisited ? "ring-1 ring-primary/20" : ""}`}
     >
-      {/* Image */}
-      {imageThumb && (
-        <button onClick={onClick} className="w-full block">
-          <div className="w-full h-40 bg-muted overflow-hidden">
-            <img
-              src={imageThumb}
-              alt={restaurant.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-          </div>
-        </button>
-      )}
-
-      {/* Top accent bar when selected (only without image) */}
-      {!imageThumb && (
-        <div className={`h-1 w-full transition-all duration-300 ${isSelected ? "bg-gradient-primary" : "bg-transparent"}`} />
-      )}
+      {/* Top accent bar when selected */}
+      <div className={`h-1 w-full transition-all duration-300 ${isSelected ? "bg-gradient-primary" : "bg-transparent"}`} />
 
       <div className="p-5">
         {/* Header: emoji + name + rating */}
         <button onClick={onClick} className="w-full text-left" aria-label={`${restaurant.name} 선택`}>
           <div className="flex items-start gap-3 mb-3">
-            {!imageThumb && (
-              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl flex-shrink-0">
-                {emoji}
-              </div>
-            )}
+            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl flex-shrink-0">
+              {emoji}
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-foreground text-base leading-snug truncate">
                   {restaurant.name}
                 </h3>
-                <OpenStatusBadge openingHours={restaurant.openingHours} closedDays={restaurant.closedDays} />
                 {isVisited && (
                   <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
                     방문완료
