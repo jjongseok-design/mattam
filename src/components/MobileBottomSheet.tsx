@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, memo } from "react";
 import { motion, PanInfo } from "framer-motion";
 import { ChevronUp } from "lucide-react";
+import { Link } from "react-router-dom";
 import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
 import SortFilterBar, { SortOption, FilterOption } from "./SortFilterBar";
