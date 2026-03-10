@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import { useToast } from "@/hooks/use-toast";
-import OpenStatusBadge from "@/components/OpenStatusBadge";
+
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
