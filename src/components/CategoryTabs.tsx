@@ -36,6 +36,9 @@ const CategoryTabs = ({ active, onChange, variant = "grid", categoryCounts = {} 
             >
               <span className="text-base">{cat.emoji}</span>
               <span>{cat.label}</span>
+              {categoryCounts[cat.id] != null && (
+                <span className="text-[10px] opacity-60">{categoryCounts[cat.id]}</span>
+              )}
             </button>
           );
         })}
