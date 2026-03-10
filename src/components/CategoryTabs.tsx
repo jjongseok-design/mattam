@@ -15,7 +15,7 @@ interface CategoryTabsProps {
   categoryCounts?: Record<string, number>;
 }
 
-const CategoryTabs = ({ active, onChange, variant = "grid" }: CategoryTabsProps) => {
+const CategoryTabs = ({ active, onChange, variant = "grid", categoryCounts = {} }: CategoryTabsProps) => {
   const { data: categories } = useCategories();
   const cats = categories && categories.length > 0 ? categories : FALLBACK_CATEGORIES;
 
