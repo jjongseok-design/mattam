@@ -342,6 +342,7 @@ const Index = () => {
             onRatingMinChange={setRatingMin}
             getDistance={getDistance}
             onClose={handleCloseList}
+            recentRestaurants={recentRestaurants}
           />
         </div>
         <TipForm />
