@@ -194,7 +194,6 @@ const RestaurantDetail = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-xl font-bold text-foreground">{restaurant.name}</h2>
-              <OpenStatusBadge openingHours={restaurant.openingHours} closedDays={restaurant.closedDays} />
             </div>
             <span className="text-sm text-muted-foreground">{emoji} {restaurant.category}</span>
           </div>
