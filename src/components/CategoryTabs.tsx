@@ -11,6 +11,8 @@ interface CategoryTabsProps {
   onChange: (id: string) => void;
   /** Horizontal scrolling pill style (for mobile top bar) */
   variant?: "grid" | "pills";
+  /** Restaurant count per category id */
+  categoryCounts?: Record<string, number>;
 }
 
 const CategoryTabs = ({ active, onChange, variant = "grid" }: CategoryTabsProps) => {
