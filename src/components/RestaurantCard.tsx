@@ -82,7 +82,6 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
                   <h3 className="font-bold text-foreground text-[14px] leading-tight truncate">
                     {restaurant.name}
                   </h3>
-                  <OpenStatusBadge openingHours={restaurant.openingHours} closedDays={restaurant.closedDays} compact />
                   {isVisited && (
                     <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                       방문
