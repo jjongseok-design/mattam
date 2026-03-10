@@ -192,7 +192,16 @@ const MobileBottomSheet = memo(({
               {filter !== "all" && ` · ${filter === "favorites" ? "찜" : "방문"}`}
             </p>
 
-            {/* Recently Viewed */}
+            {/* List - isolated scroll container */}
+            <div
+              ref={listRef}
+              className="flex-1 min-h-0 overflow-y-auto scrollbar-thin space-y-2 pb-4 overscroll-contain"
+              style={{ WebkitOverflowScrolling: "touch" }}
+              onScroll={handleListScroll}
+              onTouchStart={handleListTouchStart}
+              onTouchEnd={handleListTouchEnd}
+            >
+              {/* Recently Viewed */}
               {recentRestaurants.length > 0 && (
                 <div className="mb-3">
                   <p className="text-[11px] text-muted-foreground/60 font-medium px-1 mb-1.5">🕐 최근 본 식당</p>
@@ -211,7 +220,6 @@ const MobileBottomSheet = memo(({
                 </div>
               )}
 
-              {/* List */}
               {restaurants.map((restaurant) => {
                 const dist = getDistance(restaurant.lat, restaurant.lng);
                 return (
