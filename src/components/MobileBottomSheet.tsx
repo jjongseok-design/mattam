@@ -183,6 +183,7 @@ const MobileBottomSheet = memo(({
 
             {/* Count */}
             <p className="text-[11px] text-muted-foreground/50 px-1 mb-1.5 font-medium flex-shrink-0">
+              {query.trim() && <span className="text-primary mr-1">🔍 전체 검색 ·</span>}
               {restaurants.length}개 ·{" "}
               {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
               {filter !== "all" && ` · ${filter === "favorites" ? "찜" : "방문"}`}
