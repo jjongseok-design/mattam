@@ -22,6 +22,7 @@ interface RestaurantRow {
   price_range: string | null;
   tags: string[] | null;
   description: string | null;
+  image_url: string | null;
 }
 
 const getEmptyForm = (category: string) => ({

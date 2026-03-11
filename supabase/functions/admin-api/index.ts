@@ -333,6 +333,65 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "upload_image": {
+        const { restaurant_id, base64, content_type, file_ext } = data;
+        if (!restaurant_id || !base64) throw new Error("restaurant_id and base64 are required");
+        
+        const filePath = `${restaurant_id}.${file_ext || "jpg"}`;
+        const buffer = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        
+        // Delete existing image if any
+        await supabase.storage.from("restaurant-images").remove([filePath]);
+        
+        const { error: uploadErr } = await supabase.storage
+          .from("restaurant-images")
+          .upload(filePath, buffer, {
+            contentType: content_type || "image/jpeg",
+            upsert: true,
+          });
+        if (uploadErr) throw uploadErr;
+        
+        const { data: urlData } = supabase.storage
+          .from("restaurant-images")
+          .getPublicUrl(filePath);
+        
+        // Update restaurant image_url
+        const { error: updateErr } = await supabase
+          .from("restaurants")
+          .update({ image_url: urlData.publicUrl })
+          .eq("id", restaurant_id);
+        if (updateErr) throw updateErr;
+        
+        result = { success: true, image_url: urlData.publicUrl };
+        break;
+      }
+
+      case "delete_image": {
+        const { restaurant_id: rid } = data;
+        // Get current image_url to find file path
+        const { data: rest } = await supabase
+          .from("restaurants")
+          .select("image_url")
+          .eq("id", rid)
+          .single();
+        
+        if (rest?.image_url) {
+          const urlParts = rest.image_url.split("/restaurant-images/");
+          if (urlParts[1]) {
+            await supabase.storage.from("restaurant-images").remove([urlParts[1]]);
+          }
+        }
+        
+        const { error: delErr } = await supabase
+          .from("restaurants")
+          .update({ image_url: null })
+          .eq("id", rid);
+        if (delErr) throw delErr;
+        
+        result = { success: true };
+        break;
+      }
+
       case "category_reorder": {
         for (const u of data.updates) {
           const { error } = await supabase
