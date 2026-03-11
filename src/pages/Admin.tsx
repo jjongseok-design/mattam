@@ -871,7 +871,16 @@ const Admin = () => {
                   {filtered.map((r) => (
                     <tr key={r.id} className="border-t border-border hover:bg-muted/30 transition-colors">
                       <td className="px-3 py-2 text-muted-foreground text-xs">{r.id}</td>
-                      <td className="px-3 py-2 font-medium">{r.name}</td>
+                      <td className="px-3 py-2 font-medium">
+                        <div className="flex items-center gap-1.5">
+                          {r.image_url ? (
+                            <img src={r.image_url} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />
+                          ) : (
+                            <span className="w-6 h-6 rounded bg-muted flex items-center justify-center text-xs flex-shrink-0">📷</span>
+                          )}
+                          {r.name}
+                        </div>
+                      </td>
                       <td className="px-3 py-2 text-muted-foreground hidden md:table-cell text-xs">{r.address}</td>
                       <td className="px-3 py-2 text-center">⭐ {r.rating}</td>
                       <td className="px-3 py-2 text-center text-muted-foreground hidden sm:table-cell">{r.review_count}</td>
