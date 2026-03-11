@@ -284,7 +284,7 @@ const Index = () => {
                       <Utensils className="h-4 w-4 text-primary" />
                       춘천 맛집 가이드
                     </h1>
-                    <div className="min-w-0 overflow-hidden">
+                    <div className="flex-1 min-w-0">
                       <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
                     </div>
                   </div>
