@@ -66,8 +66,10 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
           <div className="p-3.5">
             {/* Header row */}
             <div className="flex items-center gap-2.5 mb-1.5">
-              <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-lg flex-shrink-0">
-                {emoji}
+              <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-lg flex-shrink-0 overflow-hidden">
+                {restaurant.imageUrl ? (
+                  <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+                ) : emoji}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
