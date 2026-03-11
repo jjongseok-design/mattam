@@ -300,6 +300,97 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "fetch_restaurant_images": {
+        const googleApiKey = Deno.env.get("GOOGLE_PLACES_API_KEY");
+        if (!googleApiKey) {
+          throw new Error("GOOGLE_PLACES_API_KEY가 Supabase 시크릿에 설정되지 않았습니다");
+        }
+
+        // Determine targets: specific ID or all without images
+        let targets: { id: string; name: string; address: string }[] = [];
+        if (data?.id) {
+          const { data: rests } = await supabase
+            .from("restaurants")
+            .select("id,name,address")
+            .eq("id", data.id);
+          targets = rests ?? [];
+        } else {
+          const { data: rests } = await supabase
+            .from("restaurants")
+            .select("id,name,address")
+            .is("image_url", null);
+          targets = rests ?? [];
+        }
+
+        const results: { id: string; name: string; success: boolean; error?: string }[] = [];
+
+        for (const restaurant of targets) {
+          try {
+            // Step 1: Find Place
+            const findUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(restaurant.name + " 춘천")}&inputtype=textquery&fields=place_id&key=${googleApiKey}`;
+            const findRes = await fetch(findUrl);
+            const findData = await findRes.json();
+            const placeId = findData.candidates?.[0]?.place_id;
+            if (!placeId) {
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "장소를 찾을 수 없음" });
+              continue;
+            }
+
+            // Step 2: Get Place Details (photos)
+            const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${googleApiKey}`;
+            const detailsRes = await fetch(detailsUrl);
+            const detailsData = await detailsRes.json();
+            const photoRef = detailsData.result?.photos?.[0]?.photo_reference;
+            if (!photoRef) {
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "사진 없음" });
+              continue;
+            }
+
+            // Step 3: Fetch photo (follows redirect to actual image)
+            const photoFetchUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${googleApiKey}`;
+            const photoRes = await fetch(photoFetchUrl);
+            if (!photoRes.ok) {
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "사진 다운로드 실패" });
+              continue;
+            }
+
+            // Step 4: Upload to Supabase Storage
+            const imageBuffer = await photoRes.arrayBuffer();
+            const contentType = photoRes.headers.get("content-type") || "image/jpeg";
+            const ext = contentType.includes("png") ? "png" : "jpg";
+            const { error: uploadErr } = await supabase.storage
+              .from("restaurant-images")
+              .upload(`${restaurant.id}.${ext}`, imageBuffer, {
+                contentType,
+                upsert: true,
+              });
+            if (uploadErr) {
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: uploadErr.message });
+              continue;
+            }
+
+            // Step 5: Get public URL and update restaurant
+            const { data: urlData } = supabase.storage
+              .from("restaurant-images")
+              .getPublicUrl(`${restaurant.id}.${ext}`);
+            const publicUrl = urlData.publicUrl;
+
+            await supabase
+              .from("restaurants")
+              .update({ image_url: publicUrl })
+              .eq("id", restaurant.id);
+
+            results.push({ id: restaurant.id, name: restaurant.name, success: true });
+          } catch (e: any) {
+            console.error("Image fetch error for", restaurant.name, e);
+            results.push({ id: restaurant.id, name: restaurant.name, success: false, error: e.message });
+          }
+        }
+
+        result = { success: true, results };
+        break;
+      }
+
       case "bulk_update_category": {
         const { error } = await supabase
           .from("restaurants")

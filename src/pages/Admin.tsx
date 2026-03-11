@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound, MessageSquarePlus, Check, X, Settings2 } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound, MessageSquarePlus, Check, X, Settings2, Image } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
 import { motion } from "framer-motion";
@@ -70,6 +70,8 @@ const Admin = () => {
   const [tips, setTips] = useState<any[]>([]);
   const [showTips, setShowTips] = useState(false);
   const [tipsLoading, setTipsLoading] = useState(false);
+  const [fetchingImageId, setFetchingImageId] = useState<string | null>(null);
+  const [fetchingAllImages, setFetchingAllImages] = useState(false);
 
   // Category management state
   const [editMode, setEditMode] = useState(false);
@@ -248,6 +250,38 @@ const Admin = () => {
       toast({ title: "저장 실패", description: err.message, variant: "destructive" });
     }
     setSaving(false);
+  };
+
+  const handleFetchImage = async (id: string) => {
+    setFetchingImageId(id);
+    try {
+      const res = await adminApi(pin, "fetch_restaurant_images", { id });
+      const r = res.results?.[0];
+      if (r?.success) {
+        toast({ title: "이미지 가져오기 완료 ✅" });
+        fetchAll();
+      } else {
+        toast({ title: "이미지 없음", description: r?.error || "Google Places에서 사진을 찾을 수 없습니다", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "오류", description: err.message, variant: "destructive" });
+    }
+    setFetchingImageId(null);
+  };
+
+  const handleFetchAllImages = async () => {
+    if (!confirm("이미지가 없는 모든 식당의 사진을 Google Places에서 가져옵니다. 계속하시겠습니까?")) return;
+    setFetchingAllImages(true);
+    try {
+      const res = await adminApi(pin, "fetch_restaurant_images");
+      const ok = res.results?.filter((r: any) => r.success).length ?? 0;
+      const fail = res.results?.filter((r: any) => !r.success).length ?? 0;
+      toast({ title: `완료: ${ok}개 성공, ${fail}개 실패` });
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "오류", description: err.message, variant: "destructive" });
+    }
+    setFetchingAllImages(false);
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -451,6 +485,16 @@ const Admin = () => {
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowPinChange(true)}>
               <KeyRound className="h-3.5 w-3.5 mr-1" /> PIN 변경
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleFetchAllImages}
+              disabled={fetchingAllImages}
+              title="이미지 없는 식당 사진 일괄 가져오기"
+            >
+              {fetchingAllImages ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Image className="h-3.5 w-3.5 mr-1" />}
+              이미지 가져오기
             </Button>
             <Button onClick={openNew} size="sm">
               <Plus className="h-4 w-4 mr-1" /> 추가
@@ -886,6 +930,19 @@ const Admin = () => {
                       <td className="px-3 py-2 text-center text-muted-foreground hidden sm:table-cell">{r.review_count}</td>
                       <td className="px-3 py-2 text-center">
                         <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            title="Google 사진 가져오기"
+                            disabled={fetchingImageId === r.id}
+                            onClick={() => handleFetchImage(r.id)}
+                          >
+                            {fetchingImageId === r.id
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <Image className="h-3 w-3" />
+                            }
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}>
                             <Pencil className="h-3 w-3" />
                           </Button>
