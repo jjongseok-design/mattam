@@ -505,10 +505,11 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("admin-api error:", err);
+    const message = err instanceof Error ? err.message : "서버 오류";
     return new Response(
-      JSON.stringify({ success: false, error: err.message || "서버 오류" }),
+      JSON.stringify({ success: false, error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
