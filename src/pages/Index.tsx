@@ -260,8 +260,18 @@ const Index = () => {
         <div className="relative h-dvh w-screen overflow-hidden bg-background">
           {/* 상단 바 */}
           <div className="absolute top-0 left-0 right-0 z-[1300] safe-area-top bg-background/95 backdrop-blur-md border-b border-border/30" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
+            {/* Row 0: Title - only when NOT in list mode */}
+            {!showList && (
+              <div className="safe-area-x pt-2 pb-0">
+                <h1 className="text-base font-bold text-foreground tracking-tight flex items-center gap-1.5">
+                  <Utensils className="h-4 w-4 text-primary" />
+                  춘천 맛집 가이드
+                </h1>
+              </div>
+            )}
+
             {/* Row 1: Tour progress + action buttons */}
-            <div className="safe-area-x pt-2 pb-1.5 flex items-center gap-2">
+            <div className="safe-area-x pt-1.5 pb-1.5 flex items-center gap-2">
               <div className="flex-1 min-w-0 overflow-hidden">
                 {showList ? (
                   <div className="flex items-center gap-2">
@@ -279,15 +289,7 @@ const Index = () => {
                     </span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <h1 className="text-base font-bold text-foreground tracking-tight whitespace-nowrap flex items-center gap-1.5 shrink-0">
-                      <Utensils className="h-4 w-4 text-primary" />
-                      춘천 맛집 가이드
-                    </h1>
-                    <div className="flex-1 min-w-0">
-                      <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
-                    </div>
-                  </div>
+                  <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
                 )}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
