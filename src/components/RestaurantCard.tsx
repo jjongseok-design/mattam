@@ -172,8 +172,10 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
         {/* Header: emoji + name + rating */}
         <button onClick={onClick} className="w-full text-left" aria-label={`${restaurant.name} 선택`}>
           <div className="flex items-start gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl flex-shrink-0">
-              {emoji}
+            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
+              {restaurant.imageUrl ? (
+                <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+              ) : emoji}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
