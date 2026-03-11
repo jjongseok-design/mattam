@@ -442,18 +442,22 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto safe-area-xlex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/">
-              <Button variant="ghost" size="icon" className="tap-safe">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-lg font-bold">🛠 식당 관리</h1>
-            <span className="text-sm text-muted-foreground">{restaurants.length}개</span>
+        <div className="max-w-5xl mx-auto px-4 py-2 flex items-center gap-2">
+          <Link to="/">
+            <Button variant="ghost" size="icon" className="tap-safe shrink-0">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-lg font-bold shrink-0">🛠 식당 관리</h1>
+          <span className="text-xs text-muted-foreground shrink-0">({restaurants.length})</span>
+
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
             <Button
               variant={showTips ? "default" : "outline"}
               size="sm"
+              className="shrink-0 h-8 text-xs"
               onClick={async () => {
                 setShowTips(!showTips);
                 if (!showTips && tips.length === 0) {
@@ -474,32 +478,32 @@ const Admin = () => {
                 </span>
               )}
             </Button>
-          </div>
-          <div className="flex items-center gap-2">
             <Button
               variant={editMode ? "default" : "outline"}
               size="sm"
+              className="shrink-0 h-8 text-xs"
               onClick={() => setEditMode(!editMode)}
             >
-              <Settings2 className="h-3.5 w-3.5 mr-1" /> {editMode ? "편집 완료" : "카테고리 편집"}
+              <Settings2 className="h-3.5 w-3.5 mr-1" /> {editMode ? "편집 완료" : "카테고리"}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowPinChange(true)}>
-              <KeyRound className="h-3.5 w-3.5 mr-1" /> PIN 변경
+            <Button variant="outline" size="sm" className="shrink-0 h-8 text-xs" onClick={() => setShowPinChange(true)}>
+              <KeyRound className="h-3.5 w-3.5 mr-1" /> PIN
             </Button>
             <Button
               variant="outline"
               size="sm"
+              className="shrink-0 h-8 text-xs"
               onClick={handleFetchAllImages}
               disabled={fetchingAllImages}
               title="이미지 없는 식당 사진 일괄 가져오기"
             >
               {fetchingAllImages ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Image className="h-3.5 w-3.5 mr-1" />}
-              이미지 가져오기
+              이미지
             </Button>
-            <Button onClick={openNew} size="sm">
-              <Plus className="h-4 w-4 mr-1" /> 추가
+            <Button onClick={openNew} size="sm" className="shrink-0 h-8 text-xs">
+              <Plus className="h-3.5 w-3.5 mr-1" /> 추가
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
+            <Button variant="ghost" size="sm" className="shrink-0 h-8 text-xs text-muted-foreground" onClick={handleLogout}>
               로그아웃
             </Button>
           </div>
