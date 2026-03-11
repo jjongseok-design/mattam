@@ -367,7 +367,7 @@ const Index = () => {
               <Utensils className="h-4 w-4 text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <h1 className="text-lg font-bold text-foreground tracking-tight">춘천 맛집 지도</h1>
+              <h1 className="text-lg font-bold text-foreground tracking-tight">춘천 맛집 가이드</h1>
               <p className="text-[11px] text-muted-foreground/70 flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
                 강원특별자치도 춘천시 · {categoryRestaurants.length}개 {category}
