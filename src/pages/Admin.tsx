@@ -22,6 +22,7 @@ interface RestaurantRow {
   price_range: string | null;
   tags: string[] | null;
   description: string | null;
+  image_url: string | null;
 }
 
 const getEmptyForm = (category: string) => ({
@@ -759,6 +760,82 @@ const Admin = () => {
                   <label className="text-sm font-medium">설명</label>
                   <Textarea value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
                 </div>
+                {/* Image Upload */}
+                {editing && (
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium">식당 사진</label>
+                    <div className="mt-1.5 space-y-2">
+                      {editing.image_url && (
+                        <div className="relative inline-block">
+                          <img
+                            src={editing.image_url}
+                            alt={editing.name}
+                            className="w-24 h-24 rounded-lg object-cover border border-border"
+                          />
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await adminApi(pin, "delete_image", { restaurant_id: editing.id });
+                                setEditing({ ...editing, image_url: null });
+                                toast({ title: "사진 삭제 완료 ✅" });
+                                fetchAll();
+                              } catch (err: any) {
+                                toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
+                              }
+                            }}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs hover:scale-110 transition-transform"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
+                      <div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            if (file.size > 5 * 1024 * 1024) {
+                              toast({ title: "파일 크기는 5MB 이하여야 합니다", variant: "destructive" });
+                              return;
+                            }
+                            setSaving(true);
+                            try {
+                              const reader = new FileReader();
+                              reader.onload = async () => {
+                                const base64 = (reader.result as string).split(",")[1];
+                                const ext = file.name.split(".").pop() || "jpg";
+                                const res = await adminApi(pin, "upload_image", {
+                                  restaurant_id: editing.id,
+                                  base64,
+                                  content_type: file.type,
+                                  file_ext: ext,
+                                });
+                                setEditing({ ...editing, image_url: res.image_url });
+                                toast({ title: "사진 업로드 완료 ✅" });
+                                fetchAll();
+                                setSaving(false);
+                              };
+                              reader.readAsDataURL(file);
+                            } catch (err: any) {
+                              toast({ title: "업로드 실패", description: err.message, variant: "destructive" });
+                              setSaving(false);
+                            }
+                          }}
+                          className="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">포털에서 검색한 식당 사진을 업로드하세요 (5MB 이하)</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {!editing && (
+                  <div className="col-span-2">
+                    <p className="text-[11px] text-muted-foreground">💡 사진은 식당 추가 후 수정에서 업로드할 수 있습니다</p>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setShowForm(false)}>취소</Button>
@@ -794,7 +871,16 @@ const Admin = () => {
                   {filtered.map((r) => (
                     <tr key={r.id} className="border-t border-border hover:bg-muted/30 transition-colors">
                       <td className="px-3 py-2 text-muted-foreground text-xs">{r.id}</td>
-                      <td className="px-3 py-2 font-medium">{r.name}</td>
+                      <td className="px-3 py-2 font-medium">
+                        <div className="flex items-center gap-1.5">
+                          {r.image_url ? (
+                            <img src={r.image_url} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />
+                          ) : (
+                            <span className="w-6 h-6 rounded bg-muted flex items-center justify-center text-xs flex-shrink-0">📷</span>
+                          )}
+                          {r.name}
+                        </div>
+                      </td>
                       <td className="px-3 py-2 text-muted-foreground hidden md:table-cell text-xs">{r.address}</td>
                       <td className="px-3 py-2 text-center">⭐ {r.rating}</td>
                       <td className="px-3 py-2 text-center text-muted-foreground hidden sm:table-cell">{r.review_count}</td>

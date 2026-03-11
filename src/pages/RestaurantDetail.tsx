@@ -191,6 +191,11 @@ const RestaurantDetail = () => {
       <div className="max-w-2xl mx-auto safe-area-x py-6 space-y-5">
         {/* Name & Rating */}
         <div className="flex items-center gap-3">
+          {restaurant.imageUrl && (
+            <div className="w-16 h-16 rounded-xl overflow-hidden border border-border/50 flex-shrink-0">
+              <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-xl font-bold text-foreground">{restaurant.name}</h2>
