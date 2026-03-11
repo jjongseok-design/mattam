@@ -279,7 +279,13 @@ const Index = () => {
                     </span>
                   </div>
                 ) : (
-                  <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
+                  <div className="flex flex-col gap-0.5">
+                    <h1 className="text-base font-bold text-foreground tracking-tight leading-tight flex items-center gap-1.5">
+                      <Utensils className="h-4 w-4 text-primary" />
+                      춘천 맛집 가이드
+                    </h1>
+                    <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
