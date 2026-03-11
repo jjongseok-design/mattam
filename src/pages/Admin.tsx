@@ -442,17 +442,20 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-2 flex items-center gap-2">
-          <Link to="/">
-            <Button variant="ghost" size="icon" className="tap-safe shrink-0">
-              <ArrowLeft className="h-4 w-4" />
+        <div className="max-w-5xl mx-auto px-4 py-2 space-y-2">
+          <div className="flex items-center gap-2">
+            <Link to="/">
+              <Button variant="ghost" size="icon" className="tap-safe shrink-0">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <h1 className="text-lg font-bold shrink-0">🛠 식당 관리</h1>
+            <span className="text-xs text-muted-foreground shrink-0">({restaurants.length})</span>
+            <div className="flex-1" />
+            <Button variant="ghost" size="sm" className="shrink-0 h-8 text-xs text-muted-foreground" onClick={handleLogout}>
+              로그아웃
             </Button>
-          </Link>
-          <h1 className="text-lg font-bold shrink-0">🛠 식당 관리</h1>
-          <span className="text-xs text-muted-foreground shrink-0">({restaurants.length})</span>
-
-          <div className="flex-1" />
-
+          </div>
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
             <Button
               variant={showTips ? "default" : "outline"}
