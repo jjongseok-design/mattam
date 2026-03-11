@@ -506,9 +506,6 @@ const Admin = () => {
             <Button onClick={openNew} size="sm" className="shrink-0 h-8 text-xs">
               <Plus className="h-3.5 w-3.5 mr-1" /> 추가
             </Button>
-            <Button variant="ghost" size="sm" className="shrink-0 h-8 text-xs text-muted-foreground" onClick={handleLogout}>
-              로그아웃
-            </Button>
           </div>
         </div>
       </div>
