@@ -138,7 +138,7 @@
   }
 
   .safe-area-top {
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: env(safe-area-inset-top, 20px);
   }
 
   .safe-area-x {
