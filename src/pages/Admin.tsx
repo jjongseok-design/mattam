@@ -493,7 +493,7 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-border bg-card sticky top-0 z-10">
+      <div className="border-b border-border bg-card sticky top-0 z-10 safe-area-top">
         <div className="max-w-5xl mx-auto px-4 py-2 space-y-2">
           <div className="flex items-center gap-2">
             <Link to="/">
@@ -504,15 +504,15 @@ const Admin = () => {
             <h1 className="text-lg font-bold shrink-0">🛠 식당 관리</h1>
             <span className="text-xs text-muted-foreground shrink-0">({restaurants.length})</span>
             <div className="flex-1" />
-            <Button variant="ghost" size="sm" className="shrink-0 h-8 text-xs text-muted-foreground" onClick={handleLogout}>
+            <Button variant="ghost" size="sm" className="shrink-0 h-10 text-xs text-muted-foreground px-3" onClick={handleLogout}>
               로그아웃
             </Button>
           </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin pb-1">
             <Button
               variant={showTips ? "default" : "outline"}
               size="sm"
-              className="shrink-0 h-8 text-xs"
+              className="shrink-0 h-10 text-xs px-3"
               onClick={async () => {
                 setShowTips(!showTips);
                 if (!showTips && tips.length === 0) {
@@ -536,18 +536,18 @@ const Admin = () => {
             <Button
               variant={editMode ? "default" : "outline"}
               size="sm"
-              className="shrink-0 h-8 text-xs"
+              className="shrink-0 h-10 text-xs px-3"
               onClick={() => setEditMode(!editMode)}
             >
               <Settings2 className="h-3.5 w-3.5 mr-1" /> {editMode ? "편집 완료" : "카테고리"}
             </Button>
-            <Button variant="outline" size="sm" className="shrink-0 h-8 text-xs" onClick={() => setShowPinChange(true)}>
+            <Button variant="outline" size="sm" className="shrink-0 h-10 text-xs px-3" onClick={() => setShowPinChange(true)}>
               <KeyRound className="h-3.5 w-3.5 mr-1" /> PIN
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="shrink-0 h-8 text-xs"
+              className="shrink-0 h-10 text-xs px-3"
               onClick={handleFetchAllImages}
               disabled={fetchingAllImages}
               title="이미지 없는 식당 사진 일괄 가져오기 (Google)"
@@ -558,7 +558,7 @@ const Admin = () => {
             <Button
               variant="outline"
               size="sm"
-              className="shrink-0 h-8 text-xs"
+              className="shrink-0 h-10 text-xs px-3"
               onClick={handleFetchAllNaverImages}
               disabled={fetchingAllNaverImages}
               title="이미지 없는 식당 사진 일괄 가져오기 (네이버)"
@@ -566,7 +566,7 @@ const Admin = () => {
               {fetchingAllNaverImages ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}
               이미지(N)
             </Button>
-            <Button onClick={openNew} size="sm" className="shrink-0 h-8 text-xs">
+            <Button onClick={openNew} size="sm" className="shrink-0 h-10 text-xs px-3">
               <Plus className="h-3.5 w-3.5 mr-1" /> 추가
             </Button>
           </div>
@@ -906,17 +906,17 @@ const Admin = () => {
                           placeholder="이미지 URL 직접 입력 (https://...)"
                           value={imageUrlInput}
                           onChange={(e) => setImageUrlInput(e.target.value)}
-                          className="text-xs h-8"
+                          className="text-xs h-10"
                         />
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="h-8 text-xs shrink-0"
+                          className="h-10 text-xs shrink-0 px-3"
                           onClick={handleSaveImageUrl}
                           disabled={savingImageUrl || !imageUrlInput.trim()}
                         >
-                          {savingImageUrl ? <Loader2 className="h-3 w-3 animate-spin" /> : "저장"}
+                          {savingImageUrl ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "저장"}
                         </Button>
                       </div>
                       <div>
@@ -1018,34 +1018,34 @@ const Admin = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground"
+                            className="h-9 w-9 text-muted-foreground"
                             title="Google 사진 가져오기"
                             disabled={fetchingImageId === r.id}
                             onClick={() => handleFetchImage(r.id)}
                           >
                             {fetchingImageId === r.id
-                              ? <Loader2 className="h-3 w-3 animate-spin" />
-                              : <Image className="h-3 w-3" />
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Image className="h-3.5 w-3.5" />
                             }
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground"
+                            className="h-9 w-9 text-muted-foreground"
                             title="네이버 사진 가져오기"
                             disabled={fetchingNaverImageId === r.id}
                             onClick={() => handleFetchNaverImage(r.id)}
                           >
                             {fetchingNaverImageId === r.id
-                              ? <Loader2 className="h-3 w-3 animate-spin" />
-                              : <Search className="h-3 w-3" />
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Search className="h-3.5 w-3.5" />
                             }
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}>
-                            <Pencil className="h-3 w-3" />
+                          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEdit(r)}>
+                            <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(r.id, r.name)}>
-                            <Trash2 className="h-3 w-3" />
+                          <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => handleDelete(r.id, r.name)}>
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </td>
@@ -1218,7 +1218,7 @@ const Admin = () => {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-muted-foreground"
+                                  className="h-9 w-9 text-muted-foreground"
                                   onClick={async () => {
                                     if (!confirm(isFeedback ? "이 피드백을 삭제하시겠습니까?" : "이 제보를 삭제하시겠습니까?")) return;
                                     try {
