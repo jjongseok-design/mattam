@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils, MapPin, Phone, Clock, XCircle, Tag, Banknote, Navigation } from "lucide-react";
+import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils, MapPin, Phone, Clock, XCircle, Tag, Banknote, Navigation, ChefHat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
@@ -188,21 +188,27 @@ const RestaurantDetail = () => {
       </div>
 
 
+
+      {/* Hero Image */}
+      {restaurant.imageUrl && (
+        <div className="w-full max-w-2xl mx-auto h-56 sm:h-72 overflow-hidden">
+          <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+        </div>
+      )}
+
       <div className="max-w-2xl mx-auto safe-area-x py-6 space-y-5">
         {/* Name & Rating */}
-        <div className="flex items-center gap-3">
-          {restaurant.imageUrl && (
-            <div className="w-16 h-16 rounded-xl overflow-hidden border border-border/50 flex-shrink-0">
-              <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+        <div className="flex items-start gap-3">
+          {!restaurant.imageUrl && (
+            <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center text-3xl flex-shrink-0">
+              {emoji}
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-xl font-bold text-foreground">{restaurant.name}</h2>
-            </div>
+            <h2 className="text-xl font-bold text-foreground">{restaurant.name}</h2>
             <span className="text-sm text-muted-foreground">{emoji} {restaurant.category}</span>
           </div>
-          <div className="flex flex-col items-center gap-0.5 bg-muted/50 px-3 py-2 rounded-xl">
+          <div className="flex flex-col items-center gap-0.5 bg-muted/50 px-3 py-2 rounded-xl flex-shrink-0">
             <div className="flex items-center gap-1">
               <Star className="h-5 w-5 text-rating fill-current" />
               <span className="text-2xl font-bold text-foreground">{restaurant.rating}</span>
@@ -228,29 +234,53 @@ const RestaurantDetail = () => {
               href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] text-primary font-medium flex items-center gap-0.5 flex-shrink-0"
+              className="text-[11px] text-primary font-medium flex items-center gap-0.5 flex-shrink-0 shrink-0"
             >
               <Navigation className="h-3 w-3" /> 길찾기
             </a>
           </div>
 
           {/* Phone */}
-          {restaurant.phone && (
-            <div className="flex items-center gap-3 p-3.5">
-              <Phone className="h-4 w-4 text-primary/60 flex-shrink-0" />
-              <a href={`tel:${restaurant.phone}`} className="text-[13px] font-medium text-foreground hover:text-primary transition-colors">
+          <div className="flex items-center gap-3 p-3.5">
+            <Phone className="h-4 w-4 text-primary/60 flex-shrink-0" />
+            {restaurant.phone ? (
+              <a href={`tel:${restaurant.phone}`} className="text-[13px] font-medium text-foreground hover:text-primary transition-colors flex-1">
                 {restaurant.phone}
               </a>
-            </div>
-          )}
+            ) : (
+              <>
+                <span className="text-[13px] text-muted-foreground/50 flex-1">전화번호 정보 없음</span>
+                <a
+                  href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-primary/70 font-medium flex items-center gap-0.5 flex-shrink-0"
+                >
+                  <ExternalLink className="h-3 w-3" /> 네이버에서 확인
+                </a>
+              </>
+            )}
+          </div>
 
           {/* Opening Hours */}
-          {restaurant.openingHours && (
-            <div className="flex items-center gap-3 p-3.5">
-              <Clock className="h-4 w-4 text-primary/60 flex-shrink-0" />
-              <span className="text-[13px] text-foreground">{restaurant.openingHours}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3 p-3.5">
+            <Clock className="h-4 w-4 text-primary/60 flex-shrink-0" />
+            {restaurant.openingHours ? (
+              <span className="text-[13px] text-foreground flex-1">{restaurant.openingHours}</span>
+            ) : (
+              <>
+                <span className="text-[13px] text-muted-foreground/50 flex-1">영업시간 정보 없음</span>
+                <a
+                  href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-primary/70 font-medium flex items-center gap-0.5 flex-shrink-0"
+                >
+                  <ExternalLink className="h-3 w-3" /> 네이버에서 확인
+                </a>
+              </>
+            )}
+          </div>
 
           {/* Closed Days */}
           {restaurant.closedDays && (
@@ -263,27 +293,83 @@ const RestaurantDetail = () => {
           )}
 
           {/* Price Range */}
-          {restaurant.priceRange && (
-            <div className="flex items-center gap-3 p-3.5">
-              <Banknote className="h-4 w-4 text-primary/60 flex-shrink-0" />
-              <span className="text-[13px] text-foreground">{restaurant.priceRange}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3 p-3.5">
+            <Banknote className="h-4 w-4 text-primary/60 flex-shrink-0" />
+            {restaurant.priceRange ? (
+              <span className="text-[13px] text-foreground flex-1">{restaurant.priceRange}</span>
+            ) : (
+              <>
+                <span className="text-[13px] text-muted-foreground/50 flex-1">가격 정보 없음</span>
+                <a
+                  href={`https://place.map.kakao.com/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-primary/70 font-medium flex items-center gap-0.5 flex-shrink-0"
+                >
+                  <ExternalLink className="h-3 w-3" /> 카카오에서 확인
+                </a>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Tags */}
+        {/* Tags as menu */}
         {restaurant.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {restaurant.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2.5 py-1 bg-muted/80 rounded-lg text-[11px] font-medium text-muted-foreground"
-              >
-                #{tag}
-              </span>
-            ))}
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+              <ChefHat className="h-4 w-4 text-primary/60" /> 대표 메뉴
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {restaurant.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1.5 bg-primary/8 border border-primary/15 rounded-lg text-[12px] font-medium text-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* External search links */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+            <ExternalLink className="h-4 w-4 text-primary/60" /> 더 자세한 정보
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            <a
+              href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border border-border/50 bg-card hover:bg-muted/50 transition-colors"
+            >
+              <span className="text-lg">🗺️</span>
+              <span className="text-[11px] font-medium text-foreground">네이버지도</span>
+              <span className="text-[10px] text-muted-foreground">영업시간·메뉴</span>
+            </a>
+            <a
+              href={`https://place.map.kakao.com/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border border-border/50 bg-card hover:bg-muted/50 transition-colors"
+            >
+              <span className="text-lg">🟡</span>
+              <span className="text-[11px] font-medium text-foreground">카카오맵</span>
+              <span className="text-[10px] text-muted-foreground">메뉴·가격</span>
+            </a>
+            <a
+              href={`https://www.google.com/search?q=${encodeURIComponent(restaurant.name + " 춘천")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border border-border/50 bg-card hover:bg-muted/50 transition-colors"
+            >
+              <span className="text-lg">🔍</span>
+              <span className="text-[11px] font-medium text-foreground">구글 검색</span>
+              <span className="text-[10px] text-muted-foreground">리뷰·사진</span>
+            </a>
+          </div>
+        </div>
 
         {/* Mini Map */}
         <div className="space-y-2">
@@ -291,15 +377,6 @@ const RestaurantDetail = () => {
             <MapPin className="h-4 w-4 text-primary/60" /> 위치
           </h3>
           <DetailMiniMap lat={restaurant.lat} lng={restaurant.lng} name={restaurant.name} />
-          <a
-            href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button variant="outline" size="sm" className="w-full mt-1">
-              네이버지도에서 상세정보 보기 <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
-            </Button>
-          </a>
         </div>
 
         {/* Reviews Section */}

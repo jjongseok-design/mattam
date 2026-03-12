@@ -93,8 +93,14 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
     let timeoutId: number | undefined;
 
     if (window.kakao?.maps) {
-      kakao.maps.load(() => setMode("kakao"));
-      return;
+      timeoutId = window.setTimeout(() => {
+        if (mode === "loading") handleFallback("카카오 SDK 초기화 타임아웃");
+      }, 7000);
+      kakao.maps.load(() => {
+        window.clearTimeout(timeoutId);
+        setMode("kakao");
+      });
+      return () => window.clearTimeout(timeoutId);
     }
 
     let script = document.getElementById(KAKAO_SCRIPT_ID) as HTMLScriptElement | null;

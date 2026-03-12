@@ -63,14 +63,20 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
           className="w-full text-left"
           aria-label={`${restaurant.name} - 평점 ${restaurant.rating}`}
         >
+          {/* Top image */}
+          {restaurant.imageUrl && (
+            <div className="w-full h-36 overflow-hidden">
+              <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+            </div>
+          )}
           <div className="p-3.5">
             {/* Header row */}
             <div className="flex items-center gap-2.5 mb-1.5">
-              <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-lg flex-shrink-0 overflow-hidden">
-                {restaurant.imageUrl ? (
-                  <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
-                ) : emoji}
-              </div>
+              {!restaurant.imageUrl && (
+                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-xl flex-shrink-0">
+                  {emoji}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h3 className="font-bold text-foreground text-[14px] leading-tight truncate">
@@ -168,15 +174,24 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
       {/* Top accent bar when selected */}
       <div className={`h-1 w-full transition-all duration-300 ${isSelected ? "bg-gradient-primary" : "bg-transparent"}`} />
 
+      {/* Top image */}
+      {restaurant.imageUrl && (
+        <button onClick={onClick} className="w-full block" aria-label={`${restaurant.name} 선택`}>
+          <div className="w-full h-44 overflow-hidden">
+            <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          </div>
+        </button>
+      )}
+
       <div className="p-5">
         {/* Header: emoji + name + rating */}
         <button onClick={onClick} className="w-full text-left" aria-label={`${restaurant.name} 선택`}>
           <div className="flex items-start gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
-              {restaurant.imageUrl ? (
-                <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
-              ) : emoji}
-            </div>
+            {!restaurant.imageUrl && (
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl flex-shrink-0">
+                {emoji}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-foreground text-base leading-snug truncate">

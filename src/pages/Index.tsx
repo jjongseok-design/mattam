@@ -8,6 +8,7 @@ import MobileBottomSheet from "@/components/MobileBottomSheet";
 import CategoryTabs from "@/components/CategoryTabs";
 import { useCategories } from "@/hooks/useCategories";
 import TipForm from "@/components/TipForm";
+import FeedbackForm from "@/components/FeedbackForm";
 import ThemeToggle from "@/components/ThemeToggle";
 import ErrorState from "@/components/ErrorState";
 import JsonLd from "@/components/JsonLd";
@@ -359,6 +360,7 @@ const Index = () => {
           />
         </div>
         <TipForm />
+        <FeedbackForm />
         <JsonLd />
         <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} />
       </>
