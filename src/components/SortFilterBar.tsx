@@ -39,32 +39,32 @@ const SortFilterBar = ({
   ];
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="space-y-1">
+      <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
         {/* Sort pills */}
         {sortOptions.map((opt) => (
           <button
             key={opt.value}
             onClick={() => onSortChange(opt.value)}
-            className={`flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-lg text-[11px] font-medium transition-all duration-200 ${
+            className={`flex items-center gap-0.5 px-2 py-1 rounded-lg text-[11px] font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
               sort === opt.value
                 ? "bg-primary/10 text-primary border border-primary/20"
                 : "bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent"
             }`}
           >
-            {opt.icon || <ArrowUpDown className="h-3 w-3" />}
+            {opt.icon || <ArrowUpDown className="h-2.5 w-2.5" />}
             {opt.label}
           </button>
         ))}
 
-        <div className="w-px h-4 bg-border mx-0.5" />
+        <div className="w-px h-3 bg-border mx-0.5 shrink-0" />
 
         {/* Filter pills */}
         {filterOptions.map((opt) => (
           <button
             key={opt.value}
             onClick={() => onFilterChange(opt.value)}
-            className={`flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-lg text-[11px] font-medium transition-all duration-200 ${
+            className={`flex items-center gap-0.5 px-2 py-1 rounded-lg text-[11px] font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
               filter === opt.value
                 ? "bg-primary/10 text-primary border border-primary/20"
                 : "bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent"
@@ -78,13 +78,13 @@ const SortFilterBar = ({
         {/* Rating filter toggle */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-1 px-2.5 py-1.5 min-h-[36px] rounded-lg text-[11px] font-medium transition-all duration-200 ${
+          className={`flex items-center gap-0.5 px-2 py-1 rounded-lg text-[11px] font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
             ratingMin > 0
               ? "bg-accent/10 text-accent border border-accent/20"
               : "bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent"
           }`}
         >
-          <SlidersHorizontal className="h-3 w-3" />
+          <SlidersHorizontal className="h-2.5 w-2.5" />
           {ratingMin > 0 ? `★${ratingMin}+` : "평점"}
         </button>
       </div>

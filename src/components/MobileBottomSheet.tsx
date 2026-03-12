@@ -162,9 +162,9 @@ const MobileBottomSheet = memo(({
 
         {/* Content - hidden when peek */}
         {!isPeek && (
-          <div className="px-4 pb-2 flex flex-col flex-1 min-h-0">
+          <div className="px-3 pb-2 flex flex-col flex-1 min-h-0">
             {/* Search + Random */}
-            <div className="flex gap-2 mb-2 flex-shrink-0">
+            <div className="flex gap-1.5 mb-1.5 flex-shrink-0">
               <div className="flex-1">
                 <SearchBar query={query} onQueryChange={onQueryChange} />
               </div>
@@ -172,7 +172,7 @@ const MobileBottomSheet = memo(({
             </div>
 
             {/* Sort / Filter */}
-            <div className="mb-2 flex-shrink-0">
+            <div className="mb-1.5 flex-shrink-0">
               <SortFilterBar
                 sort={sort}
                 onSortChange={onSortChange}
@@ -185,7 +185,7 @@ const MobileBottomSheet = memo(({
             </div>
 
             {/* Count */}
-            <p className="text-[11px] text-muted-foreground/50 px-1 mb-1.5 font-medium flex-shrink-0">
+            <p className="text-[10px] text-muted-foreground/50 px-1 mb-1 font-medium flex-shrink-0">
               {query.trim() && <span className="text-primary mr-1">🔍 전체 검색 ·</span>}
               {restaurants.length}개 ·{" "}
               {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
@@ -195,7 +195,7 @@ const MobileBottomSheet = memo(({
             {/* List - isolated scroll container */}
             <div
               ref={listRef}
-              className="flex-1 min-h-0 overflow-y-auto scrollbar-thin space-y-2 pb-4 overscroll-contain"
+              className="flex-1 min-h-0 overflow-y-auto scrollbar-thin space-y-1.5 pb-4 overscroll-contain"
               style={{ WebkitOverflowScrolling: "touch" }}
               onScroll={handleListScroll}
               onTouchStart={handleListTouchStart}

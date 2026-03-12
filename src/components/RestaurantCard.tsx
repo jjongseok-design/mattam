@@ -65,13 +65,13 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
         >
           {/* Top image */}
           {restaurant.imageUrl && (
-            <div className="w-full h-36 overflow-hidden">
+            <div className="w-full h-20 overflow-hidden">
               <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
             </div>
           )}
-          <div className="p-3.5">
+          <div className="p-2.5">
             {/* Header row */}
-            <div className="flex items-center gap-2.5 mb-1.5">
+            <div className="flex items-center gap-2 mb-1">
               {!restaurant.imageUrl && (
                 <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-xl flex-shrink-0">
                   {emoji}
@@ -100,7 +100,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
             </div>
 
             {/* Tags + distance + actions */}
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1 mt-1">
               {restaurant.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
@@ -120,7 +120,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
         </button>
 
         {/* Action bar */}
-        <div className="flex items-center justify-between px-3.5 pb-3 pt-0">
+        <div className="flex items-center justify-between px-2.5 pb-2 pt-0">
           <div className="flex items-center gap-0.5">
             {onToggleFavorite && (
               <button

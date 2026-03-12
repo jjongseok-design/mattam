@@ -33,7 +33,7 @@ const RandomPickButton = ({ restaurants }: RandomPickButtonProps) => {
       <button
         onClick={handlePick}
         disabled={restaurants.length === 0}
-        className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] bg-accent/10 hover:bg-accent/20 text-accent rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-40 border border-accent/20"
+        className="flex items-center gap-1 px-2.5 py-1.5 bg-accent/10 hover:bg-accent/20 text-accent rounded-xl text-[11px] font-semibold transition-all duration-200 disabled:opacity-40 border border-accent/20 whitespace-nowrap"
         aria-label="랜덤 식당 추천"
       >
         <motion.span
