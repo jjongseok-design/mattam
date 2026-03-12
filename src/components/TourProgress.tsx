@@ -26,7 +26,7 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false }: TourPr
           <span className="text-xl">{stats.rankEmoji}</span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-foreground truncate">{stats.rank}</span>
+              <span className="text-xs font-bold text-foreground whitespace-nowrap">{stats.rank}</span>
               <span className="text-[10px] text-primary font-bold">{stats.overallPercent}%</span>
               {expanded ? (
                 <ChevronUp className="h-3 w-3 text-muted-foreground" />
