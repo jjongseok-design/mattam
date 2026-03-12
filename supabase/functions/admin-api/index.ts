@@ -438,11 +438,12 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            // Step 2: 첫 번째 유효한 이미지 URL 사용
+            // Step 2: thumbnail(네이버 CDN) 우선, 없으면 link 사용
             let imageUrl: string | null = null;
             for (const item of items) {
-              if (item.link && (item.link.startsWith("http://") || item.link.startsWith("https://"))) {
-                imageUrl = item.link;
+              const candidate = item.thumbnail || item.link;
+              if (candidate && (candidate.startsWith("http://") || candidate.startsWith("https://"))) {
+                imageUrl = candidate;
                 break;
               }
             }
@@ -453,15 +454,24 @@ Deno.serve(async (req) => {
             }
 
             // Step 3: Download image
-            const imgRes = await fetch(imageUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
+            const imgRes = await fetch(imageUrl, {
+              headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "https://www.naver.com/",
+              },
+            });
             if (!imgRes.ok) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "이미지 다운로드 실패" });
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: `이미지 다운로드 실패 (${imgRes.status}): ${imageUrl}` });
+              continue;
+            }
+            const contentType = imgRes.headers.get("content-type") || "";
+            if (!contentType.includes("image")) {
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: `이미지가 아닌 응답 (${contentType})` });
               continue;
             }
 
             // Step 4: Upload to Supabase Storage
             const imageBuffer = await imgRes.arrayBuffer();
-            const contentType = imgRes.headers.get("content-type") || "image/jpeg";
             const ext = contentType.includes("png") ? "png" : "jpg";
             const { error: uploadErr } = await supabase.storage
               .from("restaurant-images")
