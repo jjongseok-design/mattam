@@ -184,14 +184,6 @@ const MobileBottomSheet = memo(({
               />
             </div>
 
-            {/* Count */}
-            <p className="text-[10px] text-muted-foreground/50 px-1 mb-1 font-medium flex-shrink-0">
-              {query.trim() && <span className="text-primary mr-1">🔍 전체 검색 ·</span>}
-              {restaurants.length}개 ·{" "}
-              {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
-              {filter !== "all" && ` · ${filter === "favorites" ? "찜" : "방문"}`}
-            </p>
-
             {/* List - isolated scroll container */}
             <div
               ref={listRef}
@@ -203,16 +195,16 @@ const MobileBottomSheet = memo(({
             >
               {/* Recently Viewed */}
               {recentRestaurants.length > 0 && (
-                <div className="mb-3">
-                  <p className="text-[11px] text-muted-foreground/60 font-medium px-1 mb-1.5">🕐 최근 본 식당</p>
-                  <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+                <div className="mb-2">
+                  <p className="text-[10px] text-muted-foreground/50 font-medium px-1 mb-1">🕐 최근 본 식당</p>
+                  <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-1">
                     {recentRestaurants.map((r) => (
                       <Link
                         key={r.id}
                         to={`/restaurant/${r.id}`}
-                        className="flex-shrink-0 px-3 py-2 bg-muted/60 hover:bg-muted rounded-xl text-[12px] font-medium text-foreground transition-colors border border-border/30"
+                        className="flex-shrink-0 px-2 py-1 bg-muted/60 hover:bg-muted rounded-lg text-[11px] font-medium text-foreground transition-colors border border-border/30"
                       >
-                        <span className="mr-1">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
+                        <span className="mr-0.5">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
                         {r.name}
                       </Link>
                     ))}
