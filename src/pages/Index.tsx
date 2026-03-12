@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { MapPin, Utensils, Loader2, Settings, Navigation, Download, X } from "lucide-react";
+import { MapPin, Utensils, Loader2, Settings, Navigation, Download, X, MessageSquarePlus } from "lucide-react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
@@ -518,8 +518,21 @@ const Index = () => {
             </div>
           )}
 
-          <div className="text-center py-4 text-[10px] text-muted-foreground/40 border-t border-border/30 mt-4">
-            © {new Date().getFullYear()} 춘천 맛집 지도. All rights reserved.
+          <div className="border-t border-border/30 mt-4 pt-3 px-1 pb-2 flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground/40">
+              © {new Date().getFullYear()} 춘천 맛집 지도
+            </span>
+            <TipForm
+              trigger={(onClick) => (
+                <button
+                  onClick={onClick}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors"
+                >
+                  <MessageSquarePlus className="h-3.5 w-3.5" />
+                  맛집 제보하기
+                </button>
+              )}
+            />
           </div>
         </div>
       </div>
@@ -536,7 +549,6 @@ const Index = () => {
           visitedIds={visited}
         />
       </div>
-      <TipForm />
       <JsonLd />
       <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} />
     </div>

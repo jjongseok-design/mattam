@@ -8,7 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 import { MessageSquarePlus, Send, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const TipForm = () => {
+interface TipFormProps {
+  /** PC sidebar용: 플로팅 버튼 대신 사용할 커스텀 트리거 */
+  trigger?: (onClick: () => void) => React.ReactNode;
+}
+
+const TipForm = ({ trigger }: TipFormProps = {}) => {
   const { data: categories = [] } = useCategories();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -46,15 +51,17 @@ const TipForm = () => {
 
   return (
     <>
-      {/* Floating button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-[45vh] z-[1300] w-12 h-12 min-w-[48px] min-h-[48px] rounded-2xl glass flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg"
-        style={{ right: 'calc(env(safe-area-inset-right, 0px) + 16px)' }}
-        aria-label="맛집 제보하기"
-      >
-        <MessageSquarePlus className="h-5 w-5 text-primary" />
-      </button>
+      {/* Floating button (모바일) 또는 커스텀 트리거 (PC) */}
+      {trigger ? trigger(() => setOpen(true)) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-[45vh] z-[1300] w-12 h-12 min-w-[48px] min-h-[48px] rounded-2xl glass flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg"
+          style={{ right: 'calc(env(safe-area-inset-right, 0px) + 16px)' }}
+          aria-label="맛집 제보하기"
+        >
+          <MessageSquarePlus className="h-5 w-5 text-primary" />
+        </button>
+      )}
 
       {/* Modal */}
       <AnimatePresence>
