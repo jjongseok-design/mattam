@@ -73,6 +73,10 @@ const Admin = () => {
   const [tipsTab, setTipsTab] = useState<"tips" | "feedback">("tips");
   const [fetchingImageId, setFetchingImageId] = useState<string | null>(null);
   const [fetchingAllImages, setFetchingAllImages] = useState(false);
+  const [fetchingNaverImageId, setFetchingNaverImageId] = useState<string | null>(null);
+  const [fetchingAllNaverImages, setFetchingAllNaverImages] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [savingImageUrl, setSavingImageUrl] = useState(false);
 
   // Category management state
   const [editMode, setEditMode] = useState(false);
@@ -283,6 +287,53 @@ const Admin = () => {
       toast({ title: "오류", description: err.message, variant: "destructive" });
     }
     setFetchingAllImages(false);
+  };
+
+  const handleFetchNaverImage = async (id: string) => {
+    setFetchingNaverImageId(id);
+    try {
+      const res = await adminApi(pin, "fetch_naver_images", { id });
+      const r = res.results?.[0];
+      if (r?.success) {
+        toast({ title: "네이버 이미지 가져오기 완료 ✅" });
+        fetchAll();
+      } else {
+        toast({ title: "이미지 없음", description: r?.error || "네이버에서 사진을 찾을 수 없습니다", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "오류", description: err.message, variant: "destructive" });
+    }
+    setFetchingNaverImageId(null);
+  };
+
+  const handleFetchAllNaverImages = async () => {
+    if (!confirm("이미지가 없는 모든 식당의 사진을 네이버 블로그에서 가져옵니다. 계속하시겠습니까?")) return;
+    setFetchingAllNaverImages(true);
+    try {
+      const res = await adminApi(pin, "fetch_naver_images");
+      const ok = res.results?.filter((r: any) => r.success).length ?? 0;
+      const fail = res.results?.filter((r: any) => !r.success).length ?? 0;
+      toast({ title: `완료: ${ok}개 성공, ${fail}개 실패` });
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "오류", description: err.message, variant: "destructive" });
+    }
+    setFetchingAllNaverImages(false);
+  };
+
+  const handleSaveImageUrl = async () => {
+    if (!editing || !imageUrlInput.trim()) return;
+    setSavingImageUrl(true);
+    try {
+      await adminApi(pin, "update", { id: editing.id, image_url: imageUrlInput.trim() });
+      setEditing({ ...editing, image_url: imageUrlInput.trim() });
+      setImageUrlInput("");
+      toast({ title: "이미지 URL 저장 완료 ✅" });
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "저장 실패", description: err.message, variant: "destructive" });
+    }
+    setSavingImageUrl(false);
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -499,10 +550,21 @@ const Admin = () => {
               className="shrink-0 h-8 text-xs"
               onClick={handleFetchAllImages}
               disabled={fetchingAllImages}
-              title="이미지 없는 식당 사진 일괄 가져오기"
+              title="이미지 없는 식당 사진 일괄 가져오기 (Google)"
             >
               {fetchingAllImages ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Image className="h-3.5 w-3.5 mr-1" />}
-              이미지
+              이미지(G)
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0 h-8 text-xs"
+              onClick={handleFetchAllNaverImages}
+              disabled={fetchingAllNaverImages}
+              title="이미지 없는 식당 사진 일괄 가져오기 (네이버)"
+            >
+              {fetchingAllNaverImages ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}
+              이미지(N)
             </Button>
             <Button onClick={openNew} size="sm" className="shrink-0 h-8 text-xs">
               <Plus className="h-3.5 w-3.5 mr-1" /> 추가
@@ -839,6 +901,24 @@ const Admin = () => {
                           </button>
                         </div>
                       )}
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="이미지 URL 직접 입력 (https://...)"
+                          value={imageUrlInput}
+                          onChange={(e) => setImageUrlInput(e.target.value)}
+                          className="text-xs h-8"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs shrink-0"
+                          onClick={handleSaveImageUrl}
+                          disabled={savingImageUrl || !imageUrlInput.trim()}
+                        >
+                          {savingImageUrl ? <Loader2 className="h-3 w-3 animate-spin" /> : "저장"}
+                        </Button>
+                      </div>
                       <div>
                         <input
                           type="file"
@@ -946,6 +1026,19 @@ const Admin = () => {
                             {fetchingImageId === r.id
                               ? <Loader2 className="h-3 w-3 animate-spin" />
                               : <Image className="h-3 w-3" />
+                            }
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            title="네이버 사진 가져오기"
+                            disabled={fetchingNaverImageId === r.id}
+                            onClick={() => handleFetchNaverImage(r.id)}
+                          >
+                            {fetchingNaverImageId === r.id
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <Search className="h-3 w-3" />
                             }
                           </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}>
