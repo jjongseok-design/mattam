@@ -66,15 +66,15 @@ const CategoryTabs = ({ active, onChange, variant = "grid", categoryCounts = {} 
                 />
               )}
               <div className="relative z-10 flex items-center gap-0.5">
-                <span className="text-lg">{cat.emoji}</span>
+                <span className="text-lg md:text-2xl">{cat.emoji}</span>
                 {count != null && (
-                  <span className={`text-[9px] font-bold -mt-1 ${isActive ? "text-primary" : "text-muted-foreground/70"}`}>
+                  <span className={`text-[9px] md:text-[11px] font-bold -mt-1 ${isActive ? "text-primary" : "text-muted-foreground/70"}`}>
                     {count}
                   </span>
                 )}
               </div>
               <span
-                className={`relative z-10 text-[10px] font-medium leading-tight w-full text-center break-keep ${
+                className={`relative z-10 text-[10px] md:text-[13px] font-medium leading-tight w-full text-center break-keep ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
