@@ -275,41 +275,41 @@ const Index = () => {
             <div className="safe-area-x pt-1.5 pb-1.5 flex items-center gap-2">
               <div className="flex-1 min-w-0 overflow-hidden">
                 {showList ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <button
                       onClick={handleCloseList}
-                      className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform shrink-0"
+                      className="w-8 h-8 min-w-[32px] rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform shrink-0"
                       aria-label="카테고리 선택으로 돌아가기"
                     >
-                      <X className="h-4 w-4 text-foreground" />
+                      <X className="h-3.5 w-3.5 text-foreground" />
                     </button>
-                    <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                      <span>{categoryEmoji}</span>
-                      <span>{category}</span>
-                      <span className="text-[11px] font-normal text-muted-foreground ml-0.5">{categoryRestaurants.length}개</span>
+                    <span className="text-sm font-bold text-foreground flex items-center gap-1 min-w-0">
+                      <span className="shrink-0">{categoryEmoji}</span>
+                      <span className="truncate">{category}</span>
+                      <span className="text-[11px] font-normal text-muted-foreground shrink-0">{categoryRestaurants.length}개</span>
                     </span>
                   </div>
                 ) : (
                   <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
                 )}
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 {!position && (
                   <button
                     onClick={handleLocationRequest}
-                    className="glass rounded-xl w-11 h-11 tap-safe flex items-center justify-center active:scale-95 transition-transform"
+                    className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform"
                     aria-label="내 위치 찾기"
                   >
-                    <Navigation className="h-5 w-5 text-muted-foreground" />
+                    <Navigation className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
                 )}
-                <Link to="/admin" className="glass rounded-xl w-11 h-11 tap-safe flex items-center justify-center active:scale-95 transition-transform">
-                  <Settings className="h-5 w-5 text-muted-foreground/50" />
+                <Link to="/admin" className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform">
+                  <Settings className="h-3.5 w-3.5 text-muted-foreground/50" />
                 </Link>
-                <Link to="/install" className="glass rounded-xl w-11 h-11 tap-safe flex items-center justify-center active:scale-95 transition-transform">
-                  <Download className="h-5 w-5 text-muted-foreground" />
+                <Link to="/install" className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform">
+                  <Download className="h-3.5 w-3.5 text-muted-foreground" />
                 </Link>
-                <div className="glass rounded-xl w-11 h-11 tap-safe flex items-center justify-center">
+                <div className="glass rounded-lg w-8 h-8 flex items-center justify-center">
                   <ThemeToggle />
                 </div>
               </div>
