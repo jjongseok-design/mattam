@@ -418,9 +418,9 @@ Deno.serve(async (req) => {
 
         for (const restaurant of targets) {
           try {
-            // Step 1: Naver Blog Search API
+            // Step 1: Naver Image Search API (직접 이미지 URL 반환)
             const query = encodeURIComponent(`${restaurant.name} 춘천 맛집`);
-            const searchUrl = `https://openapi.naver.com/v1/search/blog.json?query=${query}&display=5`;
+            const searchUrl = `https://openapi.naver.com/v1/search/image.json?query=${query}&display=3&filter=large`;
             const searchRes = await fetch(searchUrl, {
               headers: {
                 "X-Naver-Client-Id": naverClientId,
@@ -428,39 +428,27 @@ Deno.serve(async (req) => {
               },
             });
             if (!searchRes.ok) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "네이버 검색 API 오류" });
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: `네이버 이미지 API 오류 (${searchRes.status})` });
               continue;
             }
             const searchData = await searchRes.json();
             const items = searchData.items ?? [];
             if (items.length === 0) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "블로그 결과 없음" });
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "이미지 검색 결과 없음" });
               continue;
             }
 
-            // Step 2: Fetch each blog post and extract og:image
+            // Step 2: 첫 번째 유효한 이미지 URL 사용
             let imageUrl: string | null = null;
             for (const item of items) {
-              try {
-                const blogRes = await fetch(item.link, {
-                  headers: { "User-Agent": "Mozilla/5.0" },
-                  redirect: "follow",
-                });
-                if (!blogRes.ok) continue;
-                const html = await blogRes.text();
-                const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-                  || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-                if (ogMatch?.[1]) {
-                  imageUrl = ogMatch[1];
-                  break;
-                }
-              } catch {
-                continue;
+              if (item.link && (item.link.startsWith("http://") || item.link.startsWith("https://"))) {
+                imageUrl = item.link;
+                break;
               }
             }
 
             if (!imageUrl) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "이미지를 찾을 수 없음" });
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "유효한 이미지 URL 없음" });
               continue;
             }
 
