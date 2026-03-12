@@ -66,6 +66,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
   const kakaoMapRef = useRef<kakao.maps.Map | null>(null);
   const kakaoMarkersRef = useRef<kakao.maps.Marker[]>([]);
   const kakaoOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
+  const kakaoNameOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
 
   const leafMapRef = useRef<L.Map | null>(null);
   const leafMarkersRef = useRef<L.Marker[]>([]);
@@ -208,6 +209,8 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
     kakaoMarkersRef.current = [];
     kakaoOverlayRef.current?.setMap(null);
     kakaoOverlayRef.current = null;
+    kakaoNameOverlaysRef.current.forEach((o) => o.setMap(null));
+    kakaoNameOverlaysRef.current = [];
 
     const defaultImage = new kakao.maps.MarkerImage(
       "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
@@ -234,6 +237,23 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
       });
 
       kakao.maps.event.addListener(marker, "click", () => onSelect(r.id));
+
+      // Name label above marker
+      const labelBg = isSelected ? "#2563eb" : isVisited ? "#16a34a" : "white";
+      const labelColor = isSelected || isVisited ? "white" : "#222";
+      const labelBorder = isSelected ? "none" : isVisited ? "none" : "1px solid rgba(0,0,0,0.12)";
+      const labelFontWeight = isSelected ? "700" : "600";
+      const markerHeight = isSelected ? 46 : 35;
+      const labelContent = `<div style="background:${labelBg};color:${labelColor};border:${labelBorder};border-radius:5px;padding:2px 7px;font-size:11px;font-weight:${labelFontWeight};box-shadow:0 1px 4px rgba(0,0,0,0.18);white-space:nowrap;pointer-events:none;">${r.name}</div>`;
+      const nameOverlay = new kakao.maps.CustomOverlay({
+        content: labelContent,
+        position,
+        map,
+        yAnchor: 1 + (markerHeight + 6) / 20,
+        xAnchor: 0.5,
+        zIndex: isSelected ? 11 : isVisited ? 6 : 2,
+      });
+      kakaoNameOverlaysRef.current.push(nameOverlay);
 
       if (isSelected) {
         const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
@@ -268,6 +288,13 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
         icon: isSelected ? leafSelectedIcon : isVisited ? leafVisitedIcon : leafDefaultIcon,
         zIndexOffset: isSelected ? 1000 : isVisited ? 500 : 0,
       }).addTo(map);
+
+      marker.bindTooltip(r.name, {
+        permanent: true,
+        direction: "top",
+        offset: [0, -38],
+        className: `map-name-label${isSelected ? " map-name-label--selected" : isVisited ? " map-name-label--visited" : ""}`,
+      });
 
       const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;">✓ 방문완료</span>` : "";
       marker.bindPopup(
