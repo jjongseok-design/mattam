@@ -238,22 +238,22 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
 
       kakao.maps.event.addListener(marker, "click", () => onSelect(r.id));
 
-      // Name label above marker
-      const labelBg = isSelected ? "#2563eb" : isVisited ? "#16a34a" : "white";
-      const labelColor = isSelected || isVisited ? "white" : "#222";
-      const labelBorder = isSelected ? "none" : isVisited ? "none" : "1px solid rgba(0,0,0,0.12)";
-      const labelFontWeight = isSelected ? "700" : "600";
-      const markerHeight = isSelected ? 46 : 35;
-      const labelContent = `<div style="background:${labelBg};color:${labelColor};border:${labelBorder};border-radius:5px;padding:2px 7px;font-size:11px;font-weight:${labelFontWeight};box-shadow:0 1px 4px rgba(0,0,0,0.18);white-space:nowrap;pointer-events:none;">${r.name}</div>`;
-      const nameOverlay = new kakao.maps.CustomOverlay({
-        content: labelContent,
-        position,
-        map,
-        yAnchor: 1 + (markerHeight + 6) / 20,
-        xAnchor: 0.5,
-        zIndex: isSelected ? 11 : isVisited ? 6 : 2,
-      });
-      kakaoNameOverlaysRef.current.push(nameOverlay);
+      // Name label above marker (선택된 마커는 팝업이 이름을 표시하므로 레이블 제외)
+      if (!isSelected) {
+        const labelBg = isVisited ? "#16a34a" : "white";
+        const labelColor = isVisited ? "white" : "#222";
+        const labelBorder = isVisited ? "none" : "1px solid rgba(0,0,0,0.12)";
+        const labelContent = `<div style="background:${labelBg};color:${labelColor};border:${labelBorder};border-radius:5px;padding:2px 7px;font-size:11px;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,0.18);white-space:nowrap;pointer-events:none;">${r.name}</div>`;
+        const nameOverlay = new kakao.maps.CustomOverlay({
+          content: labelContent,
+          position,
+          map,
+          yAnchor: 1 + 35 / 20 + 0.3,
+          xAnchor: 0.5,
+          zIndex: isVisited ? 6 : 2,
+        });
+        kakaoNameOverlaysRef.current.push(nameOverlay);
+      }
 
       if (isSelected) {
         const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
@@ -289,12 +289,15 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
         zIndexOffset: isSelected ? 1000 : isVisited ? 500 : 0,
       }).addTo(map);
 
-      marker.bindTooltip(r.name, {
-        permanent: true,
-        direction: "top",
-        offset: [0, -38],
-        className: `map-name-label${isSelected ? " map-name-label--selected" : isVisited ? " map-name-label--visited" : ""}`,
-      });
+      // 선택된 마커는 팝업이 이름을 표시하므로 고정 툴팁 제외
+      if (!isSelected) {
+        marker.bindTooltip(r.name, {
+          permanent: true,
+          direction: "top",
+          offset: [0, -38],
+          className: `map-name-label${isVisited ? " map-name-label--visited" : ""}`,
+        });
+      }
 
       const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;">✓ 방문완료</span>` : "";
       marker.bindPopup(
