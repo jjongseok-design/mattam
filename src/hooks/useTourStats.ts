@@ -21,9 +21,9 @@ interface TourStats {
 
 const RANKS = [
   { min: 0, label: "맛집 입문자", emoji: "🌱" },
-  { min: 5, label: "맛집 탐험가", emoji: "🔍" },
+  { min: 5, label: "맛집 탐험가", emoji: "🧭" },
   { min: 15, label: "맛집 애호가", emoji: "😋" },
-  { min: 30, label: "맛집 전문가", emoji: "🎯" },
+  { min: 30, label: "맛집 전문가", emoji: "⭐" },
   { min: 50, label: "맛집 마니아", emoji: "🔥" },
   { min: 75, label: "맛집 달인", emoji: "👑" },
   { min: 100, label: "춘천 미식왕", emoji: "🏆" },

@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { useToast } from "@/hooks/use-toast";
+import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 
 const CHUNCHEON_CENTER = { lat: 37.8813, lng: 127.73 };
 const LEAFLET_CENTER: L.LatLngExpression = [37.8813, 127.73];
@@ -21,7 +22,22 @@ interface MapViewProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   visitedIds?: Set<string>;
+  isDarkMode?: boolean;
 }
+
+const makeEmojiIcon = (emoji: string, isSelected: boolean, isVisited: boolean) => {
+  const size = isSelected ? 40 : 32;
+  const bg = isSelected ? "#f97316" : isVisited ? "#16a34a" : "#ffffff";
+  const border = isSelected ? "#ea580c" : isVisited ? "#15803d" : "#e2e8f0";
+  const shadow = isSelected ? "0 2px 8px rgba(249,115,22,0.5)" : "0 1px 4px rgba(0,0,0,0.2)";
+  return L.divIcon({
+    html: `<div style="width:${size}px;height:${size}px;background:${bg};border:2px solid ${border};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${isSelected ? 20 : 16}px;box-shadow:${shadow};transition:all .15s;">${emoji}</div>`,
+    className: "",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2) - 4],
+  });
+};
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -59,7 +75,7 @@ const leafSelectedIcon = new L.Icon({
   className: "selected-marker",
 });
 
-const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: MapViewProps) => {
+const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), isDarkMode = false }: MapViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -284,8 +300,9 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
       const isSelected = r.id === selectedId;
       const isVisited = visitedIds.has(r.id);
       const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
+      const emoji = CATEGORY_EMOJI[r.category] || "🍽️";
       const marker = L.marker([r.lat, r.lng], {
-        icon: isSelected ? leafSelectedIcon : isVisited ? leafVisitedIcon : leafDefaultIcon,
+        icon: makeEmojiIcon(emoji, isSelected, isVisited),
         zIndexOffset: isSelected ? 1000 : isVisited ? 500 : 0,
       }).addTo(map);
 
@@ -347,7 +364,11 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set() }: 
           기본 지도로 표시 중{fallbackReason ? ` (${fallbackReason})` : ""}
         </div>
       )}
-      <div ref={containerRef} className="h-full w-full" />
+      <div
+        ref={containerRef}
+        className="h-full w-full"
+        style={isDarkMode ? { filter: "invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9)", WebkitFilter: "invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9)" } : undefined}
+      />
     </div>
   );
 };

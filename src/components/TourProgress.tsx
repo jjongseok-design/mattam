@@ -1,9 +1,10 @@
 import { Trophy, MapPin, Share2, ChevronDown, ChevronUp, Crown } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { useTourStats } from "@/hooks/useTourStats";
+import { useToast } from "@/hooks/use-toast";
 
 interface TourProgressProps {
   restaurants: Restaurant[];
@@ -15,6 +16,20 @@ interface TourProgressProps {
 const TourProgress = ({ restaurants, visited, onShare, compact = false }: TourProgressProps) => {
   const [expanded, setExpanded] = useState(false);
   const stats = useTourStats(restaurants, visited);
+  const { toast } = useToast();
+  const prevMasterRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    const prev = prevMasterRef.current;
+    const newlyMastered = stats.masterCategories.filter((cat) => !prev.includes(cat));
+    if (newlyMastered.length > 0 && prev.length > 0) {
+      newlyMastered.forEach((cat) => {
+        const emoji = CATEGORY_EMOJI[cat] || "🍽️";
+        toast({ title: `${emoji} ${cat} 마스터 달성! 🏆`, description: `${cat}의 모든 맛집을 방문했습니다!` });
+      });
+    }
+    prevMasterRef.current = stats.masterCategories;
+  }, [stats.masterCategories, toast]);
 
   if (compact) {
     return (

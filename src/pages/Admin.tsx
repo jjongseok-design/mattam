@@ -576,6 +576,24 @@ const Admin = () => {
         </div>
       </div>
 
+      <div className="max-w-5xl mx-auto px-4 pt-3 pb-1">
+        {/* Stats summary card */}
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="bg-card border border-border rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-foreground">{restaurants.length}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">전체 식당</p>
+          </div>
+          <div className="bg-card border border-border rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-orange-500">{restaurants.filter(r => !r.image_url).length}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">이미지 없음</p>
+          </div>
+          <div className="bg-card border border-border rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-primary">{tips.filter(t => t.status === 'pending').length}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">미처리 제보</p>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-5xl mx-auto px-4 py-4">
         {/* Unified Category Grid - matches main screen layout */}
         <div className="border border-border rounded-lg p-3 mb-4 bg-card">

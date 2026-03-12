@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils, MapPin, Phone, Clock, XCircle, Tag, Banknote, Navigation, ChefHat } from "lucide-react";
+import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils, MapPin, Phone, Clock, XCircle, Tag, Banknote, Navigation, ChefHat, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import ReviewForm from "@/components/ReviewForm";
@@ -9,6 +10,7 @@ import ReviewList from "@/components/ReviewList";
 import ErrorState from "@/components/ErrorState";
 import { useToast } from "@/hooks/use-toast";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+import { supabase } from "@/integrations/supabase/client";
 import L from "leaflet";
 
 const DetailMiniMap = ({ lat, lng, name }: { lat: number; lng: number; name: string }) => {
@@ -58,6 +60,9 @@ const RestaurantDetail = () => {
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
   const { toast } = useToast();
   const { addViewed } = useRecentlyViewed();
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportText, setReportText] = useState("");
+  const [reportSending, setReportSending] = useState(false);
 
   const restaurant = restaurants.find((r) => r.id === id);
 
@@ -140,6 +145,24 @@ const RestaurantDetail = () => {
       await navigator.clipboard.writeText(url);
       toast({ title: "링크가 복사되었습니다 📋" });
     }
+  };
+
+  const handleReport = async () => {
+    if (!reportText.trim() || !restaurant) return;
+    setReportSending(true);
+    try {
+      await supabase.from("tips").insert({
+        restaurant_name: restaurant.name,
+        content: reportText.trim(),
+        status: "pending",
+      });
+      toast({ title: "오류 신고가 접수되었습니다 ✅", description: "관리자가 확인 후 수정하겠습니다." });
+      setReportOpen(false);
+      setReportText("");
+    } catch {
+      toast({ title: "신고 접수 실패", description: "잠시 후 다시 시도해주세요.", variant: "destructive" });
+    }
+    setReportSending(false);
   };
 
   if (isLoading) {
@@ -361,7 +384,46 @@ const RestaurantDetail = () => {
           <ReviewForm restaurantId={restaurant.id} />
           <ReviewList restaurantId={restaurant.id} />
         </div>
+
+        {/* Report error */}
+        <div className="pt-2 pb-6 flex justify-center">
+          <button
+            onClick={() => setReportOpen(true)}
+            className="flex items-center gap-1.5 text-[12px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            정보 오류 신고
+          </button>
+        </div>
       </div>
+
+      {/* Report Modal */}
+      {reportOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setReportOpen(false)}>
+          <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full max-w-md p-5 space-y-3 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-500" />
+              <h3 className="font-bold text-foreground">정보 오류 신고</h3>
+            </div>
+            <p className="text-[12px] text-muted-foreground">
+              <span className="font-semibold text-foreground">{restaurant.name}</span>의 잘못된 정보를 알려주세요.
+            </p>
+            <Textarea
+              value={reportText}
+              onChange={(e) => setReportText(e.target.value)}
+              placeholder="예: 전화번호가 틀렸어요 / 영업시간이 바뀌었어요 / 폐업했어요"
+              className="text-sm resize-none"
+              rows={3}
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setReportOpen(false)}>취소</Button>
+              <Button className="flex-1" onClick={handleReport} disabled={reportSending || !reportText.trim()}>
+                {reportSending ? "전송 중..." : "신고하기"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

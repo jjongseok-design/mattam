@@ -67,6 +67,7 @@ const Index = () => {
   const [filter, setFilter] = useState<FilterOption>(saved.current?.filter || "all");
   const [ratingMin, setRatingMin] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
 
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
@@ -76,6 +77,15 @@ const Index = () => {
   const { recentIds, addViewed } = useRecentlyViewed();
   const { toast } = useToast();
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Observe dark mode class changes
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
 
   // Deep linking: sync category to URL
   useEffect(() => {
@@ -132,6 +142,19 @@ const Index = () => {
     requestGeo();
     toast({ title: "📍 현재 위치를 확인하고 있습니다..." });
   }, [requestGeo, toast]);
+
+  const handleFindNearest = useCallback(() => {
+    if (!position || restaurants.length === 0) return;
+    let nearest = restaurants[0];
+    let minDist = getDistanceKm(position.lat, position.lng, nearest.lat, nearest.lng);
+    for (const r of restaurants) {
+      const d = getDistanceKm(position.lat, position.lng, r.lat, r.lng);
+      if (d < minDist) { minDist = d; nearest = r; }
+    }
+    handleSelect(nearest.id);
+    const distText = minDist < 1 ? `${Math.round(minDist * 1000)}m` : `${minDist.toFixed(1)}km`;
+    toast({ title: `📍 가장 가까운 맛집: ${nearest.name}`, description: `${distText} 거리` });
+  }, [position, restaurants, handleSelect, toast]);
 
   // Track viewed restaurants
   const handleSelect = useCallback((id: string) => {
@@ -196,6 +219,9 @@ const Index = () => {
       }
       if (sort === "reviews") {
         return b.reviewCount - a.reviewCount || b.rating - a.rating;
+      }
+      if (sort === "newest") {
+        return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
       }
       return b.rating - a.rating || b.reviewCount - a.reviewCount;
     });
@@ -303,6 +329,16 @@ const Index = () => {
                     <Navigation className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
                 )}
+                {position && (
+                  <button
+                    onClick={handleFindNearest}
+                    className="glass rounded-lg px-2 h-8 flex items-center gap-1 active:scale-95 transition-transform text-[10px] font-semibold text-primary"
+                    aria-label="내 주변 가장 가까운 맛집"
+                  >
+                    <Navigation className="h-3 w-3" />
+                    내 주변
+                  </button>
+                )}
                 <Link to="/admin" className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform">
                   <Settings className="h-3.5 w-3.5 text-muted-foreground/50" />
                 </Link>
@@ -330,6 +366,7 @@ const Index = () => {
               selectedId={selectedId}
               onSelect={handleSelect}
               visitedIds={visited}
+              isDarkMode={isDarkMode}
             />
           </div>
 
@@ -501,7 +538,7 @@ const Index = () => {
             <p className="text-[11px] text-muted-foreground/60 px-1.5 mb-1 font-medium">
               {isGlobalSearch && <span className="text-primary mr-1">🔍 전체 검색</span>}
               {filtered.length}개 {isGlobalSearch ? "결과" : category} ·{" "}
-              {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : "가까운 순"}
+              {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : sort === "newest" ? "최신 순" : "가까운 순"}
               {filter !== "all" && ` · ${filter === "favorites" ? "찜한 곳" : "방문한 곳"}`}
             </p>
           )}

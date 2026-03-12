@@ -1,10 +1,10 @@
 /** Shared category → emoji map (single source of truth) */
 export const CATEGORY_EMOJI: Record<string, string> = {
   "닭갈비": "🍗",
-  "막국수": "🍜",
+  "막국수": "🍥",
   "중화요리": "🥟",
-  "갈비탕": "🍖",
-  "삼계탕": "🐔",
+  "갈비탕": "🫕",
+  "삼계탕": "🍲",
   "칼국수": "🍜",
   "수제버거": "🍔",
   "삼겹살": "🥓",
@@ -20,7 +20,7 @@ export const CATEGORY_EMOJI: Record<string, string> = {
   "돈까스": "🍛",
   "샤브샤브": "🫕",
   "생선구이": "🐟",
-  "통닭": "🍗",
+  "통닭": "🐓",
   "카페": "☕",
   "분식": "🍢",
   "기타": "🍴",

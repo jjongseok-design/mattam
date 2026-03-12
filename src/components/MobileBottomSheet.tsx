@@ -156,6 +156,7 @@ const MobileBottomSheet = memo(({
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 font-medium">
             <span>{emoji}</span>
             <span>{totalCount}개 {category}</span>
+            {isPeek && <span className="text-primary/70">· 탭해서 보기</span>}
             <ChevronUp className={`h-3 w-3 transition-transform duration-200 ${state === "peek" ? "" : state === "full" ? "rotate-180" : ""}`} />
           </div>
         </button>

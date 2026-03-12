@@ -2,7 +2,7 @@ import { ArrowUpDown, SlidersHorizontal, Heart, CheckCircle2, Navigation, X } fr
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export type SortOption = "rating" | "reviews" | "distance";
+export type SortOption = "rating" | "reviews" | "distance" | "newest";
 export type FilterOption = "all" | "visited" | "favorites";
 
 interface SortFilterBarProps {
@@ -29,6 +29,7 @@ const SortFilterBar = ({
   const sortOptions: { value: SortOption; label: string; icon?: React.ReactNode }[] = [
     { value: "rating", label: "평점순" },
     { value: "reviews", label: "리뷰순" },
+    { value: "newest", label: "최신순" },
     ...(hasLocation ? [{ value: "distance" as SortOption, label: "거리순", icon: <Navigation className="h-3 w-3" /> }] : []),
   ];
 

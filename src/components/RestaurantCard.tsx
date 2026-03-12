@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { Star, MapPin, Phone, CheckCircle2, ExternalLink, Share2, Clock, Heart, Navigation, MessageSquare, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -19,9 +19,26 @@ interface RestaurantCardProps {
   onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
+// Parse "HH:MM-HH:MM" or "HH:MM ~ HH:MM" opening hours and check if currently open
+const checkIsOpen = (openingHours?: string): boolean | null => {
+  if (!openingHours) return null;
+  const match = openingHours.match(/(\d{1,2}):(\d{2})\s*[-~]\s*(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  const open = parseInt(match[1]) * 60 + parseInt(match[2]);
+  const close = parseInt(match[3]) * 60 + parseInt(match[4]);
+  if (close <= open) {
+    // crosses midnight
+    return cur >= open || cur < close;
+  }
+  return cur >= open && cur < close;
+};
+
 const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, distance, compact, onClick, onToggleVisited, onToggleFavorite }: RestaurantCardProps) => {
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
   const { toast } = useToast();
+  const isOpen = useMemo(() => checkIsOpen(restaurant.openingHours), [restaurant.openingHours]);
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,28 +80,35 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
           className="w-full text-left"
           aria-label={`${restaurant.name} - 평점 ${restaurant.rating}`}
         >
-          {/* Top image */}
-          {restaurant.imageUrl && (
+          {/* Top image / gradient placeholder */}
+          {restaurant.imageUrl ? (
             <div className="w-full h-20 overflow-hidden">
-              <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+              <img src={restaurant.imageUrl} alt={restaurant.name} loading="lazy" className="w-full h-full object-cover" />
             </div>
+          ) : (
+            <div className="w-full h-10 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent" />
           )}
           <div className="p-2.5">
             {/* Header row */}
             <div className="flex items-center gap-2 mb-1">
               {!restaurant.imageUrl && (
-                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-xl flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center text-xl flex-shrink-0">
                   {emoji}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <h3 className="font-bold text-foreground text-[14px] leading-tight truncate">
                     {restaurant.name}
                   </h3>
                   {isVisited && (
                     <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                       방문
+                    </span>
+                  )}
+                  {isOpen === true && (
+                    <span className="text-[9px] bg-green-500/15 text-green-600 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0 dark:text-green-400">
+                      영업 중
                     </span>
                   )}
                 </div>
@@ -178,7 +202,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
       {restaurant.imageUrl && (
         <button onClick={onClick} className="w-full block" aria-label={`${restaurant.name} 선택`}>
           <div className="w-full h-44 overflow-hidden">
-            <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+            <img src={restaurant.imageUrl} alt={restaurant.name} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
           </div>
         </button>
       )}
@@ -193,13 +217,18 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-bold text-foreground text-base leading-snug truncate">
                   {restaurant.name}
                 </h3>
                 {isVisited && (
                   <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
                     방문완료
+                  </span>
+                )}
+                {isOpen === true && (
+                  <span className="text-[10px] bg-green-500/15 text-green-600 px-2 py-0.5 rounded-full font-semibold flex-shrink-0 dark:text-green-400">
+                    지금 영업 중
                   </span>
                 )}
               </div>
