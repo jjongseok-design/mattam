@@ -9,6 +9,41 @@ const corsHeaders = {
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 
+// Returns true if Google Vision API detects faces in the image.
+// Fails open (returns false) if the API call itself errors.
+async function hasFaces(imageBuffer: ArrayBuffer, googleApiKey: string): Promise<boolean> {
+  try {
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+    const visionRes = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${googleApiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requests: [{
+            image: { content: base64 },
+            features: [{ type: "FACE_DETECTION", maxResults: 1 }],
+          }],
+        }),
+      }
+    );
+    if (!visionRes.ok) {
+      console.warn("Vision API error:", visionRes.status, await visionRes.text());
+      return false; // fail open
+    }
+    const visionData = await visionRes.json();
+    const faces = visionData.responses?.[0]?.faceAnnotations ?? [];
+    if (faces.length > 0) {
+      console.log(`Face detected (${faces.length}명), 이미지 제외`);
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.warn("hasFaces check failed (fail open):", e);
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -336,32 +371,44 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            // Step 2: Get Place Details (photos)
+            // Step 2: Get Place Details (up to 5 photos)
             const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${googleApiKey}`;
             const detailsRes = await fetch(detailsUrl);
             const detailsData = await detailsRes.json();
-            const photoRef = detailsData.result?.photos?.[0]?.photo_reference;
-            if (!photoRef) {
+            const photoRefs: string[] = (detailsData.result?.photos ?? [])
+              .slice(0, 5)
+              .map((p: any) => p.photo_reference)
+              .filter(Boolean);
+            if (photoRefs.length === 0) {
               results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "사진 없음" });
               continue;
             }
 
-            // Step 3: Fetch photo (follows redirect to actual image)
-            const photoFetchUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${googleApiKey}`;
-            const photoRes = await fetch(photoFetchUrl);
-            if (!photoRes.ok) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "사진 다운로드 실패" });
+            // Step 3: Try each photo, skip ones with faces
+            let chosenBuffer: ArrayBuffer | null = null;
+            let chosenContentType = "image/jpeg";
+            for (const photoRef of photoRefs) {
+              const photoFetchUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${googleApiKey}`;
+              const photoRes = await fetch(photoFetchUrl);
+              if (!photoRes.ok) continue;
+              const buf = await photoRes.arrayBuffer();
+              const ct = photoRes.headers.get("content-type") || "image/jpeg";
+              if (await hasFaces(buf, googleApiKey)) continue;
+              chosenBuffer = buf;
+              chosenContentType = ct;
+              break;
+            }
+            if (!chosenBuffer) {
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "얼굴 없는 사진 없음" });
               continue;
             }
 
             // Step 4: Upload to Supabase Storage
-            const imageBuffer = await photoRes.arrayBuffer();
-            const contentType = photoRes.headers.get("content-type") || "image/jpeg";
-            const ext = contentType.includes("png") ? "png" : "jpg";
+            const ext = chosenContentType.includes("png") ? "png" : "jpg";
             const { error: uploadErr } = await supabase.storage
               .from("restaurant-images")
-              .upload(`${restaurant.id}.${ext}`, imageBuffer, {
-                contentType,
+              .upload(`${restaurant.id}.${ext}`, chosenBuffer, {
+                contentType: chosenContentType,
                 upsert: true,
               });
             if (uploadErr) {
@@ -420,7 +467,7 @@ Deno.serve(async (req) => {
           try {
             // Step 1: Naver Image Search API (직접 이미지 URL 반환)
             const query = encodeURIComponent(`${restaurant.name} 춘천 맛집`);
-            const searchUrl = `https://openapi.naver.com/v1/search/image.json?query=${query}&display=3&filter=large`;
+            const searchUrl = `https://openapi.naver.com/v1/search/image.json?query=${query}&display=5&filter=large`;
             const searchRes = await fetch(searchUrl, {
               headers: {
                 "X-Naver-Client-Id": naverClientId,
@@ -438,45 +485,46 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            // Step 2: thumbnail(네이버 CDN) 우선, 없으면 link 사용
-            let imageUrl: string | null = null;
+            // Step 2~3: 각 후보 이미지를 순서대로 시도, 얼굴 없는 첫 번째 사용
+            const naverGoogleApiKey = Deno.env.get("GOOGLE_PLACES_API_KEY");
+            let chosenNaverBuffer: ArrayBuffer | null = null;
+            let chosenNaverContentType = "image/jpeg";
+
             for (const item of items) {
               const candidate = item.thumbnail || item.link;
-              if (candidate && (candidate.startsWith("http://") || candidate.startsWith("https://"))) {
-                imageUrl = candidate;
-                break;
+              if (!candidate || (!candidate.startsWith("http://") && !candidate.startsWith("https://"))) continue;
+
+              const imgRes = await fetch(candidate, {
+                headers: {
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                  "Referer": "https://www.naver.com/",
+                },
+              });
+              if (!imgRes.ok) continue;
+              const ct = imgRes.headers.get("content-type") || "";
+              if (!ct.includes("image")) continue;
+
+              const buf = await imgRes.arrayBuffer();
+              if (naverGoogleApiKey && await hasFaces(buf, naverGoogleApiKey)) {
+                console.log(`${restaurant.name}: 얼굴 감지됨, 다음 이미지로`);
+                continue;
               }
+              chosenNaverBuffer = buf;
+              chosenNaverContentType = ct;
+              break;
             }
 
-            if (!imageUrl) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "유효한 이미지 URL 없음" });
-              continue;
-            }
-
-            // Step 3: Download image
-            const imgRes = await fetch(imageUrl, {
-              headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": "https://www.naver.com/",
-              },
-            });
-            if (!imgRes.ok) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: `이미지 다운로드 실패 (${imgRes.status}): ${imageUrl}` });
-              continue;
-            }
-            const contentType = imgRes.headers.get("content-type") || "";
-            if (!contentType.includes("image")) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: `이미지가 아닌 응답 (${contentType})` });
+            if (!chosenNaverBuffer) {
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "얼굴 없는 이미지 없음" });
               continue;
             }
 
             // Step 4: Upload to Supabase Storage
-            const imageBuffer = await imgRes.arrayBuffer();
-            const ext = contentType.includes("png") ? "png" : "jpg";
+            const ext = chosenNaverContentType.includes("png") ? "png" : "jpg";
             const { error: uploadErr } = await supabase.storage
               .from("restaurant-images")
-              .upload(`${restaurant.id}.${ext}`, imageBuffer, {
-                contentType,
+              .upload(`${restaurant.id}.${ext}`, chosenNaverBuffer, {
+                contentType: chosenNaverContentType,
                 upsert: true,
               });
             if (uploadErr) {
@@ -540,10 +588,19 @@ Deno.serve(async (req) => {
       case "upload_image": {
         const { restaurant_id, base64, content_type, file_ext } = data;
         if (!restaurant_id || !base64) throw new Error("restaurant_id and base64 are required");
-        
+
         const filePath = `${restaurant_id}.${file_ext || "jpg"}`;
         const buffer = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-        
+
+        // Face detection check
+        const uploadGoogleKey = Deno.env.get("GOOGLE_PLACES_API_KEY");
+        if (uploadGoogleKey && await hasFaces(buffer.buffer, uploadGoogleKey)) {
+          return new Response(
+            JSON.stringify({ success: false, error: "사람 얼굴이 포함된 사진은 업로드할 수 없습니다" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         // Delete existing image if any
         await supabase.storage.from("restaurant-images").remove([filePath]);
         
