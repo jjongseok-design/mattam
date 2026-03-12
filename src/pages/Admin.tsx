@@ -495,13 +495,13 @@ const Admin = () => {
       {/* Header */}
       <div
         className="border-b border-border bg-card sticky top-0 z-10"
-        style={{ paddingTop: 'env(safe-area-inset-top, 44px)' }}
+        style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 56px)' }}
       >
-        <div className="max-w-5xl mx-auto px-4 pt-3 pb-2 space-y-2">
-          <div className="flex items-center gap-2">
+        <div className="max-w-5xl mx-auto px-4 pb-2 space-y-2">
+          <div className="flex items-center gap-2 pt-2">
             <Link to="/">
               <Button variant="ghost" size="icon" className="tap-safe shrink-0">
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
             <h1 className="text-lg font-bold shrink-0">🛠 식당 관리</h1>
