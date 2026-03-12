@@ -231,7 +231,7 @@ const RestaurantDetail = () => {
               <p className="text-[13px] font-medium text-foreground">{restaurant.address}</p>
             </div>
             <a
-              href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " " + restaurant.address)}`}
+              href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + " 춘천")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[11px] text-primary font-medium flex items-center gap-0.5 flex-shrink-0 shrink-0"
@@ -251,7 +251,7 @@ const RestaurantDetail = () => {
               <>
                 <span className="text-[13px] text-muted-foreground/50 flex-1">전화번호 정보 없음</span>
                 <a
-                  href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " " + restaurant.address)}`}
+                  href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + " 춘천")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[11px] text-primary/70 font-medium flex items-center gap-0.5 flex-shrink-0"
@@ -271,7 +271,7 @@ const RestaurantDetail = () => {
               <>
                 <span className="text-[13px] text-muted-foreground/50 flex-1">영업시간 정보 없음</span>
                 <a
-                  href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " " + restaurant.address)}`}
+                  href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + " 춘천")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[11px] text-primary/70 font-medium flex items-center gap-0.5 flex-shrink-0"
@@ -339,7 +339,7 @@ const RestaurantDetail = () => {
           </h3>
           <div className="grid grid-cols-3 gap-2">
             <a
-              href={`https://map.naver.com/v5/search/${encodeURIComponent(restaurant.name + " " + restaurant.address)}`}
+              href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + " 춘천")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border border-border/50 bg-card hover:bg-muted/50 transition-colors"
@@ -359,7 +359,7 @@ const RestaurantDetail = () => {
               <span className="text-[10px] text-muted-foreground">메뉴·가격</span>
             </a>
             <a
-              href={`https://www.google.com/maps/search/${encodeURIComponent(restaurant.name + " " + restaurant.address)}`}
+              href={`https://www.google.com/maps/search/${encodeURIComponent(restaurant.name)}/@${restaurant.lat},${restaurant.lng},17z`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border border-border/50 bg-card hover:bg-muted/50 transition-colors"
