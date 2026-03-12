@@ -301,7 +301,7 @@ const RestaurantDetail = () => {
               <>
                 <span className="text-[13px] text-muted-foreground/50 flex-1">가격 정보 없음</span>
                 <a
-                  href={`https://place.map.kakao.com/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
+                  href={`https://map.kakao.com/?q=${encodeURIComponent(restaurant.name + " 춘천")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[11px] text-primary/70 font-medium flex items-center gap-0.5 flex-shrink-0"
@@ -349,7 +349,7 @@ const RestaurantDetail = () => {
               <span className="text-[10px] text-muted-foreground">영업시간·메뉴</span>
             </a>
             <a
-              href={`https://place.map.kakao.com/search/${encodeURIComponent(restaurant.name + " 춘천")}`}
+              href={`https://map.kakao.com/?q=${encodeURIComponent(restaurant.name + " 춘천")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border border-border/50 bg-card hover:bg-muted/50 transition-colors"
