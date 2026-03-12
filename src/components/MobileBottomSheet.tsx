@@ -162,9 +162,9 @@ const MobileBottomSheet = memo(({
 
         {/* Content - hidden when peek */}
         {!isPeek && (
-          <div className="px-3 pb-2 flex flex-col flex-1 min-h-0">
+          <div className="px-3 pb-1 flex flex-col flex-1 min-h-0">
             {/* Search + Random */}
-            <div className="flex gap-1.5 mb-1.5 flex-shrink-0">
+            <div className="flex gap-1 mb-1 flex-shrink-0">
               <div className="flex-1">
                 <SearchBar query={query} onQueryChange={onQueryChange} />
               </div>
@@ -172,7 +172,7 @@ const MobileBottomSheet = memo(({
             </div>
 
             {/* Sort / Filter */}
-            <div className="mb-1.5 flex-shrink-0">
+            <div className="mb-1 flex-shrink-0">
               <SortFilterBar
                 sort={sort}
                 onSortChange={onSortChange}
@@ -195,14 +195,14 @@ const MobileBottomSheet = memo(({
             >
               {/* Recently Viewed */}
               {recentRestaurants.length > 0 && (
-                <div className="mb-2">
-                  <p className="text-[10px] text-muted-foreground/50 font-medium px-1 mb-1">🕐 최근 본 식당</p>
-                  <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-1">
+                <div className="mb-1">
+                  <p className="text-[10px] text-muted-foreground/50 font-medium px-1 mb-0.5">🕐 최근 본 식당</p>
+                  <div className="flex gap-1 overflow-x-auto scrollbar-none pb-0.5">
                     {recentRestaurants.map((r) => (
                       <Link
                         key={r.id}
                         to={`/restaurant/${r.id}`}
-                        className="flex-shrink-0 px-2 py-1 bg-muted/60 hover:bg-muted rounded-lg text-[11px] font-medium text-foreground transition-colors border border-border/30"
+                        className="flex-shrink-0 px-1.5 py-0.5 bg-muted/60 hover:bg-muted rounded-md text-[10px] font-medium text-foreground transition-colors border border-border/30"
                       >
                         <span className="mr-0.5">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
                         {r.name}

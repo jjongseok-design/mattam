@@ -33,14 +33,14 @@ const RandomPickButton = ({ restaurants }: RandomPickButtonProps) => {
       <button
         onClick={handlePick}
         disabled={restaurants.length === 0}
-        className="flex items-center gap-1 px-2.5 py-1.5 bg-accent/10 hover:bg-accent/20 text-accent rounded-xl text-[11px] font-semibold transition-all duration-200 disabled:opacity-40 border border-accent/20 whitespace-nowrap"
+        className="flex items-center gap-1 px-2 py-1 bg-accent/10 hover:bg-accent/20 text-accent rounded-lg text-[10px] font-semibold transition-all duration-200 disabled:opacity-40 border border-accent/20 whitespace-nowrap"
         aria-label="랜덤 식당 추천"
       >
         <motion.span
           animate={isSpinning ? { rotate: 360 } : { rotate: 0 }}
           transition={isSpinning ? { duration: 0.6, repeat: Infinity, ease: "linear" } : {}}
         >
-          <Dices className="h-3.5 w-3.5" />
+          <Dices className="h-3 w-3" />
         </motion.span>
         오늘 뭐 먹지?
       </button>
