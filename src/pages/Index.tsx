@@ -143,6 +143,12 @@ const Index = () => {
     toast({ title: "📍 현재 위치를 확인하고 있습니다..." });
   }, [requestGeo, toast]);
 
+  // Track viewed restaurants
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id);
+    addViewed(id);
+  }, [addViewed]);
+
   const handleFindNearest = useCallback(() => {
     if (!position || restaurants.length === 0) return;
     let nearest = restaurants[0];
@@ -155,12 +161,6 @@ const Index = () => {
     const distText = minDist < 1 ? `${Math.round(minDist * 1000)}m` : `${minDist.toFixed(1)}km`;
     toast({ title: `📍 가장 가까운 맛집: ${nearest.name}`, description: `${distText} 거리` });
   }, [position, restaurants, handleSelect, toast]);
-
-  // Track viewed restaurants
-  const handleSelect = useCallback((id: string) => {
-    setSelectedId(id);
-    addViewed(id);
-  }, [addViewed]);
 
   // Scroll list to selected card
   useEffect(() => {
