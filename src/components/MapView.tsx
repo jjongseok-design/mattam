@@ -266,7 +266,6 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
           map,
           yAnchor: 1 + 35 / 20 + 0.3,
           xAnchor: 0.5,
-          zIndex: isVisited ? 6 : 2,
         });
         kakaoNameOverlaysRef.current.push(nameOverlay);
       }
