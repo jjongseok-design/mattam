@@ -106,7 +106,7 @@ const RestaurantCard = memo(({
                 </div>
               </div>
 
-              <p className="text-[11px] text-muted-foreground truncate mb-1">
+              <p className="text-[13px] text-muted-foreground truncate mb-1">
                 {restaurant.address}
                 {distText && <span className="text-primary/70 font-medium"> · {distText}</span>}
               </p>
