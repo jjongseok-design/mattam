@@ -447,27 +447,83 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Category pills */}
-          <CategoryTabs active={category} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
+          {/* 카테고리 + 정렬 + 필터 통합 스크롤 */}
+          <div
+            className="flex items-center gap-1.5 overflow-x-auto py-0.5"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {dbCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryChange(cat.id)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
+                  category === cat.id
+                    ? "bg-foreground text-background shadow-sm"
+                    : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <span className="text-sm leading-none">{cat.emoji}</span>
+                <span>{cat.label}</span>
+                {categoryCounts[cat.id] != null && (
+                  <span className="text-[10px] opacity-50">{categoryCounts[cat.id]}</span>
+                )}
+              </button>
+            ))}
+
+            <div className="w-px h-4 bg-border/60 mx-0.5 flex-shrink-0" />
+
+            {(["rating", "reviews", "newest", ...(position ? ["distance"] : [])] as SortOption[]).map((val) => {
+              const label = val === "rating" ? "평점순" : val === "reviews" ? "리뷰순" : val === "newest" ? "최신순" : "거리순";
+              return (
+                <button
+                  key={val}
+                  onClick={() => setSort(val)}
+                  className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
+                    sort === val
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+
+            <div className="w-px h-4 bg-border/60 mx-0.5 flex-shrink-0" />
+
+            {([{ value: "favorites" as FilterOption, label: "❤ 찜" }, { value: "visited" as FilterOption, label: "✓ 방문" }]).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setFilter(filter === opt.value ? "all" : opt.value)}
+                className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
+                  filter === opt.value
+                    ? "bg-primary/10 text-primary border border-primary/20"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+
+            {ratingMin > 0 && (
+              <button
+                onClick={() => setRatingMin(0)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 bg-accent/10 text-accent border border-accent/20"
+              >
+                ★{ratingMin}+ ×
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Search + filter */}
-        <div className="px-4 py-2.5 border-b border-border/30 space-y-2">
+        {/* Search */}
+        <div className="px-4 py-2.5 border-b border-border/30">
           <div className="flex gap-2">
             <div className="flex-1">
               <SearchBar query={query} onQueryChange={setQuery} restaurants={restaurants} onSelectRestaurant={handleSelect} />
             </div>
             <RandomPickButton restaurants={filtered} />
           </div>
-          <SortFilterBar
-            sort={sort}
-            onSortChange={setSort}
-            filter={filter}
-            onFilterChange={setFilter}
-            hasLocation={!!position}
-            ratingMin={ratingMin}
-            onRatingMinChange={setRatingMin}
-          />
         </div>
 
         {/* List */}
