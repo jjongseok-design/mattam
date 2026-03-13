@@ -71,7 +71,7 @@ const RestaurantCard = memo(({
         <button onClick={onClick} className="w-full text-left p-3 pb-2">
           <div className="flex gap-3">
             {/* Thumbnail */}
-            <div className="w-[54px] h-[54px] rounded-xl overflow-hidden flex-shrink-0 bg-secondary/60 flex items-center justify-center">
+            <div className="w-[65px] h-[65px] rounded-xl overflow-hidden flex-shrink-0 bg-secondary/60 flex items-center justify-center">
               {restaurant.imageUrl ? (
                 <img
                   src={restaurant.imageUrl}
@@ -93,7 +93,7 @@ const RestaurantCard = memo(({
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-1 mb-0.5">
                 <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-                  <h3 className="font-semibold text-[15px] text-foreground truncate">{restaurant.name}</h3>
+                  <h3 className="font-semibold text-[20px] text-foreground truncate">{restaurant.name}</h3>
                   {isVisited && (
                     <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                       방문
@@ -106,7 +106,7 @@ const RestaurantCard = memo(({
                 </div>
               </div>
 
-              <p className="text-[13px] text-muted-foreground truncate mb-1">
+              <p className="text-[16px] text-muted-foreground truncate mb-1">
                 {restaurant.address}
                 {distText && <span className="text-primary/70 font-medium"> · {distText}</span>}
               </p>
@@ -179,7 +179,7 @@ const RestaurantCard = memo(({
     >
       <div className="flex min-h-[108px]">
         {/* Image / emoji */}
-        <div className="w-[92px] flex-shrink-0 overflow-hidden self-stretch">
+        <div className="w-[110px] flex-shrink-0 overflow-hidden self-stretch">
           {restaurant.imageUrl ? (
             <img
               src={restaurant.imageUrl}
@@ -204,7 +204,7 @@ const RestaurantCard = memo(({
           <div className="flex items-start justify-between gap-2 mb-1.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h3 className="font-semibold text-[16px] text-foreground leading-snug">
+                <h3 className="font-semibold text-[21px] text-foreground leading-snug">
                   {restaurant.name}
                 </h3>
                 {isVisited && (
@@ -234,7 +234,7 @@ const RestaurantCard = memo(({
           {/* Address */}
           <div className="flex items-center gap-1.5 mb-1">
             <MapPin className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
-            <span className="text-[13px] text-muted-foreground truncate flex-1">{restaurant.address}</span>
+            <span className="text-[16px] text-muted-foreground truncate flex-1">{restaurant.address}</span>
             {distText && (
               <span className="text-[11px] font-semibold text-primary/70 flex-shrink-0 flex items-center gap-0.5">
                 <Navigation className="h-2.5 w-2.5" />
