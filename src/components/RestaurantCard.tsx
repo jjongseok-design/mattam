@@ -274,26 +274,26 @@ const RestaurantCard = memo(({
               {onToggleFavorite && (
                 <button
                   onClick={onToggleFavorite}
-                  className={`p-1.5 rounded-lg transition-colors ${
+                  className={`p-2 rounded-lg transition-colors ${
                     isFavorite
-                      ? "text-rose-500"
-                      : "text-muted-foreground/25 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                      ? "text-rose-500 bg-rose-50 dark:bg-rose-950/30"
+                      : "text-muted-foreground/40 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                   }`}
                   aria-label={isFavorite ? "찜 취소" : "찜하기"}
                 >
-                  <Heart className={`h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`} />
+                  <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
                 </button>
               )}
               <button
                 onClick={onToggleVisited}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`p-2 rounded-lg transition-colors ${
                   isVisited
-                    ? "text-primary bg-primary/8"
-                    : "text-muted-foreground/25 hover:text-primary/60 hover:bg-primary/5"
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground/40 hover:text-primary/60 hover:bg-primary/5"
                 }`}
                 aria-label={isVisited ? "방문 취소" : "방문 표시"}
               >
-                <CheckCircle2 className={`h-3.5 w-3.5 ${isVisited ? "fill-primary/15" : ""}`} />
+                <CheckCircle2 className={`h-5 w-5 ${isVisited ? "fill-primary/15" : ""}`} />
               </button>
               <button
                 onClick={handleShare}

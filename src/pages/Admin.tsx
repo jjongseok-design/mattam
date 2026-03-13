@@ -23,7 +23,7 @@ interface RestaurantRow {
   tags: string[] | null;
   description: string | null;
   image_url: string | null;
-  extra_images: string[] | null;
+  extra_images?: string[] | null;
 }
 
 const getEmptyForm = (category: string) => ({

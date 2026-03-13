@@ -26,8 +26,7 @@ const CategoryTabs = ({ active, onChange, categoryCounts = {} }: CategoryTabsPro
   return (
     <div
       ref={scrollRef}
-      className="flex gap-1.5 overflow-x-auto scrollbar-none py-0.5"
-      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      className="flex flex-wrap gap-1 py-0.5"
     >
       {cats.map((cat) => {
         const isActive = active === cat.id;
@@ -38,18 +37,18 @@ const CategoryTabs = ({ active, onChange, categoryCounts = {} }: CategoryTabsPro
             data-cat-id={cat.id}
             onClick={() => onChange(cat.id)}
             className={`
-              inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold
-              whitespace-nowrap flex-shrink-0 transition-all duration-200
+              inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold
+              whitespace-nowrap transition-all duration-200
               ${isActive
                 ? "bg-foreground text-background shadow-sm scale-[1.02]"
                 : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
               }
             `}
           >
-            <span className="text-sm leading-none">{cat.emoji}</span>
+            <span className="text-xs leading-none">{cat.emoji}</span>
             <span>{cat.label}</span>
             {count != null && (
-              <span className={`text-[10px] font-normal ${isActive ? "opacity-60" : "opacity-50"}`}>
+              <span className={`text-[9px] font-normal ${isActive ? "opacity-60" : "opacity-50"}`}>
                 {count}
               </span>
             )}
