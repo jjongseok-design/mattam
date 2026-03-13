@@ -406,8 +406,8 @@ const Index = () => {
       <div className="w-[400px] flex-shrink-0 h-full flex flex-col bg-card z-10" style={{ boxShadow: "var(--panel-shadow)" }}>
 
         {/* Header */}
-        <div className="px-5 pt-4 pb-3 border-b border-border/40">
-          <div className="flex items-center gap-2.5 mb-3.5">
+        <div className="border-b border-border/40">
+          <div className="px-5 pt-4 pb-3 flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
               <Utensils className="h-4 w-4 text-white" />
             </div>
@@ -447,72 +447,76 @@ const Index = () => {
             </div>
           </div>
 
-          {/* 카테고리 + 정렬 + 필터 통합 스크롤 */}
-          <div
-            className="flex items-center gap-1.5 overflow-x-auto py-0.5"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {dbCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => handleCategoryChange(cat.id)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
-                  category === cat.id
-                    ? "bg-foreground text-background shadow-sm"
-                    : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                <span className="text-sm leading-none">{cat.emoji}</span>
-                <span>{cat.label}</span>
-                {categoryCounts[cat.id] != null && (
-                  <span className="text-[10px] opacity-50">{categoryCounts[cat.id]}</span>
-                )}
-              </button>
-            ))}
-
-            <div className="w-px h-4 bg-border/60 mx-0.5 flex-shrink-0" />
-
-            {(["rating", "reviews", "newest", ...(position ? ["distance"] : [])] as SortOption[]).map((val) => {
-              const label = val === "rating" ? "평점순" : val === "reviews" ? "리뷰순" : val === "newest" ? "최신순" : "거리순";
-              return (
+          {/* 카테고리 + 정렬 + 필터 통합 스크롤 — 좌우 끝까지, 오른쪽 페이드로 더 있음 암시 */}
+          <div className="relative">
+            <div
+              className="flex items-center gap-1.5 overflow-x-auto py-2"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none", paddingLeft: "20px", paddingRight: "36px" }}
+            >
+              {dbCategories.map((cat) => (
                 <button
-                  key={val}
-                  onClick={() => setSort(val)}
+                  key={cat.id}
+                  onClick={() => handleCategoryChange(cat.id)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
+                    category === cat.id
+                      ? "bg-foreground text-background shadow-sm scale-[1.03]"
+                      : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <span className="text-sm leading-none">{cat.emoji}</span>
+                  <span>{cat.label}</span>
+                  {categoryCounts[cat.id] != null && (
+                    <span className="text-[10px] opacity-50">{categoryCounts[cat.id]}</span>
+                  )}
+                </button>
+              ))}
+
+              <div className="w-px h-4 bg-border/60 mx-0.5 flex-shrink-0" />
+
+              {(["rating", "reviews", "newest", ...(position ? ["distance"] : [])] as SortOption[]).map((val) => {
+                const label = val === "rating" ? "평점순" : val === "reviews" ? "리뷰순" : val === "newest" ? "최신순" : "거리순";
+                return (
+                  <button
+                    key={val}
+                    onClick={() => setSort(val)}
+                    className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
+                      sort === val
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+
+              <div className="w-px h-4 bg-border/60 mx-0.5 flex-shrink-0" />
+
+              {([{ value: "favorites" as FilterOption, label: "❤ 찜" }, { value: "visited" as FilterOption, label: "✓ 방문" }]).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setFilter(filter === opt.value ? "all" : opt.value)}
                   className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
-                    sort === val
+                    filter === opt.value
                       ? "bg-primary/10 text-primary border border-primary/20"
                       : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
                   }`}
                 >
-                  {label}
+                  {opt.label}
                 </button>
-              );
-            })}
+              ))}
 
-            <div className="w-px h-4 bg-border/60 mx-0.5 flex-shrink-0" />
-
-            {([{ value: "favorites" as FilterOption, label: "❤ 찜" }, { value: "visited" as FilterOption, label: "✓ 방문" }]).map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setFilter(filter === opt.value ? "all" : opt.value)}
-                className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
-                  filter === opt.value
-                    ? "bg-primary/10 text-primary border border-primary/20"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-
-            {ratingMin > 0 && (
-              <button
-                onClick={() => setRatingMin(0)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 bg-accent/10 text-accent border border-accent/20"
-              >
-                ★{ratingMin}+ ×
-              </button>
-            )}
+              {ratingMin > 0 && (
+                <button
+                  onClick={() => setRatingMin(0)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 bg-accent/10 text-accent border border-accent/20"
+                >
+                  ★{ratingMin}+ ×
+                </button>
+              )}
+            </div>
+            {/* 오른쪽 페이드 — 더 스크롤 가능 암시 */}
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-card to-transparent" />
           </div>
         </div>
 
