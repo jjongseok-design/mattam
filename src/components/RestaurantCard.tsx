@@ -204,7 +204,7 @@ const RestaurantCard = memo(({
           <div className="flex items-start justify-between gap-2 mb-1.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h3 className="font-semibold text-[16px] text-foreground leading-snug">
+                <h3 className="font-semibold text-[21px] text-foreground leading-snug">
                   {restaurant.name}
                 </h3>
                 {isVisited && (
