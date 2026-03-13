@@ -18,6 +18,7 @@ export interface Restaurant {
   tags: string[];
   description?: string;
   imageUrl?: string;
+  extraImages?: string[];
   openingHours?: string;
   closedDays?: string;
   createdAt?: string;
@@ -51,6 +52,7 @@ export const useRestaurants = () => {
         tags: r.tags ?? [],
         description: r.description ?? undefined,
         imageUrl: r.image_url ?? undefined,
+        extraImages: r.extra_images ?? [],
         openingHours: r.opening_hours ?? undefined,
         closedDays: r.closed_days ?? undefined,
         createdAt: r.created_at ?? undefined,

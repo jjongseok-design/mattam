@@ -215,12 +215,40 @@ const RestaurantDetail = () => {
 
 
 
-      {/* Hero Image */}
-      {restaurant.imageUrl && (
-        <div className="w-full max-w-2xl mx-auto h-56 sm:h-72 overflow-hidden">
-          <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
-        </div>
-      )}
+      {/* Hero Image / Gallery */}
+      {restaurant.imageUrl && (() => {
+        const allImages = [restaurant.imageUrl, ...(restaurant.extraImages ?? [])].filter(Boolean);
+        if (allImages.length === 1) {
+          return (
+            <div className="w-full max-w-2xl mx-auto h-56 sm:h-72 overflow-hidden">
+              <img src={allImages[0]} alt={restaurant.name} className="w-full h-full object-cover" />
+            </div>
+          );
+        }
+        return (
+          <div className="w-full max-w-2xl mx-auto">
+            <div className="flex gap-1 h-56 sm:h-72 overflow-hidden rounded-none">
+              <div className="flex-1 overflow-hidden">
+                <img src={allImages[0]} alt={restaurant.name} className="w-full h-full object-cover" />
+              </div>
+              {allImages.length > 1 && (
+                <div className="flex flex-col gap-1 w-[35%]">
+                  {allImages.slice(1, 3).map((url, i) => (
+                    <div key={url} className="flex-1 overflow-hidden relative">
+                      <img src={url} alt={`${restaurant.name} ${i + 2}`} className="w-full h-full object-cover" />
+                      {i === 1 && allImages.length > 3 && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">+{allImages.length - 3}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="max-w-2xl mx-auto safe-area-x py-6 space-y-5">
         {/* Name & Rating */}

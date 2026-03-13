@@ -23,6 +23,7 @@ interface RestaurantRow {
   tags: string[] | null;
   description: string | null;
   image_url: string | null;
+  extra_images: string[] | null;
 }
 
 const getEmptyForm = (category: string) => ({
@@ -896,32 +897,62 @@ const Admin = () => {
                 {editing && (
                   <div className="col-span-2">
                     <label className="text-sm font-medium">식당 사진</label>
-                    <div className="mt-1.5 space-y-2">
-                      {editing.image_url && (
-                        <div className="relative inline-block">
-                          <img
-                            src={editing.image_url}
-                            alt={editing.name}
-                            className="w-24 h-24 rounded-lg object-cover border border-border"
-                          />
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                await adminApi(pin, "delete_image", { restaurant_id: editing.id });
-                                setEditing({ ...editing, image_url: null });
-                                toast({ title: "사진 삭제 완료 ✅" });
-                                fetchAll();
-                              } catch (err: any) {
-                                toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
-                              }
-                            }}
-                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs hover:scale-110 transition-transform"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      )}
+                    <div className="mt-1.5 space-y-3">
+                      {/* Gallery: image_url + extra_images */}
+                      {(() => {
+                        const allImages = [
+                          ...(editing.image_url ? [editing.image_url] : []),
+                          ...(editing.extra_images ?? []),
+                        ];
+                        if (allImages.length === 0) return null;
+                        return (
+                          <div className="flex flex-wrap gap-2">
+                            {allImages.map((url, idx) => (
+                              <div key={url} className="relative group">
+                                <img
+                                  src={url}
+                                  alt={`${editing.name} ${idx + 1}`}
+                                  className="w-20 h-20 rounded-lg object-cover border border-border"
+                                />
+                                {idx === 0 && (
+                                  <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] bg-black/50 text-white rounded-b-lg py-0.5">대표</span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      if (idx === 0) {
+                                        // Delete primary image
+                                        await adminApi(pin, "delete_image", { restaurant_id: editing.id });
+                                        // Promote first extra image if exists
+                                        const extras = editing.extra_images ?? [];
+                                        if (extras.length > 0) {
+                                          await adminApi(pin, "update", { id: editing.id, image_url: extras[0], extra_images: extras.slice(1) });
+                                          setEditing({ ...editing, image_url: extras[0], extra_images: extras.slice(1) });
+                                        } else {
+                                          setEditing({ ...editing, image_url: null, extra_images: [] });
+                                        }
+                                      } else {
+                                        // Delete from extra_images
+                                        const extras = (editing.extra_images ?? []).filter(u => u !== url);
+                                        await adminApi(pin, "update", { id: editing.id, extra_images: extras });
+                                        setEditing({ ...editing, extra_images: extras });
+                                      }
+                                      toast({ title: "사진 삭제 완료 ✅" });
+                                      fetchAll();
+                                    } catch (err: any) {
+                                      toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
+                                    }
+                                  }}
+                                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 hover:scale-110 transition-all"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       <div className="flex gap-2">
                         <Input
                           placeholder="이미지 URL 직접 입력 (https://...)"
@@ -976,7 +1007,7 @@ const Admin = () => {
                           }}
                           className="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
                         />
-                        <p className="text-[10px] text-muted-foreground mt-1">포털에서 검색한 식당 사진을 업로드하세요 (5MB 이하)</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">포털에서 검색한 식당 사진을 업로드하세요 (5MB 이하, 최대 3장)</p>
                       </div>
                     </div>
                   </div>
@@ -1006,67 +1037,81 @@ const Admin = () => {
         ) : (
           <div className="border border-border rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm" style={{ minWidth: 700 }}>
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="text-left px-3 py-2 font-medium">ID</th>
-                    <th className="text-left px-3 py-2 font-medium">이름</th>
-                    <th className="text-left px-3 py-2 font-medium hidden md:table-cell">주소</th>
-                    <th className="text-center px-3 py-2 font-medium">평점</th>
-                    <th className="text-center px-3 py-2 font-medium hidden sm:table-cell">리뷰</th>
-                    <th className="text-center px-3 py-2 font-medium">관리</th>
+                    <th className="text-left px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap w-[90px]">ID</th>
+                    <th className="text-left px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap">이름</th>
+                    <th className="text-left px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap hidden md:table-cell">주소</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap w-[70px]">평점</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap w-[60px] hidden sm:table-cell">리뷰</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap w-[200px]">관리</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((r) => (
                     <tr key={r.id} className="border-t border-border hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2 text-muted-foreground text-xs">{r.id}</td>
-                      <td className="px-3 py-2 font-medium">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs whitespace-nowrap max-w-[90px] overflow-hidden text-ellipsis">{r.id}</td>
+                      <td className="px-3 py-2.5 font-medium whitespace-nowrap">
+                        <div className="flex items-center gap-2">
                           {r.image_url ? (
-                            <img src={r.image_url} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />
+                            <img src={r.image_url} alt="" className="w-7 h-7 rounded object-cover flex-shrink-0" />
                           ) : (
-                            <span className="w-6 h-6 rounded bg-muted flex items-center justify-center text-xs flex-shrink-0">📷</span>
+                            <span className="w-7 h-7 rounded bg-muted flex items-center justify-center text-xs flex-shrink-0">📷</span>
                           )}
-                          {r.name}
+                          <span className="text-sm">{r.name}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-muted-foreground hidden md:table-cell text-xs">{r.address}</td>
-                      <td className="px-3 py-2 text-center">⭐ {r.rating}</td>
-                      <td className="px-3 py-2 text-center text-muted-foreground hidden sm:table-cell">{r.review_count}</td>
-                      <td className="px-3 py-2 text-center">
-                        <div className="flex items-center justify-center gap-1">
+                      <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-xs whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{r.address}</td>
+                      <td className="px-3 py-2.5 text-center whitespace-nowrap text-sm">⭐ {r.rating}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground whitespace-nowrap hidden sm:table-cell text-sm">{r.review_count}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center justify-center gap-1 whitespace-nowrap">
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-muted-foreground"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
                             title="Google 사진 가져오기"
                             disabled={fetchingImageId === r.id}
                             onClick={() => handleFetchImage(r.id)}
                           >
                             {fetchingImageId === r.id
-                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              : <Image className="h-3.5 w-3.5" />
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <Image className="h-3 w-3" />
                             }
+                            <span>G</span>
                           </Button>
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-muted-foreground"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
                             title="네이버 사진 가져오기"
                             disabled={fetchingNaverImageId === r.id}
                             onClick={() => handleFetchNaverImage(r.id)}
                           >
                             {fetchingNaverImageId === r.id
-                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              : <Search className="h-3.5 w-3.5" />
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <Search className="h-3 w-3" />
                             }
+                            <span>N</span>
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEdit(r)}>
-                            <Pencil className="h-3.5 w-3.5" />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-[11px] gap-1 hover:text-primary hover:border-primary/40"
+                            onClick={() => openEdit(r)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            <span>수정</span>
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => handleDelete(r.id, r.name)}>
-                            <Trash2 className="h-3.5 w-3.5" />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-[11px] gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
+                            onClick={() => handleDelete(r.id, r.name)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            <span>삭제</span>
                           </Button>
                         </div>
                       </td>
