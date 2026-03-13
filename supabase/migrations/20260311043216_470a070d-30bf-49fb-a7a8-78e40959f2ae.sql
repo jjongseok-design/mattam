@@ -1,7 +1,8 @@
 
 -- Create public storage bucket for restaurant images
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('restaurant-images', 'restaurant-images', true);
+VALUES ('restaurant-images', 'restaurant-images', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- Allow anyone to view images
 CREATE POLICY "Anyone can view restaurant images"

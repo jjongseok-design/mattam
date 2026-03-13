@@ -21,11 +21,4 @@ CREATE POLICY "review_images_select" ON review_images
 CREATE POLICY "review_images_insert" ON review_images
   FOR INSERT WITH CHECK (true);
 
--- Migrate existing single image_url values into new table
-INSERT INTO review_images (review_id, url, position)
-SELECT id, image_url, 0
-FROM reviews
-WHERE image_url IS NOT NULL AND image_url <> '';
-
--- Keep image_url column for backwards compat but mark as deprecated via comment
-COMMENT ON COLUMN reviews.image_url IS 'DEPRECATED: use review_images table instead';
+-- (No image_url column to migrate in this project)
