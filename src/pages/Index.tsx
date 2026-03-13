@@ -129,6 +129,18 @@ const Index = () => {
     addViewed(id);
   }, [setSelectedId, addViewed]);
 
+  const { filtered, categoryRestaurants, isGlobalSearch, distanceMap } = useFilteredRestaurants({
+    restaurants,
+    category,
+    query,
+    sort,
+    filter,
+    ratingMin,
+    position,
+    isFavorite,
+    isVisited,
+  });
+
   const handleFindNearest = useCallback(() => {
     if (!position || filtered.length === 0) return;
     let nearest = filtered[0];
@@ -158,18 +170,6 @@ const Index = () => {
     }
     return counts;
   }, [restaurants]);
-
-  const { filtered, categoryRestaurants, isGlobalSearch, distanceMap } = useFilteredRestaurants({
-    restaurants,
-    category,
-    query,
-    sort,
-    filter,
-    ratingMin,
-    position,
-    isFavorite,
-    isVisited,
-  });
 
   // Recently viewed restaurants
   const recentRestaurants = useMemo(() => {
