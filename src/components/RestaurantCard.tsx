@@ -131,24 +131,24 @@ const RestaurantCard = memo(({
         {/* Action row */}
         <div className="flex items-center px-3 pb-2.5 gap-0.5">
           {onToggleFavorite && (
-            <button
+              <button
               onClick={onToggleFavorite}
-              className={`p-1.5 rounded-lg transition-colors ${
-                isFavorite ? "text-rose-500" : "text-muted-foreground/25 hover:text-rose-400"
+              className={`p-2 rounded-lg transition-colors ${
+                isFavorite ? "text-rose-500 bg-rose-50 dark:bg-rose-950/30" : "text-muted-foreground/40 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
               }`}
               aria-label={isFavorite ? "찜 취소" : "찜하기"}
             >
-              <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
+              <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
             </button>
           )}
           <button
             onClick={onToggleVisited}
-            className={`p-1.5 rounded-lg transition-colors ${
-              isVisited ? "text-primary" : "text-muted-foreground/25 hover:text-primary/60"
+            className={`p-2 rounded-lg transition-colors ${
+              isVisited ? "text-primary bg-primary/10" : "text-muted-foreground/40 hover:text-primary/60 hover:bg-primary/5"
             }`}
             aria-label={isVisited ? "방문 취소" : "방문 표시"}
           >
-            <CheckCircle2 className={`h-4 w-4 ${isVisited ? "fill-primary/15" : ""}`} />
+            <CheckCircle2 className={`h-5 w-5 ${isVisited ? "fill-primary/15" : ""}`} />
           </button>
           <Link
             to={`/restaurant/${restaurant.slug}`}
