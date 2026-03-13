@@ -12,7 +12,7 @@ const CHUNCHEON_BOUNDS = L.latLngBounds(
   L.latLng(38.02, 127.92)
 );
 
-const KAKAO_APP_KEY = "9f52e7f69b37432bdec6b14bbd85a56b";
+const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY as string;
 const KAKAO_SCRIPT_ID = "kakao-maps-sdk";
 
 type MapMode = "loading" | "kakao" | "leaflet";

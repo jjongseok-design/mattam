@@ -1,12 +1,11 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { MapPin, Utensils, Loader2, Settings, Navigation, Download, X } from "lucide-react";
-import { Link, useSearchParams, useLocation } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
 import MapView from "@/components/MapView";
 import MobileBottomSheet from "@/components/MobileBottomSheet";
 import CategoryTabs from "@/components/CategoryTabs";
-import { useCategories } from "@/hooks/useCategories";
 import TipForm from "@/components/TipForm";
 import FeedbackForm from "@/components/FeedbackForm";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -22,52 +21,31 @@ import { useVisited } from "@/hooks/useVisited";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useGeolocation, getDistanceKm } from "@/hooks/useGeolocation";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
-import { AnimatePresence, motion } from "framer-motion";
+import { useFilteredRestaurants } from "@/hooks/useFilteredRestaurants";
+import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 
-// Persist scroll & state across navigation
-const INDEX_STATE_KEY = "index_scroll_state";
-
-interface SavedState {
-  category: string;
-  showList: boolean;
-  scrollTop: number;
-  query: string;
-  sort: SortOption;
-  filter: FilterOption;
-}
-
-const saveState = (state: SavedState) => {
-  try { sessionStorage.setItem(INDEX_STATE_KEY, JSON.stringify(state)); } catch {}
-};
-
-const loadState = (): SavedState | null => {
-  try {
-    const s = sessionStorage.getItem(INDEX_STATE_KEY);
-    return s ? JSON.parse(s) : null;
-  } catch { return null; }
-};
+// Scroll position persistence (scroll position can't go in URL)
+const SCROLL_KEY = "index_scroll_top";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
-  const initialCat = searchParams.get("category");
-  
-  // Restore state on back navigation
-  const saved = useRef(loadState());
-  const isRestored = useRef(false);
-  
-  const [query, setQuery] = useState(saved.current?.query || "");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { data: dbCategories = [] } = useCategories();
-  const [category, setCategory] = useState<string>(initialCat || saved.current?.category || "닭갈비");
-  const [showList, setShowList] = useState(saved.current?.showList || false);
-  const [sort, setSort] = useState<SortOption>(saved.current?.sort || "rating");
-  const [filter, setFilter] = useState<FilterOption>(saved.current?.filter || "all");
+
+  // URL is the single source of truth for filterable state
+  const category = searchParams.get("category") || "닭갈비";
+  const query = searchParams.get("q") || "";
+  const sort = (searchParams.get("sort") as SortOption) || "rating";
+  const filter = (searchParams.get("filter") as FilterOption) || "all";
+  const selectedId = searchParams.get("selected") || null;
+
+  // UI-only state (not worth putting in URL)
+  const [showList, setShowList] = useState(() => searchParams.has("q") || searchParams.has("selected"));
   const [ratingMin, setRatingMin] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
+  const isRestored = useRef(false);
+
 
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
@@ -78,6 +56,27 @@ const Index = () => {
   const { toast } = useToast();
   const listRef = useRef<HTMLDivElement>(null);
 
+  // URL param setters
+  const setCategory = useCallback((cat: string) => {
+    setSearchParams((p) => { const n = new URLSearchParams(p); n.set("category", cat); n.delete("q"); n.delete("selected"); return n; }, { replace: true });
+  }, [setSearchParams]);
+
+  const setQuery = useCallback((q: string) => {
+    setSearchParams((p) => { const n = new URLSearchParams(p); if (q) n.set("q", q); else n.delete("q"); return n; }, { replace: true });
+  }, [setSearchParams]);
+
+  const setSort = useCallback((s: SortOption) => {
+    setSearchParams((p) => { const n = new URLSearchParams(p); if (s !== "rating") n.set("sort", s); else n.delete("sort"); return n; }, { replace: true });
+  }, [setSearchParams]);
+
+  const setFilter = useCallback((f: FilterOption) => {
+    setSearchParams((p) => { const n = new URLSearchParams(p); if (f !== "all") n.set("filter", f); else n.delete("filter"); return n; }, { replace: true });
+  }, [setSearchParams]);
+
+  const setSelectedId = useCallback((id: string | null) => {
+    setSearchParams((p) => { const n = new URLSearchParams(p); if (id) n.set("selected", id); else n.delete("selected"); return n; }, { replace: true });
+  }, [setSearchParams]);
+
   // Observe dark mode class changes
   useEffect(() => {
     const obs = new MutationObserver(() => {
@@ -87,49 +86,30 @@ const Index = () => {
     return () => obs.disconnect();
   }, []);
 
-  // Deep linking: sync category to URL
+  // Persist scroll position
   useEffect(() => {
-    setSearchParams({ category }, { replace: true });
-  }, [category, setSearchParams]);
-
-  // Save state before navigating away
-  useEffect(() => {
-    return () => {
-      saveState({
-        category,
-        showList,
-        scrollTop: listRef.current?.scrollTop || 0,
-        query,
-        sort,
-        filter,
-      });
-    };
-  }, [category, showList, query, sort, filter]);
-
-  // Restore scroll position after render
-  useEffect(() => {
-    if (!isRestored.current && saved.current && listRef.current && restaurants.length > 0) {
+    const el = listRef.current;
+    if (!el) return;
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    if (saved && !isRestored.current && restaurants.length > 0) {
       isRestored.current = true;
-      requestAnimationFrame(() => {
-        if (listRef.current) {
-          listRef.current.scrollTop = saved.current!.scrollTop;
-        }
-      });
+      requestAnimationFrame(() => { if (listRef.current) listRef.current.scrollTop = Number(saved); });
     }
+    return () => {
+      if (listRef.current) sessionStorage.setItem(SCROLL_KEY, String(listRef.current.scrollTop));
+    };
   }, [restaurants]);
 
   const handleCategoryChange = useCallback((cat: string) => {
     setCategory(cat);
     setShowList(true);
-    setSelectedId(null);
-    setQuery("");
-  }, []);
+  }, [setCategory]);
 
   const handleCloseList = useCallback(() => {
     setShowList(false);
     setSelectedId(null);
     setQuery("");
-  }, []);
+  }, [setSelectedId, setQuery]);
 
   // Request geolocation when user selects distance sort
   useEffect(() => {
@@ -147,20 +127,20 @@ const Index = () => {
   const handleSelect = useCallback((id: string) => {
     setSelectedId(id);
     addViewed(id);
-  }, [addViewed]);
+  }, [setSelectedId, addViewed]);
 
   const handleFindNearest = useCallback(() => {
-    if (!position || restaurants.length === 0) return;
-    let nearest = restaurants[0];
-    let minDist = getDistanceKm(position.lat, position.lng, nearest.lat, nearest.lng);
-    for (const r of restaurants) {
-      const d = getDistanceKm(position.lat, position.lng, r.lat, r.lng);
+    if (!position || filtered.length === 0) return;
+    let nearest = filtered[0];
+    let minDist = distanceMap[nearest.id] ?? getDistanceKm(position.lat, position.lng, nearest.lat, nearest.lng);
+    for (const r of filtered) {
+      const d = distanceMap[r.id] ?? getDistanceKm(position.lat, position.lng, r.lat, r.lng);
       if (d < minDist) { minDist = d; nearest = r; }
     }
     handleSelect(nearest.id);
     const distText = minDist < 1 ? `${Math.round(minDist * 1000)}m` : `${minDist.toFixed(1)}km`;
     toast({ title: `📍 가장 가까운 맛집: ${nearest.name}`, description: `${distText} 거리` });
-  }, [position, restaurants, handleSelect, toast]);
+  }, [position, filtered, distanceMap, handleSelect, toast]);
 
   // Scroll list to selected card
   useEffect(() => {
@@ -179,53 +159,17 @@ const Index = () => {
     return counts;
   }, [restaurants]);
 
-  const categoryRestaurants = useMemo(
-    () => restaurants.filter((r) => r.category === category),
-    [restaurants, category]
-  );
-
-  const isGlobalSearch = query.trim().length > 0;
-
-  const filtered = useMemo(() => {
-    // When searching, search across ALL restaurants regardless of category
-    let list = isGlobalSearch ? restaurants : categoryRestaurants;
-
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter(
-        (r) =>
-          r.name.toLowerCase().includes(q) ||
-          r.tags.some((t) => t.includes(q)) ||
-          r.address.includes(q) ||
-          r.category.includes(q)
-      );
-    }
-
-    if (filter === "favorites") {
-      list = list.filter((r) => isFavorite(r.id));
-    } else if (filter === "visited") {
-      list = list.filter((r) => isVisited(r.id));
-    }
-
-    if (ratingMin > 0) {
-      list = list.filter((r) => r.rating >= ratingMin);
-    }
-
-    return [...list].sort((a, b) => {
-      if (sort === "distance" && position) {
-        const dA = getDistanceKm(position.lat, position.lng, a.lat, a.lng);
-        const dB = getDistanceKm(position.lat, position.lng, b.lat, b.lng);
-        return dA - dB;
-      }
-      if (sort === "reviews") {
-        return b.reviewCount - a.reviewCount || b.rating - a.rating;
-      }
-      if (sort === "newest") {
-        return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
-      }
-      return b.rating - a.rating || b.reviewCount - a.reviewCount;
-    });
-  }, [query, categoryRestaurants, restaurants, isGlobalSearch, sort, filter, ratingMin, position, isFavorite, isVisited]);
+  const { filtered, categoryRestaurants, isGlobalSearch, distanceMap } = useFilteredRestaurants({
+    restaurants,
+    category,
+    query,
+    sort,
+    filter,
+    ratingMin,
+    position,
+    isFavorite,
+    isVisited,
+  });
 
   // Recently viewed restaurants
   const recentRestaurants = useMemo(() => {
@@ -239,9 +183,12 @@ const Index = () => {
   const getDistance = useCallback(
     (lat: number, lng: number) => {
       if (!position) return null;
+      // Use pre-computed distance map when available
+      const r = filtered.find((x) => x.lat === lat && x.lng === lng);
+      if (r && distanceMap[r.id] != null) return distanceMap[r.id] as number;
       return getDistanceKm(position.lat, position.lng, lat, lng);
     },
-    [position]
+    [position, filtered, distanceMap]
   );
 
   if (isLoading) {
@@ -263,7 +210,7 @@ const Index = () => {
   const renderRestaurantList = (maxItems?: number) => {
     const items = maxItems ? filtered.slice(0, maxItems) : filtered;
     return items.map((restaurant) => {
-      const dist = getDistance(restaurant.lat, restaurant.lng);
+      const dist = distanceMap[restaurant.id] ?? null;
       return (
         <RestaurantCard
           key={restaurant.id}

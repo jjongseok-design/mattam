@@ -22,6 +22,48 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // Stale-while-revalidate for Supabase API calls
+        runtimeCaching: [
+          {
+            // Supabase REST API — serve cached data instantly, refresh in background
+            urlPattern: ({ url }) => url.hostname.endsWith(".supabase.co"),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "supabase-api",
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 }, // 24h
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Restaurant images (Supabase Storage / external CDN)
+            urlPattern: ({ request }) => request.destination === "image",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "restaurant-images",
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 }, // 30d
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Kakao Maps SDK
+            urlPattern: ({ url }) => url.hostname.includes("dapi.kakao.com"),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "kakao-sdk",
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 7 }, // 7d
+            },
+          },
+          {
+            // OpenStreetMap tiles (Leaflet fallback)
+            urlPattern: ({ url }) => url.hostname.includes("tile.openstreetmap.org"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "osm-tiles",
+              expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 14 }, // 14d
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
       manifest: {
         name: "춘천 맛집지도",
