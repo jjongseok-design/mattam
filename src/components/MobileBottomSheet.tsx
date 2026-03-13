@@ -6,6 +6,7 @@ import RestaurantCard from "./RestaurantCard";
 import SearchBar from "./SearchBar";
 import SortFilterBar, { SortOption, FilterOption } from "./SortFilterBar";
 import RandomPickButton from "./RandomPickButton";
+import TourProgress from "./TourProgress";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import type { Restaurant } from "@/hooks/useRestaurants";
 
@@ -32,6 +33,9 @@ interface MobileBottomSheetProps {
   getDistance: (lat: number, lng: number) => number | null;
   onClose?: () => void;
   recentRestaurants?: Restaurant[];
+  allRestaurants?: Restaurant[];
+  visited?: Set<string>;
+  onShare?: () => void;
 }
 
 type SheetState = "peek" | "half" | "full";
@@ -63,6 +67,9 @@ const MobileBottomSheet = memo(({
   onRatingMinChange,
   getDistance,
   recentRestaurants = [],
+  allRestaurants,
+  visited,
+  onShare,
 }: MobileBottomSheetProps) => {
   const [state, setState] = useState<SheetState>("half");
   const [isDraggable, setIsDraggable] = useState(true);
@@ -184,6 +191,13 @@ const MobileBottomSheet = memo(({
                 onRatingMinChange={onRatingMinChange}
               />
             </div>
+
+            {/* 맛집 정복 */}
+            {allRestaurants && visited && onShare && (
+              <div className="mb-1 px-1 flex-shrink-0">
+                <TourProgress restaurants={allRestaurants} visited={visited} onShare={onShare} compact />
+              </div>
+            )}
 
             {/* List - isolated scroll container */}
             <div

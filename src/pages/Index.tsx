@@ -402,6 +402,9 @@ const Index = () => {
             getDistance={getDistance}
             onClose={handleCloseList}
             recentRestaurants={recentRestaurants}
+            allRestaurants={restaurants}
+            visited={visited}
+            onShare={() => setShareOpen(true)}
           />
         </div>
         <TipForm />
