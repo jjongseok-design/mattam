@@ -100,6 +100,27 @@ const Index = () => {
     };
   }, [restaurants]);
 
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of restaurants) {
+      counts[r.category] = (counts[r.category] || 0) + 1;
+    }
+    return counts;
+  }, [restaurants]);
+
+  // Must be declared before any callback that references filtered/distanceMap
+  const { filtered, categoryRestaurants, isGlobalSearch, distanceMap } = useFilteredRestaurants({
+    restaurants,
+    category,
+    query,
+    sort,
+    filter,
+    ratingMin,
+    position,
+    isFavorite,
+    isVisited,
+  });
+
   const handleCategoryChange = useCallback((cat: string) => {
     setCategory(cat);
     setShowList(true);
@@ -162,14 +183,6 @@ const Index = () => {
       el.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }, [selectedId]);
-
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const r of restaurants) {
-      counts[r.category] = (counts[r.category] || 0) + 1;
-    }
-    return counts;
-  }, [restaurants]);
 
   // Recently viewed restaurants
   const recentRestaurants = useMemo(() => {
