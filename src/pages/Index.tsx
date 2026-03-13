@@ -77,6 +77,19 @@ const Index = () => {
   const { recentIds, addViewed } = useRecentlyViewed();
   const { toast } = useToast();
   const listRef = useRef<HTMLDivElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   // Observe dark mode class changes
   useEffect(() => {
@@ -450,6 +463,7 @@ const Index = () => {
           {/* 카테고리 + 정렬 + 필터 통합 스크롤 — 좌우 끝까지, 오른쪽 페이드로 더 있음 암시 */}
           <div className="relative">
             <div
+              ref={stripRef}
               className="flex items-center gap-1.5 overflow-x-auto py-2"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none", paddingLeft: "20px", paddingRight: "36px" }}
             >
