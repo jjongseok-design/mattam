@@ -179,7 +179,7 @@ const RestaurantCard = memo(({
     >
       <div className="flex min-h-[108px]">
         {/* Image / emoji */}
-        <div className="w-[92px] flex-shrink-0 overflow-hidden self-stretch">
+        <div className="w-[110px] flex-shrink-0 overflow-hidden self-stretch">
           {restaurant.imageUrl ? (
             <img
               src={restaurant.imageUrl}
