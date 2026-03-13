@@ -71,7 +71,7 @@ const RestaurantCard = memo(({
         <button onClick={onClick} className="w-full text-left p-3 pb-2">
           <div className="flex gap-3">
             {/* Thumbnail */}
-            <div className="w-[54px] h-[54px] rounded-xl overflow-hidden flex-shrink-0 bg-secondary/60 flex items-center justify-center">
+            <div className="w-[65px] h-[65px] rounded-xl overflow-hidden flex-shrink-0 bg-secondary/60 flex items-center justify-center">
               {restaurant.imageUrl ? (
                 <img
                   src={restaurant.imageUrl}
