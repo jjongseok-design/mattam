@@ -92,6 +92,85 @@ export type Database = {
         }
         Relationships: []
       }
+      device_favorites: {
+        Row: {
+          device_id: string
+          favorited_at: string
+          restaurant_id: string
+        }
+        Insert: {
+          device_id: string
+          favorited_at?: string
+          restaurant_id: string
+        }
+        Update: {
+          device_id?: string
+          favorited_at?: string
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_favorites_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_visits: {
+        Row: {
+          device_id: string
+          restaurant_id: string
+          visited_at: string
+        }
+        Insert: {
+          device_id: string
+          restaurant_id: string
+          visited_at?: string
+        }
+        Update: {
+          device_id?: string
+          restaurant_id?: string
+          visited_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_visits_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          device_id: string
+          endpoint: string
+          id: string
+          p256dh: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          device_id: string
+          endpoint: string
+          id?: string
+          p256dh: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          device_id?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+        }
+        Relationships: []
+      }
       restaurants: {
         Row: {
           address: string
@@ -109,6 +188,7 @@ export type Database = {
           price_range: string | null
           rating: number
           review_count: number
+          slug: string | null
           tags: string[] | null
           updated_at: string
         }
@@ -128,6 +208,7 @@ export type Database = {
           price_range?: string | null
           rating?: number
           review_count?: number
+          slug?: string | null
           tags?: string[] | null
           updated_at?: string
         }
@@ -147,16 +228,76 @@ export type Database = {
           price_range?: string | null
           rating?: number
           review_count?: number
+          slug?: string | null
           tags?: string[] | null
           updated_at?: string
         }
         Relationships: []
+      }
+      review_images: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          review_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position?: number
+          review_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          review_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_images_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_likes: {
+        Row: {
+          device_id: string
+          liked_at: string
+          review_id: string
+        }
+        Insert: {
+          device_id: string
+          liked_at?: string
+          review_id: string
+        }
+        Update: {
+          device_id?: string
+          liked_at?: string
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_likes_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
           comment: string | null
           created_at: string
           id: string
+          likes_count: number
           nickname: string | null
           rating: number
           restaurant_id: string
@@ -165,6 +306,7 @@ export type Database = {
           comment?: string | null
           created_at?: string
           id?: string
+          likes_count?: number
           nickname?: string | null
           rating: number
           restaurant_id: string
@@ -173,6 +315,7 @@ export type Database = {
           comment?: string | null
           created_at?: string
           id?: string
+          likes_count?: number
           nickname?: string | null
           rating?: number
           restaurant_id?: string
