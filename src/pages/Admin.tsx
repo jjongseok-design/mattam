@@ -114,7 +114,7 @@ const Admin = () => {
     if (error) {
       toast({ title: "오류", description: error.message, variant: "destructive" });
     } else {
-      setRestaurants(data ?? []);
+      setRestaurants((data as any) ?? []);
     }
     setLoading(false);
   }, [toast]);
