@@ -91,9 +91,9 @@ const RestaurantCard = memo(({
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-1 mb-0.5">
+              <div className="flex items-start justify-between gap-1 mb-0.5">
                 <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-                  <h3 className="font-semibold text-[15px] text-foreground truncate">{restaurant.name}</h3>
+                  <h3 className="font-semibold text-[13px] text-foreground truncate">{restaurant.name}</h3>
                   {isVisited && (
                     <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                       방문
@@ -106,7 +106,7 @@ const RestaurantCard = memo(({
                 </div>
               </div>
 
-              <p className="text-[13px] text-muted-foreground truncate mb-1">
+              <p className="text-[11px] text-muted-foreground truncate mb-1">
                 {restaurant.address}
                 {distText && <span className="text-primary/70 font-medium"> · {distText}</span>}
               </p>
@@ -131,24 +131,24 @@ const RestaurantCard = memo(({
         {/* Action row */}
         <div className="flex items-center px-3 pb-2.5 gap-0.5">
           {onToggleFavorite && (
-              <button
+            <button
               onClick={onToggleFavorite}
-              className={`p-2 rounded-lg transition-colors ${
-                isFavorite ? "text-rose-500 bg-rose-50 dark:bg-rose-950/30" : "text-muted-foreground/40 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+              className={`p-1.5 rounded-lg transition-colors ${
+                isFavorite ? "text-rose-500" : "text-muted-foreground/25 hover:text-rose-400"
               }`}
               aria-label={isFavorite ? "찜 취소" : "찜하기"}
             >
-              <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
+              <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
             </button>
           )}
           <button
             onClick={onToggleVisited}
-            className={`p-2 rounded-lg transition-colors ${
-              isVisited ? "text-primary bg-primary/10" : "text-muted-foreground/40 hover:text-primary/60 hover:bg-primary/5"
+            className={`p-1.5 rounded-lg transition-colors ${
+              isVisited ? "text-primary" : "text-muted-foreground/25 hover:text-primary/60"
             }`}
             aria-label={isVisited ? "방문 취소" : "방문 표시"}
           >
-            <CheckCircle2 className={`h-5 w-5 ${isVisited ? "fill-primary/15" : ""}`} />
+            <CheckCircle2 className={`h-4 w-4 ${isVisited ? "fill-primary/15" : ""}`} />
           </button>
           <Link
             to={`/restaurant/${restaurant.slug}`}
@@ -204,7 +204,7 @@ const RestaurantCard = memo(({
           <div className="flex items-start justify-between gap-2 mb-1.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h3 className="font-semibold text-[16px] text-foreground leading-snug">
+                <h3 className="font-semibold text-[14px] text-foreground leading-snug">
                   {restaurant.name}
                 </h3>
                 {isVisited && (
@@ -234,7 +234,7 @@ const RestaurantCard = memo(({
           {/* Address */}
           <div className="flex items-center gap-1.5 mb-1">
             <MapPin className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
-            <span className="text-[13px] text-muted-foreground truncate flex-1">{restaurant.address}</span>
+            <span className="text-[11px] text-muted-foreground truncate flex-1">{restaurant.address}</span>
             {distText && (
               <span className="text-[11px] font-semibold text-primary/70 flex-shrink-0 flex items-center gap-0.5">
                 <Navigation className="h-2.5 w-2.5" />
@@ -274,26 +274,26 @@ const RestaurantCard = memo(({
               {onToggleFavorite && (
                 <button
                   onClick={onToggleFavorite}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-1.5 rounded-lg transition-colors ${
                     isFavorite
-                      ? "text-rose-500 bg-rose-50 dark:bg-rose-950/30"
-                      : "text-muted-foreground/40 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                      ? "text-rose-500"
+                      : "text-muted-foreground/25 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                   }`}
                   aria-label={isFavorite ? "찜 취소" : "찜하기"}
                 >
-                  <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
+                  <Heart className={`h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`} />
                 </button>
               )}
               <button
                 onClick={onToggleVisited}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-lg transition-colors ${
                   isVisited
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground/40 hover:text-primary/60 hover:bg-primary/5"
+                    ? "text-primary bg-primary/8"
+                    : "text-muted-foreground/25 hover:text-primary/60 hover:bg-primary/5"
                 }`}
                 aria-label={isVisited ? "방문 취소" : "방문 표시"}
               >
-                <CheckCircle2 className={`h-5 w-5 ${isVisited ? "fill-primary/15" : ""}`} />
+                <CheckCircle2 className={`h-3.5 w-3.5 ${isVisited ? "fill-primary/15" : ""}`} />
               </button>
               <button
                 onClick={handleShare}
