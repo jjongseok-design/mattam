@@ -147,7 +147,7 @@ const Index = () => {
   const handleSelect = useCallback((id: string) => {
     setSelectedId(id);
     addViewed(id);
-  }, [addViewed]);
+  }, [setSelectedId, addViewed]);
 
   const handleFindNearest = useCallback(() => {
     if (!position || restaurants.length === 0) return;
