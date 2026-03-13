@@ -56,7 +56,8 @@ const DetailMiniMap = ({ lat, lng, name }: { lat: number; lng: number; name: str
 };
 
 const RestaurantDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  // Support both slug (/restaurant/dakgalbi-matzip) and legacy id (/restaurant/dc01)
+  const { slug } = useParams<{ slug: string }>();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
   const { toast } = useToast();
   const { addViewed } = useRecentlyViewed();
@@ -64,7 +65,9 @@ const RestaurantDetail = () => {
   const [reportText, setReportText] = useState("");
   const [reportSending, setReportSending] = useState(false);
 
-  const restaurant = restaurants.find((r) => r.id === id);
+  // Match by slug first, then fall back to id for backwards compat
+  const restaurant = restaurants.find((r) => r.slug === slug || r.id === slug);
+  const id = restaurant?.id;
 
   useEffect(() => {
     if (id) addViewed(id);

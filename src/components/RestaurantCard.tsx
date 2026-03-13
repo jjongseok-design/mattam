@@ -42,7 +42,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/restaurant/${restaurant.id}`;
+    const url = `${window.location.origin}/restaurant/${restaurant.slug}`;
     const text = `${restaurant.name} - 춘천 맛집`;
     if (navigator.share) {
       try {
@@ -185,7 +185,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
             </button>
           </div>
           <Link
-            to={`/restaurant/${restaurant.id}`}
+            to={`/restaurant/${restaurant.slug}`}
             onClick={(e) => e.stopPropagation()}
             className="flex items-center gap-1 text-[11px] text-primary font-semibold px-3 py-1.5 min-h-[36px] rounded-lg bg-primary/10 active:bg-primary/20 transition-colors"
           >
@@ -375,7 +375,7 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
               </a>
             )}
             <Link
-              to={`/restaurant/${restaurant.id}`}
+              to={`/restaurant/${restaurant.slug}`}
               onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1 text-[12px] text-primary font-semibold transition-colors px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/15"
             >

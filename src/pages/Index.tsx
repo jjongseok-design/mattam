@@ -263,7 +263,9 @@ const Index = () => {
                     </span>
                   </div>
                 ) : (
-                  <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
+                  <Link to="/tour" className="block" onClick={(e) => e.stopPropagation()}>
+                    <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
+                  </Link>
                 )}
               </div>
               <div className="flex items-center gap-1 shrink-0">
@@ -457,7 +459,7 @@ const Index = () => {
                     {recentRestaurants.map((r) => (
                       <Link
                         key={r.id}
-                        to={`/restaurant/${r.id}`}
+                        to={`/restaurant/${r.slug}`}
                         className="flex-shrink-0 px-3 py-2 bg-muted/60 hover:bg-muted rounded-xl text-[12px] font-medium text-foreground transition-colors border border-border/30 hover:border-primary/20"
                       >
                         <span className="mr-1">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
@@ -510,8 +512,13 @@ const Index = () => {
 
       {/* Map */}
       <div className="flex-1 h-full relative">
-        <div className="absolute top-4 right-4 z-[1000] w-72">
+        <div className="absolute top-4 right-4 z-[1000] w-72 space-y-1">
           <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} />
+          <div className="text-right">
+            <Link to="/tour" className="text-[11px] text-primary/70 hover:text-primary font-medium transition-colors">
+              투어 상세 보기 →
+            </Link>
+          </div>
         </div>
         <MapView
           restaurants={filtered}

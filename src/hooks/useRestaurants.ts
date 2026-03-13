@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Restaurant {
   id: string;
+  /** URL-friendly identifier used in /restaurant/:slug routes. Falls back to id. */
+  slug: string;
   name: string;
   category: string;
   address: string;
@@ -36,6 +38,7 @@ export const useRestaurants = () => {
 
       return (data ?? []).map((r: any) => ({
         id: r.id,
+        slug: r.slug ?? r.id, // falls back to id until migration runs
         name: r.name,
         category: r.category,
         address: r.address,

@@ -202,7 +202,7 @@ const MobileBottomSheet = memo(({
                     {recentRestaurants.map((r) => (
                       <Link
                         key={r.id}
-                        to={`/restaurant/${r.id}`}
+                        to={`/restaurant/${r.slug}`}
                         className="flex-shrink-0 px-1.5 py-0.5 bg-muted/60 hover:bg-muted rounded-md text-[10px] font-medium text-foreground transition-colors border border-border/30"
                       >
                         <span className="mr-0.5">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
