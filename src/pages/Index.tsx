@@ -285,73 +285,68 @@ const Index = () => {
     return (
       <>
         <div className="relative h-dvh w-screen overflow-hidden bg-background">
-          {/* 상단 바 */}
-          <div className="absolute top-0 left-0 right-0 z-[1300] safe-area-top bg-background/95 backdrop-blur-md border-b border-border/30" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
-            {/* Row 0: Title - only when NOT in list mode */}
-            {!showList && (
-              <div className="safe-area-x pt-2 pb-0">
-                <h1 className="text-base font-bold text-foreground tracking-tight flex items-center gap-1.5">
-                  <Utensils className="h-4 w-4 text-primary" />
-                  춘천 맛집 가이드
-                </h1>
-              </div>
-            )}
-
-            {/* Row 1: Tour progress + action buttons */}
-            <div className="safe-area-x pt-1.5 pb-1.5 flex items-center gap-2">
-              <div className="flex-1 min-w-0 overflow-hidden">
+          {/* 모바일 상단 바 */}
+          <div
+            className="absolute top-0 left-0 right-0 z-[1300] safe-area-top bg-card/90 border-b border-border/30"
+            style={{ backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}
+          >
+            {/* Row 1: 로고 + 액션 버튼 */}
+            <div className="safe-area-x pt-2 pb-1.5 flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
+                  <Utensils className="h-3.5 w-3.5 text-white" />
+                </div>
                 {showList ? (
-                  <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     <button
                       onClick={handleCloseList}
-                      className="w-8 h-8 min-w-[32px] rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform shrink-0"
-                      aria-label="카테고리 선택으로 돌아가기"
+                      className="w-7 h-7 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
+                      aria-label="뒤로"
                     >
-                      <X className="h-3.5 w-3.5 text-foreground" />
+                      <X className="h-3 w-3 text-foreground" />
                     </button>
-                    <span className="text-sm font-bold text-foreground flex items-center gap-1 min-w-0">
-                      <span className="shrink-0">{categoryEmoji}</span>
+                    <span className="text-[13px] font-bold text-foreground flex items-center gap-1 truncate">
+                      <span className="flex-shrink-0">{categoryEmoji}</span>
                       <span className="truncate">{category}</span>
-                      <span className="text-[11px] font-normal text-muted-foreground shrink-0">{categoryRestaurants.length}개</span>
+                      <span className="text-[11px] font-normal text-muted-foreground flex-shrink-0">
+                        {categoryRestaurants.length}개
+                      </span>
                     </span>
                   </div>
                 ) : (
-                  <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} compact />
+                  <h1 className="text-[14px] font-bold text-foreground">춘천 맛집</h1>
                 )}
               </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {!position && (
+
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {!position ? (
                   <button
                     onClick={handleLocationRequest}
                     className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform"
-                    aria-label="내 위치 찾기"
+                    aria-label="내 위치"
                   >
                     <Navigation className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
-                )}
-                {position && (
+                ) : (
                   <button
                     onClick={handleFindNearest}
-                    className="glass rounded-lg px-2 h-8 flex items-center gap-1 active:scale-95 transition-transform text-[10px] font-semibold text-primary"
-                    aria-label="내 주변 가장 가까운 맛집"
+                    className="glass rounded-lg h-8 px-2 flex items-center gap-1 active:scale-95 transition-transform text-[11px] font-semibold text-primary"
+                    aria-label="내 주변 맛집"
                   >
                     <Navigation className="h-3 w-3" />
                     내 주변
                   </button>
                 )}
-                <Link to="/admin" className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform">
-                  <Settings className="h-3.5 w-3.5 text-muted-foreground/50" />
-                </Link>
-                <Link to="/install" className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform">
-                  <Download className="h-3.5 w-3.5 text-muted-foreground" />
-                </Link>
                 <div className="glass rounded-lg w-8 h-8 flex items-center justify-center">
                   <ThemeToggle />
                 </div>
+                <Link to="/admin" className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform">
+                  <Settings className="h-3.5 w-3.5 text-muted-foreground/50" />
+                </Link>
               </div>
             </div>
 
-            {/* Row 2: Category grid - only when NOT in list mode */}
+            {/* Row 2: 카테고리 pills */}
             {!showList && (
               <div className="safe-area-x pb-2">
                 <CategoryTabs active={category} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
@@ -407,156 +402,126 @@ const Index = () => {
   // Desktop layout
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
-      {/* Side Panel */}
-      <div className="w-[38.2%] min-w-[380px] max-w-[600px] flex-shrink-0 h-full flex flex-col border-r border-border/50 bg-card shadow-panel z-10">
+      {/* ── Sidebar ── */}
+      <div className="w-[400px] flex-shrink-0 h-full flex flex-col bg-card z-10" style={{ boxShadow: "var(--panel-shadow)" }}>
+
         {/* Header */}
-        <div className="p-5 pb-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center shadow-sm">
-              <Utensils className="h-4 w-4 text-primary-foreground" />
+        <div className="px-5 pt-4 pb-3 border-b border-border/40">
+          <div className="flex items-center gap-2.5 mb-3.5">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+              <Utensils className="h-4 w-4 text-white" />
             </div>
-            <div className="flex-1">
-              <h1 className="text-lg font-bold text-foreground tracking-tight">춘천 맛집 가이드</h1>
-              <p className="text-[11px] text-muted-foreground/70 flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                강원특별자치도 춘천시 · {categoryRestaurants.length}개 {category}
-              </p>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-[15px] font-bold text-foreground tracking-tight">춘천 맛집</h1>
+              <p className="text-[11px] text-muted-foreground">강원도 춘천시 · {restaurants.length}곳</p>
             </div>
-            {!position && (
-              <button
-                onClick={handleLocationRequest}
-                className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
-                title="내 위치 찾기"
-                aria-label="내 위치 찾기"
-              >
-                <Navigation className="h-4 w-4 text-muted-foreground/50" />
-              </button>
-            )}
-            {position && (
-              <span className="text-[10px] text-primary/60 font-medium">📍 위치 ON</span>
-            )}
-            <ThemeToggle />
-            <Link to="/install">
-              <button
-                className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
-                title="앱 설치"
-                aria-label="앱 설치"
-              >
-                <Download className="h-4 w-4 text-muted-foreground/50" />
-              </button>
-            </Link>
-            <Link to="/admin">
-              <button
-                className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
-                title="관리자"
-                aria-label="관리자 설정"
-              >
-                <Settings className="h-4 w-4 text-muted-foreground/50" />
-              </button>
-            </Link>
+            <div className="flex items-center gap-0.5">
+              {!position ? (
+                <button
+                  onClick={handleLocationRequest}
+                  className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
+                  title="내 위치 찾기"
+                >
+                  <Navigation className="h-3.5 w-3.5 text-muted-foreground/50" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleFindNearest}
+                  className="w-7 h-7 rounded-lg hover:bg-primary/10 text-primary/60 hover:text-primary flex items-center justify-center transition-colors"
+                  title="가장 가까운 맛집"
+                >
+                  <Navigation className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <ThemeToggle />
+              <Link to="/install">
+                <button className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="앱 설치">
+                  <Download className="h-3.5 w-3.5 text-muted-foreground/50" />
+                </button>
+              </Link>
+              <Link to="/admin">
+                <button className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="관리자">
+                  <Settings className="h-3.5 w-3.5 text-muted-foreground/40" />
+                </button>
+              </Link>
+            </div>
           </div>
 
-          {!showList ? (
-            <CategoryTabs active={category} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
-          ) : (
-            <>
-              <div className="flex items-center gap-2 mb-3">
-                <button
-                  onClick={handleCloseList}
-                  className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors shrink-0"
-                  aria-label="카테고리 선택으로 돌아가기"
-                >
-                  <X className="h-4 w-4 text-foreground" />
-                </button>
-                <span className="text-base font-bold text-foreground flex items-center gap-1.5">
-                  <span className="text-xl">{categoryEmoji}</span>
-                  <span>{category}</span>
-                </span>
-                <span className="text-xs text-muted-foreground ml-auto">{categoryRestaurants.length}개</span>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <SearchBar query={query} onQueryChange={setQuery} />
-                </div>
-                <RandomPickButton restaurants={filtered} />
-              </div>
-              <div className="mt-2.5">
-                <SortFilterBar
-                  sort={sort}
-                  onSortChange={setSort}
-                  filter={filter}
-                  onFilterChange={setFilter}
-                  hasLocation={!!position}
-                  ratingMin={ratingMin}
-                  onRatingMinChange={setRatingMin}
-                />
-              </div>
-            </>
-          )}
+          {/* Category pills */}
+          <CategoryTabs active={category} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
         </div>
 
-        {/* Divider */}
-        <div className="h-px bg-border/60 mx-4" />
+        {/* Search + filter */}
+        <div className="px-4 py-2.5 border-b border-border/30 space-y-2">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <SearchBar query={query} onQueryChange={setQuery} restaurants={restaurants} onSelectRestaurant={handleSelect} />
+            </div>
+            <RandomPickButton restaurants={filtered} />
+          </div>
+          <SortFilterBar
+            sort={sort}
+            onSortChange={setSort}
+            filter={filter}
+            onFilterChange={setFilter}
+            hasLocation={!!position}
+            ratingMin={ratingMin}
+            onRatingMinChange={setRatingMin}
+          />
+        </div>
 
-        {/* Restaurant list */}
-        <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
-          {!showList && (
-            <>
-              {/* Recently Viewed */}
-              {recentRestaurants.length > 0 && (
-                <div className="mb-3">
-                  <p className="text-[11px] text-muted-foreground/60 font-medium px-1.5 mb-1.5">🕐 최근 본 식당</p>
-                  <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-                    {recentRestaurants.map((r) => (
-                      <Link
-                        key={r.id}
-                        to={`/restaurant/${r.id}`}
-                        className="flex-shrink-0 px-3 py-2 bg-muted/60 hover:bg-muted rounded-xl text-[12px] font-medium text-foreground transition-colors border border-border/30 hover:border-primary/20"
-                      >
-                        <span className="mr-1">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
-                        {r.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center justify-between px-1.5 mb-1">
-                <p className="text-[11px] text-muted-foreground/60 font-medium">
-                  {categoryEmoji} {category} · {filtered.length}개
-                </p>
-                <button
-                  onClick={() => setShowList(true)}
-                  className="text-[11px] text-primary font-medium hover:underline"
-                >
-                  전체보기 →
-                </button>
+        {/* List */}
+        <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin">
+          {/* Recently viewed */}
+          {recentRestaurants.length > 0 && (
+            <div className="px-4 pt-3 pb-1">
+              <p className="text-[10px] text-muted-foreground/50 font-medium uppercase tracking-wide mb-2">최근 본 식당</p>
+              <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                {recentRestaurants.map((r) => (
+                  <Link
+                    key={r.id}
+                    to={`/restaurant/${r.slug}`}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/60 hover:bg-muted rounded-lg text-[11px] font-medium text-foreground transition-colors border border-border/30 hover:border-primary/20"
+                  >
+                    <span className="text-sm">{CATEGORY_EMOJI[r.category] || "🍽️"}</span>
+                    {r.name}
+                  </Link>
+                ))}
               </div>
-            </>
-          )}
-
-          {showList && (
-            <p className="text-[11px] text-muted-foreground/60 px-1.5 mb-1 font-medium">
-              {isGlobalSearch && <span className="text-primary mr-1">🔍 전체 검색</span>}
-              {filtered.length}개 {isGlobalSearch ? "결과" : category} ·{" "}
-              {sort === "rating" ? "평점 높은 순" : sort === "reviews" ? "리뷰 많은 순" : sort === "newest" ? "최신 순" : "가까운 순"}
-              {filter !== "all" && ` · ${filter === "favorites" ? "찜한 곳" : "방문한 곳"}`}
-            </p>
-          )}
-
-          <AnimatePresence mode="popLayout">
-            {renderRestaurantList()}
-          </AnimatePresence>
-
-          {filtered.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground">
-              <Utensils className="h-8 w-8 mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-medium">검색 결과가 없습니다</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">다른 키워드로 검색해보세요</p>
             </div>
           )}
 
-          <div className="text-center py-4 text-[10px] text-muted-foreground/40 border-t border-border/30 mt-4">
-            © {new Date().getFullYear()} 춘천 맛집 지도. All rights reserved.
+          {/* Count label */}
+          <div className="px-5 pt-3 pb-1.5 flex items-center justify-between">
+            <p className="text-[11px] text-muted-foreground/60 font-medium">
+              {isGlobalSearch && <span className="text-primary mr-1">🔍 검색</span>}
+              {filtered.length}개
+              {!isGlobalSearch && ` ${categoryEmoji} ${category}`}
+              {filter === "favorites" && " · 찜한 곳"}
+              {filter === "visited" && " · 방문한 곳"}
+            </p>
+            <p className="text-[10px] text-muted-foreground/40">
+              {sort === "rating" ? "평점순" : sort === "reviews" ? "리뷰순" : sort === "newest" ? "최신순" : "거리순"}
+            </p>
+          </div>
+
+          {/* Cards */}
+          <div className="px-3 pb-4 space-y-2">
+            <AnimatePresence mode="popLayout">
+              {renderRestaurantList()}
+            </AnimatePresence>
+
+            {filtered.length === 0 && (
+              <div className="text-center py-16 text-muted-foreground">
+                <Utensils className="h-8 w-8 mx-auto mb-3 opacity-20" />
+                <p className="text-sm font-medium">검색 결과가 없습니다</p>
+                <p className="text-xs text-muted-foreground/40 mt-1">다른 키워드로 검색해보세요</p>
+              </div>
+            )}
+          </div>
+
+          <div className="px-5 py-4 text-center text-[10px] text-muted-foreground/30 border-t border-border/20">
+            © {new Date().getFullYear()} 춘천 맛집 지도
           </div>
         </div>
       </div>
