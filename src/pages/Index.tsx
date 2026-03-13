@@ -476,7 +476,7 @@ const Index = () => {
               </div>
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <SearchBar query={query} onQueryChange={setQuery} />
+                  <SearchBar query={query} onQueryChange={setQuery} restaurants={restaurants} onSelectRestaurant={setSelectedId} />
                 </div>
                 <RandomPickButton restaurants={filtered} />
               </div>

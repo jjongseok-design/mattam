@@ -83,6 +83,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
   const kakaoMarkersRef = useRef<kakao.maps.Marker[]>([]);
   const kakaoOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const kakaoNameOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
+  const kakaoClustererRef = useRef<any>(null);
 
   const leafMapRef = useRef<L.Map | null>(null);
   const leafMarkersRef = useRef<L.Marker[]>([]);
@@ -125,7 +126,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       script = document.createElement("script");
       script.id = KAKAO_SCRIPT_ID;
       script.async = true;
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false`;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false&libraries=clusterer`;
       document.head.appendChild(script);
     }
 
@@ -227,6 +228,9 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     kakaoOverlayRef.current = null;
     kakaoNameOverlaysRef.current.forEach((o) => o.setMap(null));
     kakaoNameOverlaysRef.current = [];
+    if (kakaoClustererRef.current) {
+      kakaoClustererRef.current.clear();
+    }
 
     const defaultImage = new kakao.maps.MarkerImage(
       "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
@@ -241,13 +245,36 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       new kakao.maps.Size(24, 35)
     );
 
+    // 클러스터러 초기화 (선택된 마커 제외, 일반 마커만 클러스터링)
+    if (!kakaoClustererRef.current && (window as any).kakao?.maps?.MarkerClusterer) {
+      kakaoClustererRef.current = new (kakao.maps as any).MarkerClusterer({
+        map,
+        averageCenter: true,
+        minLevel: 5,
+        disableClickZoom: false,
+        styles: [{
+          width: "44px", height: "44px",
+          background: "rgba(var(--primary-rgb, 59 130 246) / 0.85)",
+          borderRadius: "50%",
+          color: "#fff",
+          textAlign: "center",
+          fontWeight: "700",
+          lineHeight: "44px",
+          fontSize: "14px",
+          border: "2px solid rgba(255,255,255,0.6)",
+        }],
+      });
+    }
+
+    const normalMarkers: kakao.maps.Marker[] = [];
+
     restaurants.forEach((r) => {
       const isSelected = r.id === selectedId;
       const isVisited = visitedIds.has(r.id);
       const position = new kakao.maps.LatLng(r.lat, r.lng);
       const marker = new kakao.maps.Marker({
         position,
-        map,
+        map: isSelected ? map : undefined,
         image: isSelected ? selectedImage : isVisited ? visitedImage : defaultImage,
         zIndex: isSelected ? 10 : isVisited ? 5 : 1,
       });
@@ -284,7 +311,13 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       }
 
       kakaoMarkersRef.current.push(marker);
+      if (!isSelected) normalMarkers.push(marker);
     });
+
+    // 일반 마커들을 클러스터러에 추가
+    if (kakaoClustererRef.current) {
+      kakaoClustererRef.current.addMarkers(normalMarkers);
+    }
   }, [mode, restaurants, selectedId, onSelect, visitedIds]);
 
   useEffect(() => {

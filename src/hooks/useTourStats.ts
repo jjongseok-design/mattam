@@ -9,6 +9,17 @@ interface CategoryStats {
   isMaster: boolean;
 }
 
+export interface Mission {
+  id: string;
+  title: string;
+  description: string;
+  emoji: string;
+  completed: boolean;
+  progress: number;
+  current: number;
+  target: number;
+}
+
 interface TourStats {
   totalRestaurants: number;
   totalVisited: number;
@@ -17,6 +28,8 @@ interface TourStats {
   rankEmoji: string;
   categoryStats: CategoryStats[];
   masterCategories: string[];
+  missions: Mission[];
+  completedMissions: number;
 }
 
 const RANKS = [
@@ -34,7 +47,6 @@ export const useTourStats = (
   visited: Set<string>
 ): TourStats => {
   return useMemo(() => {
-    // Group by category
     const byCategory = restaurants.reduce((acc, r) => {
       if (!acc[r.category]) acc[r.category] = [];
       acc[r.category].push(r);
@@ -59,12 +71,99 @@ export const useTourStats = (
     const totalVisited = visited.size;
     const overallPercent = totalRestaurants > 0 ? Math.round((totalVisited / totalRestaurants) * 100) : 0;
 
-    // Calculate rank
     const rankInfo = [...RANKS].reverse().find((r) => totalVisited >= r.min) || RANKS[0];
 
     const masterCategories = categoryStats
       .filter((c) => c.isMaster)
       .map((c) => c.category);
+
+    const dakStat = categoryStats.find((c) => c.category === "닭갈비");
+
+    // 미션 시스템
+    const missions: Mission[] = [
+      {
+        id: "first_visit",
+        title: "첫 발걸음",
+        description: "첫 번째 맛집을 방문하세요",
+        emoji: "👣",
+        completed: totalVisited >= 1,
+        progress: Math.min(100, totalVisited * 100),
+        current: Math.min(1, totalVisited),
+        target: 1,
+      },
+      {
+        id: "explorer_5",
+        title: "맛집 탐험",
+        description: "5곳의 맛집을 방문하세요",
+        emoji: "🗺️",
+        completed: totalVisited >= 5,
+        progress: Math.min(100, (totalVisited / 5) * 100),
+        current: Math.min(5, totalVisited),
+        target: 5,
+      },
+      {
+        id: "dak_master",
+        title: "닭갈비 정복",
+        description: "닭갈비 카테고리 전체 방문",
+        emoji: "🍗",
+        completed: dakStat?.isMaster ?? false,
+        progress: dakStat?.percent ?? 0,
+        current: dakStat?.visited ?? 0,
+        target: dakStat?.total ?? 0,
+      },
+      {
+        id: "category_3",
+        title: "카테고리 3 완주",
+        description: "3개 카테고리를 완전 정복",
+        emoji: "🏅",
+        completed: masterCategories.length >= 3,
+        progress: Math.min(100, (masterCategories.length / 3) * 100),
+        current: Math.min(3, masterCategories.length),
+        target: 3,
+      },
+      {
+        id: "visited_20",
+        title: "미식 여행가",
+        description: "20곳의 맛집을 방문하세요",
+        emoji: "✈️",
+        completed: totalVisited >= 20,
+        progress: Math.min(100, (totalVisited / 20) * 100),
+        current: Math.min(20, totalVisited),
+        target: 20,
+      },
+      {
+        id: "visited_50",
+        title: "춘천 토박이",
+        description: "50곳의 맛집을 방문하세요",
+        emoji: "🏠",
+        completed: totalVisited >= 50,
+        progress: Math.min(100, (totalVisited / 50) * 100),
+        current: Math.min(50, totalVisited),
+        target: 50,
+      },
+      {
+        id: "category_5",
+        title: "음식 백과사전",
+        description: "5개 카테고리를 완전 정복",
+        emoji: "📚",
+        completed: masterCategories.length >= 5,
+        progress: Math.min(100, (masterCategories.length / 5) * 100),
+        current: Math.min(5, masterCategories.length),
+        target: 5,
+      },
+      {
+        id: "all_visited",
+        title: "춘천 미식왕",
+        description: "모든 맛집을 정복하세요",
+        emoji: "🏆",
+        completed: overallPercent === 100 && totalRestaurants > 0,
+        progress: overallPercent,
+        current: totalVisited,
+        target: totalRestaurants,
+      },
+    ];
+
+    const completedMissions = missions.filter((m) => m.completed).length;
 
     return {
       totalRestaurants,
@@ -74,6 +173,8 @@ export const useTourStats = (
       rankEmoji: rankInfo.emoji,
       categoryStats,
       masterCategories,
+      missions,
+      completedMissions,
     };
   }, [restaurants, visited]);
 };

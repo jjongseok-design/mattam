@@ -167,7 +167,7 @@ const MobileBottomSheet = memo(({
             {/* Search + Random */}
             <div className="flex gap-1 mb-1 flex-shrink-0">
               <div className="flex-1">
-                <SearchBar query={query} onQueryChange={onQueryChange} />
+                <SearchBar query={query} onQueryChange={onQueryChange} restaurants={restaurants} onSelectRestaurant={onSelect} />
               </div>
               <RandomPickButton restaurants={restaurants} />
             </div>

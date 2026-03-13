@@ -1,9 +1,10 @@
-import { Trophy, MapPin, Share2, ChevronDown, ChevronUp, Crown } from "lucide-react";
+import { Trophy, MapPin, Share2, ChevronDown, ChevronUp, Crown, Target, CheckCircle2, Bell, BellOff } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { useTourStats } from "@/hooks/useTourStats";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useToast } from "@/hooks/use-toast";
 
 interface TourProgressProps {
@@ -15,7 +16,9 @@ interface TourProgressProps {
 
 const TourProgress = ({ restaurants, visited, onShare, compact = false }: TourProgressProps) => {
   const [expanded, setExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<"category" | "missions">("category");
   const stats = useTourStats(restaurants, visited);
+  const { permission, requestPermission } = useNotifications();
   const { toast } = useToast();
   const prevMasterRef = useRef<string[]>([]);
 
@@ -30,6 +33,24 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false }: TourPr
     }
     prevMasterRef.current = stats.masterCategories;
   }, [stats.masterCategories, toast]);
+
+  const handleNotificationToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (permission === "unsupported") {
+      toast({ title: "이 브라우저는 알림을 지원하지 않습니다" });
+      return;
+    }
+    if (permission === "denied") {
+      toast({ title: "브라우저 설정에서 알림을 허용해주세요", variant: "destructive" });
+      return;
+    }
+    if (permission === "granted") {
+      toast({ title: "알림이 이미 켜져 있습니다 🔔" });
+      return;
+    }
+    const ok = await requestPermission();
+    toast({ title: ok ? "알림이 켜졌습니다 🔔" : "알림 허용을 취소했습니다" });
+  };
 
   if (compact) {
     return (
@@ -181,8 +202,19 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false }: TourPr
           </p>
         </div>
 
-        {/* Expand/Share */}
+        {/* Expand/Share/Notification */}
         <div className="flex items-center gap-1">
+          <button
+            onClick={handleNotificationToggle}
+            className={`p-2.5 rounded-xl transition-colors active:scale-95 ${
+              permission === "granted"
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground/50 hover:bg-muted/50"
+            }`}
+            aria-label="알림 설정"
+          >
+            {permission === "granted" ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -214,7 +246,7 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false }: TourPr
             <div className="px-4 pb-4 border-t border-border/50 pt-3">
               {/* Master badges */}
               {stats.masterCategories.length > 0 && (
-                <div className="mb-4">
+                <div className="mb-3">
                   <p className="text-[11px] font-semibold text-muted-foreground mb-2 flex items-center gap-1">
                     <Trophy className="h-3 w-3 text-rating" />
                     획득한 마스터 배지
@@ -234,40 +266,100 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false }: TourPr
                 </div>
               )}
 
-              {/* Category progress list */}
-              <p className="text-[11px] font-semibold text-muted-foreground mb-2">카테고리별 진행률</p>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto scrollbar-thin">
-                {stats.categoryStats.map((cat) => (
-                  <div key={cat.category} className="flex items-center gap-2">
-                    <span className="text-sm w-5 text-center">
-                      {CATEGORY_EMOJI[cat.category] || "🍽️"}
-                    </span>
-                    <span className="text-[12px] font-medium text-foreground w-20 truncate">
-                      {cat.category}
-                    </span>
-                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <motion.div
-                        className={`h-full rounded-full ${
-                          cat.isMaster
-                            ? "bg-gradient-to-r from-rating to-rating/70"
-                            : "bg-gradient-to-r from-primary/70 to-primary/50"
+              {/* 탭 전환 */}
+              <div className="flex gap-1 mb-3 bg-muted/50 rounded-lg p-0.5">
+                <button
+                  onClick={() => setActiveTab("category")}
+                  className={`flex-1 text-[11px] font-semibold py-1 rounded-md transition-colors ${
+                    activeTab === "category" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                  }`}
+                >
+                  카테고리
+                </button>
+                <button
+                  onClick={() => setActiveTab("missions")}
+                  className={`flex-1 text-[11px] font-semibold py-1 rounded-md transition-colors flex items-center justify-center gap-1 ${
+                    activeTab === "missions" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                  }`}
+                >
+                  <Target className="h-3 w-3" />
+                  미션 {stats.completedMissions}/{stats.missions.length}
+                </button>
+              </div>
+
+              {activeTab === "category" ? (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto scrollbar-thin">
+                  {stats.categoryStats.map((cat) => (
+                    <div key={cat.category} className="flex items-center gap-2">
+                      <span className="text-sm w-5 text-center">
+                        {CATEGORY_EMOJI[cat.category] || "🍽️"}
+                      </span>
+                      <span className="text-[12px] font-medium text-foreground w-20 truncate">
+                        {cat.category}
+                      </span>
+                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <motion.div
+                          className={`h-full rounded-full ${
+                            cat.isMaster
+                              ? "bg-gradient-to-r from-rating to-rating/70"
+                              : "bg-gradient-to-r from-primary/70 to-primary/50"
+                          }`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${cat.percent}%` }}
+                          transition={{ duration: 0.5, delay: 0.1 }}
+                        />
+                      </div>
+                      <span
+                        className={`text-[11px] font-bold w-14 text-right ${
+                          cat.isMaster ? "text-rating" : "text-muted-foreground"
                         }`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${cat.percent}%` }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                      />
+                      >
+                        {cat.visited}/{cat.total}
+                        {cat.isMaster && " 🏆"}
+                      </span>
                     </div>
-                    <span
-                      className={`text-[11px] font-bold w-14 text-right ${
-                        cat.isMaster ? "text-rating" : "text-muted-foreground"
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto scrollbar-thin">
+                  {stats.missions.map((mission) => (
+                    <div
+                      key={mission.id}
+                      className={`flex items-center gap-2.5 p-2 rounded-xl border transition-colors ${
+                        mission.completed
+                          ? "bg-primary/5 border-primary/20"
+                          : "bg-muted/30 border-border/30"
                       }`}
                     >
-                      {cat.visited}/{cat.total}
-                      {cat.isMaster && " 🏆"}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                      <span className="text-lg flex-shrink-0">{mission.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          <span className={`text-[12px] font-bold ${mission.completed ? "text-primary" : "text-foreground"}`}>
+                            {mission.title}
+                          </span>
+                          {mission.completed && (
+                            <CheckCircle2 className="h-3 w-3 text-primary flex-shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">{mission.description}</p>
+                        {!mission.completed && mission.target > 0 && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary/60 rounded-full transition-all duration-500"
+                                style={{ width: `${mission.progress}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                              {mission.current}/{mission.target}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         )}

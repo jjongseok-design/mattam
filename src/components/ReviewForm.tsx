@@ -1,5 +1,5 @@
-import { useState, memo } from "react";
-import { Star, Send, Loader2 } from "lucide-react";
+import { useState, memo, useRef } from "react";
+import { Star, Send, Loader2, ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ interface ReviewFormProps {
 }
 
 const REVIEW_COOLDOWN_KEY = "last_review_time";
-const REVIEW_COOLDOWN_MS = 60_000; // 1 minute between reviews
+const REVIEW_COOLDOWN_MS = 300_000; // 5분 쿨다운
 
 const NICKNAME_KEY = "review_nickname";
 
@@ -23,9 +23,31 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
   const [nickname, setNickname] = useState(() => {
     try { return localStorage.getItem(NICKNAME_KEY) || ""; } catch { return ""; }
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "5MB 이하 이미지만 업로드 가능합니다", variant: "destructive" });
+      return;
+    }
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -33,15 +55,14 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
       return;
     }
 
-    // Client-side rate limiting
+    // Client-side rate limiting (5분)
     const lastReview = localStorage.getItem(REVIEW_COOLDOWN_KEY);
     if (lastReview && Date.now() - parseInt(lastReview) < REVIEW_COOLDOWN_MS) {
-      const remaining = Math.ceil((REVIEW_COOLDOWN_MS - (Date.now() - parseInt(lastReview))) / 1000);
-      toast({ title: `${remaining}초 후에 다시 작성할 수 있습니다 ⏳`, variant: "destructive" });
+      const remaining = Math.ceil((REVIEW_COOLDOWN_MS - (Date.now() - parseInt(lastReview))) / 60000);
+      toast({ title: `${remaining}분 후에 다시 작성할 수 있습니다 ⏳`, variant: "destructive" });
       return;
     }
 
-    // Input validation
     const trimmedComment = comment.trim();
     const trimmedNickname = nickname.trim();
 
@@ -55,12 +76,31 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
     }
 
     setSubmitting(true);
+
+    // 이미지 업로드
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      try {
+        const ext = imageFile.name.split(".").pop() ?? "jpg";
+        const path = `reviews/${restaurantId}_${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("restaurant-images")
+          .upload(path, imageFile, { upsert: false });
+        if (!uploadError) {
+          const { data } = supabase.storage.from("restaurant-images").getPublicUrl(path);
+          imageUrl = data.publicUrl;
+        }
+      } catch {}
+    }
+
     const { error } = await supabase.from("reviews").insert({
       restaurant_id: restaurantId,
       rating,
       comment: trimmedComment || null,
       nickname: trimmedNickname || "익명",
+      image_url: imageUrl,
     });
+
     if (error) {
       if (error.message?.includes("Too many reviews")) {
         toast({ title: "리뷰 등록 제한", description: "잠시 후 다시 시도해주세요", variant: "destructive" });
@@ -73,6 +113,7 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
       toast({ title: "리뷰가 등록되었습니다 ✅" });
       setRating(0);
       setComment("");
+      clearImage();
       queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
     }
     setSubmitting(false);
@@ -118,13 +159,43 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
 
       {/* Comment */}
       <Textarea
-        placeholder="한줄평을 남겨주세요 (선택)"
+        placeholder="한줄평을 남겨주세요 (선택, 최대 200자)"
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         maxLength={200}
         rows={2}
         className="text-sm resize-none"
       />
+
+      {/* 사진 업로드 */}
+      <div>
+        {imagePreview ? (
+          <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border/50">
+            <img src={imagePreview} alt="리뷰 사진" className="w-full h-full object-cover" />
+            <button
+              onClick={clearImage}
+              className="absolute top-1.5 right-1.5 bg-black/60 text-white rounded-full p-1"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-border/60 text-muted-foreground/60 text-xs hover:bg-muted/40 transition-colors"
+          >
+            <ImagePlus className="h-4 w-4" />
+            사진 추가 (선택, 최대 5MB)
+          </button>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageChange}
+        />
+      </div>
 
       <Button onClick={handleSubmit} disabled={submitting || rating === 0} size="sm" className="w-full">
         {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1.5" />}

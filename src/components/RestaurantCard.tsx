@@ -83,7 +83,13 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
           {/* Top image / gradient placeholder */}
           {restaurant.imageUrl ? (
             <div className="w-full h-20 overflow-hidden">
-              <img src={restaurant.imageUrl} alt={restaurant.name} loading="lazy" className="w-full h-full object-cover" />
+              <img
+                src={restaurant.imageUrl}
+                alt={restaurant.name}
+                loading="lazy"
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }}
+              />
             </div>
           ) : (
             <div className="w-full h-10 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent" />
@@ -115,6 +121,15 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-[11px] text-muted-foreground truncate">{restaurant.address}</span>
                 </div>
+                {restaurant.openingHours && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Clock className="h-2.5 w-2.5 text-muted-foreground/50 flex-shrink-0" />
+                    <span className="text-[10px] text-muted-foreground/70 truncate">{restaurant.openingHours}</span>
+                    {restaurant.closedDays && (
+                      <span className="text-[10px] text-destructive/60 flex-shrink-0">· 휴무 {restaurant.closedDays}</span>
+                    )}
+                  </div>
+                )}
               </div>
               {/* Rating */}
               <div className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-lg flex-shrink-0">
@@ -201,8 +216,14 @@ const RestaurantCard = memo(({ restaurant, isSelected, isVisited, isFavorite, di
       {/* Top image */}
       {restaurant.imageUrl && (
         <button onClick={onClick} className="w-full block" aria-label={`${restaurant.name} 선택`}>
-          <div className="w-full h-44 overflow-hidden">
-            <img src={restaurant.imageUrl} alt={restaurant.name} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          <div className="w-full h-44 overflow-hidden bg-muted/40">
+            <img
+              src={restaurant.imageUrl}
+              alt={restaurant.name}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+              onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }}
+            />
           </div>
         </button>
       )}
