@@ -10,6 +10,11 @@ interface ReviewListProps {
   restaurantId: string;
 }
 
+interface ReviewImage {
+  url: string;
+  position: number;
+}
+
 interface Review {
   id: string;
   rating: number;
@@ -17,7 +22,7 @@ interface Review {
   nickname: string;
   created_at: string;
   likes_count: number;
-  image_url?: string | null;
+  review_images: ReviewImage[];
 }
 
 const ReviewList = ({ restaurantId }: ReviewListProps) => {
@@ -29,12 +34,12 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
     queryFn: async (): Promise<Review[]> => {
       const { data, error } = await supabase
         .from("reviews")
-        .select("*")
+        .select("*, review_images(url, position)")
         .eq("restaurant_id", restaurantId)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return (data ?? []) as Review[];
+      return (data ?? []) as unknown as Review[];
     },
   });
 
