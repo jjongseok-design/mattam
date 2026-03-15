@@ -93,13 +93,12 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
       } catch {}
     }
 
-    const { error } = await supabase.from("reviews").insert({
+    const { data: reviewData, error } = await supabase.from("reviews").insert({
       restaurant_id: restaurantId,
       rating,
       comment: trimmedComment || null,
       nickname: trimmedNickname || "익명",
-      image_url: imageUrl,
-    });
+    }).select("id").single();
 
     if (error) {
       if (error.message?.includes("Too many reviews")) {
@@ -108,6 +107,14 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
         toast({ title: "리뷰 등록 실패", description: error.message, variant: "destructive" });
       }
     } else {
+      // 이미지가 있으면 review_images 테이블에 저장
+      if (imageUrl && reviewData?.id) {
+        await supabase.from("review_images").insert({
+          review_id: reviewData.id,
+          url: imageUrl,
+          position: 0,
+        });
+      }
       localStorage.setItem(REVIEW_COOLDOWN_KEY, Date.now().toString());
       if (trimmedNickname) localStorage.setItem(NICKNAME_KEY, trimmedNickname);
       toast({ title: "리뷰가 등록되었습니다 ✅" });
