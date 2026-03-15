@@ -137,9 +137,9 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
                 {review.comment && (
                   <p className="text-xs text-muted-foreground leading-relaxed mb-2">{review.comment}</p>
                 )}
-                {review.image_url && (
+                {review.review_images?.length > 0 && (
                   <div className="mb-2 rounded-lg overflow-hidden border border-border/30">
-                    <img src={review.image_url} alt="리뷰 사진" className="w-full max-h-40 object-cover" />
+                    <img src={review.review_images[0].url} alt="리뷰 사진" className="w-full max-h-40 object-cover" />
                   </div>
                 )}
                 {/* 좋아요 버튼 */}
