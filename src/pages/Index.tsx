@@ -140,7 +140,6 @@ const Index = () => {
     setCategories((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
-    setShowList(true);
     setSelectedId(null);
     setQuery("");
   }, []);
@@ -323,25 +322,11 @@ const Index = () => {
                 <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
                   <Utensils className="h-3.5 w-3.5 text-white" />
                 </div>
-                {showList ? (
-                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <button
-                      onClick={handleCloseList}
-                      className="w-7 h-7 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
-                      aria-label="뒤로"
-                    >
-                      <X className="h-3 w-3 text-foreground" />
-                    </button>
-                    <span className="text-[13px] font-bold text-foreground flex items-center gap-1 truncate">
-                      <span className="flex-shrink-0">{categoryEmoji}</span>
-                      <span className="truncate">{categoryLabel}</span>
-                      <span className="text-[11px] font-normal text-muted-foreground flex-shrink-0">
-                        {categoryRestaurants.length}개
-                      </span>
-                    </span>
-                  </div>
-                ) : (
-                  <h1 className="text-[14px] font-bold text-foreground">춘천 맛집</h1>
+                <h1 className="text-[14px] font-bold text-foreground">춘천 맛집</h1>
+                {categories.length > 0 && (
+                  <span className="text-[11px] text-muted-foreground font-medium">
+                    {categoryEmoji} {categoryRestaurants.length}개
+                  </span>
                 )}
               </div>
 
@@ -373,12 +358,10 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Row 2: 카테고리 pills */}
-            {!showList && (
-              <div className="safe-area-x pb-2">
-                <CategoryTabs active={categories} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
-              </div>
-            )}
+            {/* Row 2: 카테고리 pills — 항상 표시 */}
+            <div className="safe-area-x pb-2">
+              <CategoryTabs active={categories} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
+            </div>
           </div>
 
           {/* Map */}
