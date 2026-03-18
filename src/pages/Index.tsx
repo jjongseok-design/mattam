@@ -89,7 +89,7 @@ const Index = () => {
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, []);
+  }, [isLoading]);
 
   // Observe dark mode class changes
   useEffect(() => {
