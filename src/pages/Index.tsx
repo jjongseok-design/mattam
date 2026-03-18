@@ -30,7 +30,7 @@ import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 const INDEX_STATE_KEY = "index_scroll_state";
 
 interface SavedState {
-  category: string;
+  categories: string[];
   showList: boolean;
   scrollTop: number;
   query: string;
@@ -52,16 +52,21 @@ const loadState = (): SavedState | null => {
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
-  const initialCat = searchParams.get("category");
-  
+  const initialCatParam = searchParams.get("category");
+  const initialCats: string[] = initialCatParam
+    ? initialCatParam.split(",").filter(Boolean)
+    : [];
+
   // Restore state on back navigation
   const saved = useRef(loadState());
   const isRestored = useRef(false);
-  
+
   const [query, setQuery] = useState(saved.current?.query || "");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data: dbCategories = [] } = useCategories();
-  const [category, setCategory] = useState<string>(initialCat || saved.current?.category || "닭갈비");
+  const [categories, setCategories] = useState<string[]>(
+    initialCats.length > 0 ? initialCats : (saved.current?.categories ?? ["닭갈비"])
+  );
   const [showList, setShowList] = useState(saved.current?.showList || false);
   const [sort, setSort] = useState<SortOption>(saved.current?.sort || "rating");
   const [filter, setFilter] = useState<FilterOption>(saved.current?.filter || "all");
@@ -100,16 +105,16 @@ const Index = () => {
     return () => obs.disconnect();
   }, []);
 
-  // Deep linking: sync category to URL
+  // Deep linking: sync categories to URL
   useEffect(() => {
-    setSearchParams({ category }, { replace: true });
-  }, [category, setSearchParams]);
+    setSearchParams(categories.length > 0 ? { category: categories.join(",") } : {}, { replace: true });
+  }, [categories, setSearchParams]);
 
   // Save state before navigating away
   useEffect(() => {
     return () => {
       saveState({
-        category,
+        categories,
         showList,
         scrollTop: listRef.current?.scrollTop || 0,
         query,
@@ -117,7 +122,7 @@ const Index = () => {
         filter,
       });
     };
-  }, [category, showList, query, sort, filter]);
+  }, [categories, showList, query, sort, filter]);
 
   // Restore scroll position after render
   useEffect(() => {
@@ -132,7 +137,9 @@ const Index = () => {
   }, [restaurants]);
 
   const handleCategoryChange = useCallback((cat: string) => {
-    setCategory(cat);
+    setCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
     setShowList(true);
     setSelectedId(null);
     setQuery("");
@@ -193,8 +200,10 @@ const Index = () => {
   }, [restaurants]);
 
   const categoryRestaurants = useMemo(
-    () => restaurants.filter((r) => r.category === category),
-    [restaurants, category]
+    () => categories.length === 0
+      ? restaurants
+      : restaurants.filter((r) => categories.includes(r.category)),
+    [restaurants, categories]
   );
 
   const isGlobalSearch = query.trim().length > 0;
@@ -270,7 +279,12 @@ const Index = () => {
     return <ErrorState onRetry={() => refetch()} />;
   }
 
-  const categoryEmoji = CATEGORY_EMOJI[category] || "🍽️";
+  const categoryEmoji = (categories.length === 1 ? CATEGORY_EMOJI[categories[0]] : null) || "🍽️";
+  const categoryLabel = categories.length === 0
+    ? "전체"
+    : categories.length === 1
+    ? categories[0]
+    : `${categories[0]} 외 ${categories.length - 1}개`;
 
   // Shared restaurant list renderer
   const renderRestaurantList = (maxItems?: number) => {
@@ -320,7 +334,7 @@ const Index = () => {
                     </button>
                     <span className="text-[13px] font-bold text-foreground flex items-center gap-1 truncate">
                       <span className="flex-shrink-0">{categoryEmoji}</span>
-                      <span className="truncate">{category}</span>
+                      <span className="truncate">{categoryLabel}</span>
                       <span className="text-[11px] font-normal text-muted-foreground flex-shrink-0">
                         {categoryRestaurants.length}개
                       </span>
@@ -362,7 +376,7 @@ const Index = () => {
             {/* Row 2: 카테고리 pills */}
             {!showList && (
               <div className="safe-area-x pb-2">
-                <CategoryTabs active={category} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
+                <CategoryTabs active={categories} onChange={handleCategoryChange} categoryCounts={categoryCounts} />
               </div>
             )}
           </div>
@@ -386,7 +400,7 @@ const Index = () => {
             query={query}
             onQueryChange={setQuery}
             totalCount={categoryRestaurants.length}
-            category={category}
+            category={categoryLabel}
             onCategoryChange={handleCategoryChange}
             isVisited={isVisited}
             onToggleVisited={toggleVisited}
@@ -474,7 +488,7 @@ const Index = () => {
                 key={cat.id}
                 onClick={() => handleCategoryChange(cat.id)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
-                  category === cat.id
+                  categories.includes(cat.id)
                     ? "bg-foreground text-background shadow-sm scale-[1.03]"
                     : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
@@ -562,7 +576,7 @@ const Index = () => {
             )}
             <span className="ml-auto text-[11px] text-muted-foreground/50">
               {isGlobalSearch && <span className="text-primary mr-1">🔍</span>}
-              {filtered.length}개{!isGlobalSearch && ` ${categoryEmoji} ${category}`}
+              {filtered.length}개{!isGlobalSearch && ` ${categoryEmoji} ${categoryLabel}`}
             </span>
           </div>
 

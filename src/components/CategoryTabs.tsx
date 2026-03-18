@@ -6,7 +6,7 @@ const FALLBACK_CATEGORIES: CategoryRow[] = [
 ];
 
 interface CategoryTabsProps {
-  active: string;
+  active: string[];
   onChange: (id: string) => void;
   variant?: "grid" | "pills";
   categoryCounts?: Record<string, number>;
@@ -17,9 +17,11 @@ const CategoryTabs = ({ active, onChange, categoryCounts = {} }: CategoryTabsPro
   const cats = categories && categories.length > 0 ? categories : FALLBACK_CATEGORIES;
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll active pill into view
+  // Auto-scroll last-selected pill into view
   useEffect(() => {
-    const el = scrollRef.current?.querySelector(`[data-cat-id="${active}"]`) as HTMLElement | null;
+    const lastActive = active[active.length - 1];
+    if (!lastActive) return;
+    const el = scrollRef.current?.querySelector(`[data-cat-id="${lastActive}"]`) as HTMLElement | null;
     el?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, [active]);
 
@@ -30,7 +32,7 @@ const CategoryTabs = ({ active, onChange, categoryCounts = {} }: CategoryTabsPro
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
       {cats.map((cat) => {
-        const isActive = active === cat.id;
+        const isActive = active.includes(cat.id);
         const count = categoryCounts[cat.id];
         return (
           <button
