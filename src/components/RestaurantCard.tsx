@@ -129,26 +129,32 @@ const RestaurantCard = memo(({
         </button>
 
         {/* Action row */}
-        <div className="flex items-center px-3 pb-2.5 gap-0.5">
+        <div className="flex items-center px-3 pb-2.5 gap-1.5">
           {onToggleFavorite && (
             <button
               onClick={onToggleFavorite}
-              className={`p-1.5 rounded-lg transition-colors ${
-                isFavorite ? "text-rose-500" : "text-muted-foreground/25 hover:text-rose-400"
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all duration-200 ${
+                isFavorite
+                  ? "bg-rose-500 text-white shadow-sm"
+                  : "bg-rose-50 dark:bg-rose-950/40 text-rose-400 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50"
               }`}
               aria-label={isFavorite ? "찜 취소" : "찜하기"}
             >
               <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
+              <span className="text-[11px] font-semibold">{isFavorite ? "찜" : "찜"}</span>
             </button>
           )}
           <button
             onClick={onToggleVisited}
-            className={`p-1.5 rounded-lg transition-colors ${
-              isVisited ? "text-primary" : "text-muted-foreground/25 hover:text-primary/60"
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all duration-200 ${
+              isVisited
+                ? "bg-primary text-white shadow-sm"
+                : "bg-primary/8 dark:bg-primary/15 text-primary/70 border border-primary/20"
             }`}
             aria-label={isVisited ? "방문 취소" : "방문 표시"}
           >
-            <CheckCircle2 className={`h-4 w-4 ${isVisited ? "fill-primary/15" : ""}`} />
+            <CheckCircle2 className={`h-4 w-4 ${isVisited ? "fill-white/30" : ""}`} />
+            <span className="text-[11px] font-semibold">방문</span>
           </button>
           <Link
             to={`/restaurant/${restaurant.slug}`}
