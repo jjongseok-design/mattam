@@ -463,77 +463,29 @@ const Index = () => {
             </div>
           </div>
 
-          {/* 카테고리 + 정렬 + 필터 통합 스크롤 — 좌우 끝까지, 오른쪽 페이드로 더 있음 암시 */}
-          <div className="relative">
-            <div
-              ref={stripRef}
-              className="flex items-center gap-1.5 overflow-x-auto py-2"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none", paddingLeft: "20px", paddingRight: "36px" }}
-            >
-              {dbCategories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryChange(cat.id)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
-                    category === cat.id
-                      ? "bg-foreground text-background shadow-sm scale-[1.03]"
-                      : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  <span className="text-sm leading-none">{cat.emoji}</span>
-                  <span>{cat.label}</span>
-                  {categoryCounts[cat.id] != null && (
-                    <span className="text-[10px] opacity-50">{categoryCounts[cat.id]}</span>
-                  )}
-                </button>
-              ))}
-
-              <div className="w-px h-4 bg-border/60 mx-0.5 flex-shrink-0" />
-
-              {(["rating", "reviews", "newest", ...(position ? ["distance"] : [])] as SortOption[]).map((val) => {
-                const label = val === "rating" ? "평점순" : val === "reviews" ? "리뷰순" : val === "newest" ? "최신순" : "거리순";
-                return (
-                  <button
-                    key={val}
-                    onClick={() => setSort(val)}
-                    className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
-                      sort === val
-                        ? "bg-primary/10 text-primary border border-primary/20"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-
-              <div className="w-px h-4 bg-border/60 mx-0.5 flex-shrink-0" />
-
-              {([{ value: "favorites" as FilterOption, label: "❤ 찜" }, { value: "visited" as FilterOption, label: "✓ 방문" }]).map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setFilter(filter === opt.value ? "all" : opt.value)}
-                  className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
-                    filter === opt.value
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-
-              {ratingMin > 0 && (
-                <button
-                  onClick={() => setRatingMin(0)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap flex-shrink-0 bg-accent/10 text-accent border border-accent/20"
-                >
-                  ★{ratingMin}+ ×
-                </button>
-              )}
-            </div>
-            {/* 오른쪽 페이드 — 더 스크롤 가능 암시 */}
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-card to-transparent" />
+          {/* 카테고리 스크롤 */}
+          <div
+            ref={stripRef}
+            className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin py-2 pb-1"
+            style={{ paddingLeft: "20px", paddingRight: "20px" }}
+          >
+            {dbCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryChange(cat.id)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
+                  category === cat.id
+                    ? "bg-foreground text-background shadow-sm scale-[1.03]"
+                    : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <span className="text-sm leading-none">{cat.emoji}</span>
+                <span>{cat.label}</span>
+                {categoryCounts[cat.id] != null && (
+                  <span className="text-[10px] opacity-50">{categoryCounts[cat.id]}</span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -568,18 +520,50 @@ const Index = () => {
             </div>
           )}
 
-          {/* Count label */}
-          <div className="px-5 pt-3 pb-1.5 flex items-center justify-between">
-            <p className="text-[11px] text-muted-foreground/60 font-medium">
-              {isGlobalSearch && <span className="text-primary mr-1">🔍 검색</span>}
-              {filtered.length}개
-              {!isGlobalSearch && ` ${categoryEmoji} ${category}`}
-              {filter === "favorites" && " · 찜한 곳"}
-              {filter === "visited" && " · 방문한 곳"}
-            </p>
-            <p className="text-[10px] text-muted-foreground/40">
-              {sort === "rating" ? "평점순" : sort === "reviews" ? "리뷰순" : sort === "newest" ? "최신순" : "거리순"}
-            </p>
+          {/* 정렬 · 필터 */}
+          <div className="px-4 pt-2.5 pb-1.5 flex items-center gap-1.5 flex-wrap">
+            {(["rating", "reviews", "newest", ...(position ? ["distance"] : [])] as SortOption[]).map((val) => {
+              const label = val === "rating" ? "평점순" : val === "reviews" ? "리뷰순" : val === "newest" ? "최신순" : "거리순";
+              return (
+                <button
+                  key={val}
+                  onClick={() => setSort(val)}
+                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all duration-200 ${
+                    sort === val
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+            <div className="w-px h-3.5 bg-border/60 mx-0.5" />
+            {([{ value: "favorites" as FilterOption, label: "❤ 찜" }, { value: "visited" as FilterOption, label: "✓ 방문" }]).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setFilter(filter === opt.value ? "all" : opt.value)}
+                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all duration-200 ${
+                  filter === opt.value
+                    ? "bg-primary/10 text-primary border border-primary/20"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+            {ratingMin > 0 && (
+              <button
+                onClick={() => setRatingMin(0)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap bg-accent/10 text-accent border border-accent/20"
+              >
+                ★{ratingMin}+ ×
+              </button>
+            )}
+            <span className="ml-auto text-[11px] text-muted-foreground/50">
+              {isGlobalSearch && <span className="text-primary mr-1">🔍</span>}
+              {filtered.length}개{!isGlobalSearch && ` ${categoryEmoji} ${category}`}
+            </span>
           </div>
 
           {/* Cards */}
