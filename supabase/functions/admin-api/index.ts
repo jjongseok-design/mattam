@@ -341,13 +341,20 @@ Deno.serve(async (req) => {
           throw new Error("GOOGLE_PLACES_API_KEY가 Supabase 시크릿에 설정되지 않았습니다");
         }
 
-        // Determine targets: specific ID or all without images
+        // Determine targets: specific ID, category, or all without images
         let targets: { id: string; name: string; address: string }[] = [];
         if (data?.id) {
           const { data: rests } = await supabase
             .from("restaurants")
             .select("id,name,address")
             .eq("id", data.id);
+          targets = rests ?? [];
+        } else if (data?.category) {
+          const { data: rests } = await supabase
+            .from("restaurants")
+            .select("id,name,address")
+            .eq("category", data.category)
+            .is("image_url", null);
           targets = rests ?? [];
         } else {
           const { data: rests } = await supabase
@@ -445,13 +452,20 @@ Deno.serve(async (req) => {
           throw new Error("NAVER_CLIENT_ID 또는 NAVER_CLIENT_SECRET이 Supabase 시크릿에 설정되지 않았습니다");
         }
 
-        // Determine targets: specific ID or all without images
+        // Determine targets: specific ID, category, or all without images
         let targets: { id: string; name: string; address: string }[] = [];
         if (data?.id) {
           const { data: rests } = await supabase
             .from("restaurants")
             .select("id,name,address")
             .eq("id", data.id);
+          targets = rests ?? [];
+        } else if (data?.category) {
+          const { data: rests } = await supabase
+            .from("restaurants")
+            .select("id,name,address")
+            .eq("category", data.category)
+            .is("image_url", null);
           targets = rests ?? [];
         } else {
           const { data: rests } = await supabase
