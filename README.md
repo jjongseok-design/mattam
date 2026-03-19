@@ -1,4 +1,5 @@
 # Welcome to your Lovable project
+<!-- updated: 2026-03-19 -->
 
 ## Project info
 
