@@ -495,7 +495,7 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div
-        className="border-b border-border bg-card sticky top-0 z-10"
+        className="border-b border-border bg-card sticky top-0 z-30"
         style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 56px)' }}
       >
         <div className="max-w-5xl mx-auto px-4 pb-2 space-y-2">
