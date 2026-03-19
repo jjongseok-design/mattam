@@ -28,7 +28,7 @@ const CategoryTabs = ({ active, onChange, categoryCounts = {} }: CategoryTabsPro
   return (
     <div
       ref={scrollRef}
-      className="flex gap-1.5 overflow-x-auto scrollbar-none py-0.5"
+      className="grid grid-rows-2 grid-flow-col gap-1.5 overflow-x-auto scrollbar-none py-0.5"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
       {cats.map((cat) => {
