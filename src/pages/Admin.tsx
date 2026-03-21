@@ -1088,9 +1088,9 @@ const Admin = () => {
                       <td className="px-3 py-2.5 font-medium whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {r.image_url ? (
-                            <img src={r.image_url} alt="" className="w-7 h-7 rounded object-cover flex-shrink-0" />
+                            <img src={r.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
                           ) : (
-                            <span className="w-7 h-7 rounded bg-muted flex items-center justify-center text-xs flex-shrink-0">📷</span>
+                            <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">📷</span>
                           )}
                           <span className="text-sm">{r.name}</span>
                         </div>
