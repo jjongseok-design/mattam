@@ -19,16 +19,41 @@ interface RestaurantCardProps {
   onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
-const checkIsOpen = (openingHours?: string): boolean | null => {
+type OpenStatus = 'open' | 'closed' | 'holiday' | null;
+
+const checkOpenStatus = (openingHours?: string, closedDays?: string): OpenStatus => {
+  const now = new Date();
+  const day = now.getDay(); // 0=일,1=월,...,6=토
+  const DAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
+
+  // 휴무일 확인
+  if (closedDays) {
+    const cd = closedDays;
+    const todayKo = DAY_KO[day];
+    const isWeekend = day === 0 || day === 6;
+    const isWeekday = day >= 1 && day <= 5;
+    if (
+      cd.includes(todayKo) ||
+      (cd.includes('주말') && isWeekend) ||
+      (cd.includes('주중') && isWeekday) ||
+      (cd.includes('일요일') && day === 0) ||
+      (cd.includes('월요일') && day === 1) ||
+      (cd.includes('화요일') && day === 2) ||
+      (cd.includes('수요일') && day === 3) ||
+      (cd.includes('목요일') && day === 4) ||
+      (cd.includes('금요일') && day === 5) ||
+      (cd.includes('토요일') && day === 6)
+    ) return 'holiday';
+  }
+
   if (!openingHours) return null;
   const match = openingHours.match(/(\d{1,2}):(\d{2})\s*[-~]\s*(\d{1,2}):(\d{2})/);
   if (!match) return null;
-  const now = new Date();
   const cur = now.getHours() * 60 + now.getMinutes();
   const open = parseInt(match[1]) * 60 + parseInt(match[2]);
   const close = parseInt(match[3]) * 60 + parseInt(match[4]);
-  if (close <= open) return cur >= open || cur < close;
-  return cur >= open && cur < close;
+  const isOpen = close <= open ? (cur >= open || cur < close) : (cur >= open && cur < close);
+  return isOpen ? 'open' : 'closed';
 };
 
 const RestaurantCard = memo(({
@@ -39,7 +64,7 @@ const RestaurantCard = memo(({
   const { toast } = useToast();
   const { cityId, city } = useCityContext();
   const cityLabel = city?.name ?? "맛집";
-  const isOpen = useMemo(() => checkIsOpen(restaurant.openingHours), [restaurant.openingHours]);
+  const openStatus = useMemo(() => checkOpenStatus(restaurant.openingHours, restaurant.closedDays), [restaurant.openingHours, restaurant.closedDays]);
 
   const distText = distance != null
     ? distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
@@ -120,11 +145,14 @@ const RestaurantCard = memo(({
                     {tag}
                   </span>
                 ))}
-                {isOpen === true && (
-                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold ml-auto">영업 중</span>
+                {openStatus === 'open' && (
+                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold ml-auto">영업중</span>
                 )}
-                {isOpen === false && (
-                  <span className="text-[9px] text-muted-foreground/50 ml-auto">영업 종료</span>
+                {openStatus === 'closed' && (
+                  <span className="text-[9px] text-muted-foreground/50 ml-auto">영업종료</span>
+                )}
+                {openStatus === 'holiday' && (
+                  <span className="text-[9px] text-rose-400 font-semibold ml-auto">휴무</span>
                 )}
               </div>
             </div>
@@ -221,13 +249,14 @@ const RestaurantCard = memo(({
                     방문
                   </span>
                 )}
-                {isOpen === true && (
-                  <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
-                    영업 중
-                  </span>
+                {openStatus === 'open' && (
+                  <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">영업중</span>
                 )}
-                {isOpen === false && (
-                  <span className="text-[9px] text-muted-foreground/40 flex-shrink-0">종료</span>
+                {openStatus === 'closed' && (
+                  <span className="text-[9px] text-muted-foreground/40 flex-shrink-0">영업종료</span>
+                )}
+                {openStatus === 'holiday' && (
+                  <span className="text-[9px] bg-rose-50 dark:bg-rose-950/50 text-rose-500 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">휴무</span>
                 )}
               </div>
               <p className="text-[11px] text-muted-foreground/60 mt-0.5">{restaurant.category}</p>

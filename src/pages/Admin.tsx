@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image, MapPin } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
 import { useCities } from "@/hooks/useCities";
@@ -89,6 +89,7 @@ const Admin = () => {
   const [showNoImage, setShowNoImage] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [fetchingNaverImageId, setFetchingNaverImageId] = useState<string | null>(null);
+  const [fetchingNaverInfoId, setFetchingNaverInfoId] = useState<string | null>(null);
   const [fetchingAllNaverImages, setFetchingAllNaverImages] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [savingImageUrl, setSavingImageUrl] = useState(false);
@@ -313,6 +314,23 @@ const Admin = () => {
       toast({ title: "오류", description: err.message, variant: "destructive" });
     }
     setFetchingAllNaverImages(false);
+  };
+
+  const handleFetchNaverInfo = async (id: string) => {
+    setFetchingNaverInfoId(id);
+    try {
+      const res = await adminApi("fetch_naver_info", { id });
+      if (res.success) {
+        const updated = Object.keys(res.updates ?? {}).join(", ");
+        toast({ title: `정보 업데이트 완료 ✅`, description: updated || "변경 없음" });
+        fetchAll();
+      } else {
+        toast({ title: "정보 없음", description: res.error, variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "오류", description: err.message, variant: "destructive" });
+    }
+    setFetchingNaverInfoId(null);
   };
 
   const handleSaveImageUrl = async () => {
@@ -1100,6 +1118,20 @@ const Admin = () => {
                       <td className="px-3 py-2.5 text-center text-muted-foreground whitespace-nowrap hidden sm:table-cell text-sm">{r.review_count}</td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center justify-center gap-1 whitespace-nowrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                            title="네이버 정보 업데이트 (전화번호·주소·좌표)"
+                            disabled={fetchingNaverInfoId === r.id}
+                            onClick={() => handleFetchNaverInfo(r.id)}
+                          >
+                            {fetchingNaverInfoId === r.id
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <MapPin className="h-3 w-3" />
+                            }
+                            <span>정보</span>
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
