@@ -44,15 +44,6 @@ export default defineConfig(({ mode }) => ({
             },
           },
           {
-            // Kakao Maps SDK
-            urlPattern: ({ url }) => url.hostname.includes("dapi.kakao.com"),
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "kakao-sdk",
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 7 }, // 7d
-            },
-          },
-          {
             // OpenStreetMap tiles (Leaflet fallback)
             urlPattern: ({ url }) => url.hostname.includes("tile.openstreetmap.org"),
             handler: "CacheFirst",
