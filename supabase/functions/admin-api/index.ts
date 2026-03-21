@@ -258,14 +258,12 @@ Deno.serve(async (req) => {
           const { data: rests } = await supabase
             .from("restaurants")
             .select("id,name,address")
-            .eq("category", data.category)
-            .is("image_url", null);
+            .eq("category", data.category);
           targets = rests ?? [];
         } else {
           const { data: rests } = await supabase
             .from("restaurants")
-            .select("id,name,address")
-            .is("image_url", null);
+            .select("id,name,address");
           targets = rests ?? [];
         }
 
