@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Restaurant {
@@ -85,6 +85,8 @@ export const useRestaurants = (cityId?: string) => {
     },
   });
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     const channel = supabase
       .channel("restaurants-realtime-" + (cityId ?? "all"))
@@ -92,12 +94,16 @@ export const useRestaurants = (cityId?: string) => {
         "postgres_changes",
         { event: "*", schema: "public", table: "restaurants" },
         () => {
-          queryClient.invalidateQueries({ queryKey });
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey });
+          }, 3000);
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       supabase.removeChannel(channel);
     };
   }, [queryClient, cityId]);
