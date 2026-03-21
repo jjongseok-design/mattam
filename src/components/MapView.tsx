@@ -325,9 +325,16 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     };
 
     const buildSelectedOverlay = (r: Restaurant, position: kakao.maps.LatLng, isVisited: boolean) => {
-      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name}${cityLabel ? ` ${cityLabel}` : ""}`)}`;
-      const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px;">✓ 방문완료</span>` : "";
-      const content = `<div style="padding:8px 12px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:160px;"><div style="display:flex;align-items:center;gap:4px;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;color:#111">${r.name}</a>${visitedBadge}</div><div style="font-size:11px;color:#666;margin-top:3px;">탭하면 네이버지도로 이동</div></div>`;
+      const detailUrl = city?.id ? `/${city.id}/restaurant/${r.slug}` : null;
+      const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px;">✓ 방문</span>` : "";
+      const nameEl = detailUrl
+        ? `<a href="${detailUrl}" style="text-decoration:none;font-weight:700;color:#111;font-size:14px;">${r.name}</a>`
+        : `<span style="font-weight:700;color:#111;font-size:14px;">${r.name}</span>`;
+      const ratingEl = r.rating ? `<span style="font-size:11px;color:#f97316;margin-left:4px;">★ ${r.rating.toFixed(1)}</span>` : "";
+      const hint = detailUrl
+        ? `<div style="font-size:11px;color:#2563eb;margin-top:4px;font-weight:500;">▶ 탭하면 상세보기</div>`
+        : "";
+      const content = `<div style="padding:10px 14px;background:white;border-radius:10px;box-shadow:0 3px 12px rgba(0,0,0,0.18);min-width:150px;cursor:${detailUrl ? "pointer" : "default"};"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${nameEl}${visitedBadge}${ratingEl}</div>${hint}</div>`;
       return new kakao.maps.CustomOverlay({
         content,
         position,
@@ -472,8 +479,15 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       }
 
       const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;">✓ 방문완료</span>` : "";
+      const detailUrl = city?.id ? `/${city.id}/restaurant/${r.slug}` : null;
+      const nameLink = detailUrl
+        ? `<a href="${detailUrl}" style="text-decoration:none;font-weight:700;color:#111;">${r.name}</a>`
+        : `<span style="font-weight:700;">${r.name}</span>`;
+      const hint = detailUrl
+        ? `<div style="font-size:11px;color:#2563eb;margin-top:3px;font-weight:500;">▶ 탭하면 상세보기</div>`
+        : `<div style="font-size:12px;opacity:.7;margin-top:3px;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer">네이버지도로 이동</a></div>`;
       marker.bindPopup(
-        `<div style="min-width:170px;line-height:1.4;"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;">${r.name}</a>${visitedBadge}</div><div style="font-size:12px;opacity:.7;">탭하면 네이버지도로 이동</div></div>`,
+        `<div style="min-width:160px;line-height:1.4;"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px;">${nameLink}${visitedBadge}</div>${hint}</div>`,
         { closeButton: false, autoPan: true }
       );
 
