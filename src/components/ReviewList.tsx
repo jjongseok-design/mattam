@@ -29,6 +29,9 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
   const deviceId = getDeviceId();
   const queryClient = useQueryClient();
 
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ["reviews", restaurantId],
     queryFn: async (): Promise<Review[]> => {
@@ -37,11 +40,14 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
         .select("*, review_images(url, position)")
         .eq("restaurant_id", restaurantId)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(200);
       if (error) throw error;
       return (data ?? []) as unknown as Review[];
     },
   });
+
+  const visibleReviews = reviews.slice(0, page * PAGE_SIZE);
+  const hasMore = visibleReviews.length < reviews.length;
 
   // 내가 좋아요한 리뷰 ID 목록
   const { data: myLikes = new Set<string>() } = useQuery({
@@ -111,7 +117,7 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
         </p>
       ) : (
         <div className="space-y-2.5 max-h-[400px] overflow-y-auto scrollbar-thin">
-          {reviews.map((review) => {
+          {visibleReviews.map((review) => {
             const liked = myLikes.has(review.id);
             const displayLikes = (review.likes_count ?? 0) + (pendingLikes[review.id] ?? 0);
             return (
@@ -138,8 +144,14 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
                   <p className="text-xs text-muted-foreground leading-relaxed mb-2">{review.comment}</p>
                 )}
                 {review.review_images?.length > 0 && (
-                  <div className="mb-2 rounded-lg overflow-hidden border border-border/30">
-                    <img src={review.review_images[0].url} alt="리뷰 사진" className="w-full max-h-40 object-cover" />
+                  <div className={`mb-2 gap-1 ${review.review_images.length > 1 ? "grid grid-cols-2" : ""}`}>
+                    {[...review.review_images]
+                      .sort((a, b) => a.position - b.position)
+                      .map((img, idx) => (
+                        <div key={idx} className="rounded-lg overflow-hidden border border-border/30">
+                          <img src={img.url} alt={`리뷰 사진 ${idx + 1}`} loading="lazy" className="w-full max-h-40 object-cover" />
+                        </div>
+                      ))}
                   </div>
                 )}
                 {/* 좋아요 버튼 */}
@@ -158,6 +170,14 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
               </div>
             );
           })}
+          {hasMore && (
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              리뷰 더 보기 ({reviews.length - visibleReviews.length}개 남음)
+            </button>
+          )}
         </div>
       )}
     </div>

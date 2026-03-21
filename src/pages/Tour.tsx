@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Trophy, Target, CheckCircle2, MapPin, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRestaurants } from "@/hooks/useRestaurants";
@@ -6,12 +6,17 @@ import { useVisited } from "@/hooks/useVisited";
 import { useTourStats } from "@/hooks/useTourStats";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import ShareCard from "@/components/ShareCard";
+import { CityContext } from "@/contexts/CityContext";
+import { useCity } from "@/hooks/useCities";
 import { useState } from "react";
 
 const Tour = () => {
-  const { data: restaurants = [], isLoading } = useRestaurants();
+  const { cityId } = useParams<{ cityId: string }>();
+  const { data: city } = useCity(cityId);
+  const cityName = city?.name;
+  const { data: restaurants = [], isLoading } = useRestaurants(cityId || undefined);
   const { visited } = useVisited();
-  const stats = useTourStats(restaurants, visited);
+  const stats = useTourStats(restaurants, visited, cityName);
   const [shareOpen, setShareOpen] = useState(false);
 
   if (isLoading) {
@@ -23,10 +28,11 @@ const Tour = () => {
   }
 
   return (
+    <CityContext.Provider value={{ cityId: cityId ?? "", city: city ?? null }}>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/50 px-4 py-3 flex items-center gap-3">
-        <Link to="/" className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors">
+        <Link to={cityId ? `/${cityId}` : "/"} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <h1 className="font-bold text-foreground flex-1">맛집 투어 현황</h1>
@@ -186,8 +192,9 @@ const Tour = () => {
         </section>
       </div>
 
-      <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} />
+      <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} cityName={cityName} />
     </div>
+    </CityContext.Provider>
   );
 };
 

@@ -54,7 +54,7 @@ export class LeafletAdapter implements MapAdapter {
     this.map = null;
   }
 
-  updateMarkers({ restaurants, selectedId, visitedIds, onSelect }: MarkerParams): void {
+  updateMarkers({ restaurants, selectedId, visitedIds, onSelect, cityName }: MarkerParams): void {
     if (!this.map) return;
     this._clearMarkers();
 
@@ -62,7 +62,7 @@ export class LeafletAdapter implements MapAdapter {
       const isSelected = r.id === selectedId;
       const isVisited = visitedIds.has(r.id);
       const emoji = CATEGORY_EMOJI[r.category] || "🍽️";
-      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
+      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name}${cityName ? ` ${cityName}` : ""}`)}`;
 
       const marker = L.marker([r.lat, r.lng], {
         icon: makeEmojiIcon(emoji, isSelected, isVisited),

@@ -11,12 +11,14 @@ interface ShareCardProps {
   onClose: () => void;
   restaurants: Restaurant[];
   visited: Set<string>;
+  cityName?: string;
 }
 
-const ShareCard = memo(({ open, onClose, restaurants, visited }: ShareCardProps) => {
+const ShareCard = memo(({ open, onClose, restaurants, visited, cityName }: ShareCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
-  const stats = useTourStats(restaurants, visited);
+  const stats = useTourStats(restaurants, visited, cityName);
   const { toast } = useToast();
+  const appLabel = cityName ? `${cityName} 맛집 지도` : "맛탐 맛집지도";
 
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;
@@ -29,7 +31,7 @@ const ShareCard = memo(({ open, onClose, restaurants, visited }: ShareCardProps)
       });
 
       const link = document.createElement("a");
-      link.download = `춘천맛집정복_${stats.totalVisited}곳.png`;
+      link.download = `${cityName ? cityName + "_" : ""}맛집정복_${stats.totalVisited}곳.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
 
@@ -40,21 +42,22 @@ const ShareCard = memo(({ open, onClose, restaurants, visited }: ShareCardProps)
   }, [stats.totalVisited, toast]);
 
   const handleShare = useCallback(async () => {
-    const text = `🗺️ 춘천 맛집 정복 현황!\n\n${stats.rankEmoji} ${stats.rank}\n📍 ${stats.totalVisited}/${stats.totalRestaurants}곳 정복 (${stats.overallPercent}%)\n${
+    const cityTag = cityName ? `#${cityName}맛집 ` : "";
+    const text = `🗺️ ${appLabel} 정복 현황!\n\n${stats.rankEmoji} ${stats.rank}\n📍 ${stats.totalVisited}/${stats.totalRestaurants}곳 정복 (${stats.overallPercent}%)\n${
       stats.masterCategories.length > 0
         ? `🏆 마스터: ${stats.masterCategories.join(", ")}\n`
         : ""
-    }\n#춘천맛집 #맛집정복 #춘천맛집지도`;
+    }\n${cityTag}#맛집정복 #맛탐`;
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: "춘천 맛집 정복 현황", text });
+        await navigator.share({ title: `${appLabel} 정복 현황`, text });
       } catch {}
     } else {
       await navigator.clipboard.writeText(text);
       toast({ title: "텍스트가 복사되었습니다! 📋" });
     }
-  }, [stats, toast]);
+  }, [stats, toast, cityName, appLabel]);
 
   return (
     <AnimatePresence>
@@ -85,7 +88,7 @@ const ShareCard = memo(({ open, onClose, restaurants, visited }: ShareCardProps)
               className="bg-gradient-to-br from-background via-card to-primary/10 rounded-3xl p-6 text-foreground shadow-2xl border border-border/50"
             >
               <div className="text-center mb-6">
-                <p className="text-xs text-muted-foreground mb-1">🗺️ 춘천 맛집 지도</p>
+                <p className="text-xs text-muted-foreground mb-1">🗺️ {appLabel}</p>
                 <h2 className="text-2xl font-black text-foreground">맛집 정복 현황</h2>
               </div>
 
@@ -151,7 +154,7 @@ const ShareCard = memo(({ open, onClose, restaurants, visited }: ShareCardProps)
               </div>
 
               <p className="text-center text-[10px] text-muted-foreground mt-4">
-                restaurantchuncheon.lovable.app
+                맛탐 · 도시별 맛집지도
               </p>
             </div>
 

@@ -11,6 +11,8 @@ import ErrorState from "@/components/ErrorState";
 import { useToast } from "@/hooks/use-toast";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { supabase } from "@/integrations/supabase/client";
+import { CityContext } from "@/contexts/CityContext";
+import { useCity } from "@/hooks/useCities";
 import L from "leaflet";
 
 const DetailMiniMap = ({ lat, lng, name }: { lat: number; lng: number; name: string }) => {
@@ -57,8 +59,10 @@ const DetailMiniMap = ({ lat, lng, name }: { lat: number; lng: number; name: str
 
 const RestaurantDetail = () => {
   // Support both slug (/restaurant/dakgalbi-matzip) and legacy id (/restaurant/dc01)
-  const { slug } = useParams<{ slug: string }>();
-  const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
+  const { cityId, slug } = useParams<{ cityId: string; slug: string }>();
+  const { data: city } = useCity(cityId);
+  const cityLabel = city?.name ?? "";
+  const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants(cityId || undefined);
   const { toast } = useToast();
   const { addViewed } = useRecentlyViewed();
   const [reportOpen, setReportOpen] = useState(false);
@@ -75,8 +79,8 @@ const RestaurantDetail = () => {
 
   useEffect(() => {
     if (!restaurant) return;
-    const title = `${restaurant.name} - 춘천 맛집지도`;
-    const desc = `${restaurant.name} | ${restaurant.category} | ${restaurant.address} | 평점 ${restaurant.rating} | 춘천 맛집`;
+    const title = `${restaurant.name} - ${cityLabel} 맛집지도`;
+    const desc = `${restaurant.name} | ${restaurant.category} | ${restaurant.address} | 평점 ${restaurant.rating} | ${cityLabel} 맛집`;
     document.title = title;
 
     const setMeta = (attr: string, key: string, content: string) => {
@@ -110,8 +114,7 @@ const RestaurantDetail = () => {
       address: {
         "@type": "PostalAddress",
         streetAddress: restaurant.address,
-        addressLocality: "춘천시",
-        addressRegion: "강원특별자치도",
+        addressLocality: cityLabel || undefined,
         addressCountry: "KR",
       },
       geo: {
@@ -132,14 +135,14 @@ const RestaurantDetail = () => {
     });
 
     return () => {
-      document.title = "춘천 맛집지도";
+      document.title = "맛탐 - 도시별 맛집지도";
       script?.remove();
     };
   }, [restaurant]);
 
   const handleShare = async () => {
     const url = window.location.href;
-    const text = `${restaurant!.name} - 춘천 맛집`;
+    const text = `${restaurant!.name} - ${cityLabel} 맛집`;
     if (navigator.share) {
       try {
         await navigator.share({ title: text, url });
@@ -185,7 +188,7 @@ const RestaurantDetail = () => {
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-background gap-4">
         <Utensils className="h-12 w-12 text-muted-foreground/30" />
         <p className="text-muted-foreground">식당을 찾을 수 없습니다</p>
-        <Link to="/">
+        <Link to={cityId ? `/${cityId}` : "/"}>
           <Button variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" /> 지도로 돌아가기
           </Button>
@@ -197,11 +200,12 @@ const RestaurantDetail = () => {
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
 
   return (
+    <CityContext.Provider value={{ cityId: cityId ?? "", city: city ?? null }}>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-card border-b border-border/50 safe-area-top">
         <div className="max-w-2xl mx-auto safe-area-x py-3 flex items-center justify-between gap-2">
-          <Link to="/" aria-label="지도로 돌아가기">
+          <Link to={cityId ? `/${cityId}` : "/"} aria-label="지도로 돌아가기">
             <Button variant="ghost" size="icon" className="tap-safe" aria-label="뒤로가기">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -285,7 +289,7 @@ const RestaurantDetail = () => {
               <p className="text-[13px] font-medium text-foreground">{restaurant.address}</p>
             </div>
             <a
-              href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + " 춘천")}`}
+              href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + (cityLabel ? ` ${cityLabel}` : ""))}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[11px] text-primary font-medium flex items-center gap-0.5 flex-shrink-0 shrink-0"
@@ -305,7 +309,7 @@ const RestaurantDetail = () => {
               <>
                 <span className="text-[13px] text-muted-foreground/50 flex-1">전화번호 정보 없음</span>
                 <a
-                  href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + " 춘천")}`}
+                  href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + (cityLabel ? ` ${cityLabel}` : ""))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[11px] text-primary/70 font-medium flex items-center gap-0.5 flex-shrink-0"
@@ -369,7 +373,7 @@ const RestaurantDetail = () => {
           </h3>
           <div className="grid grid-cols-3 gap-2">
             <a
-              href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + " 춘천")}`}
+              href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + (cityLabel ? ` ${cityLabel}` : ""))}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border border-border/50 bg-card hover:bg-muted/50 transition-colors"
@@ -456,6 +460,7 @@ const RestaurantDetail = () => {
         </div>
       )}
     </div>
+    </CityContext.Provider>
   );
 };
 

@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
@@ -15,7 +14,6 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "pwa-icon-192.png", "pwa-icon-512.png"],
@@ -66,9 +64,9 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       manifest: {
-        name: "춘천 맛집지도",
-        short_name: "춘천맛집",
-        description: "춘천시 현지인 추천 맛집을 한눈에! 업종별 맛집 검색 지도.",
+        name: "맛탐 - 도시별 맛집지도",
+        short_name: "맛탐",
+        description: "도시별 현지인 추천 맛집을 한눈에! 업종별 맛집 검색 지도.",
         theme_color: "#f97316",
         background_color: "#1a1a2e",
         display: "standalone",

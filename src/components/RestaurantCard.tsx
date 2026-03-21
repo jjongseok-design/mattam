@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import { useToast } from "@/hooks/use-toast";
+import { useCityContext } from "@/contexts/CityContext";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -36,6 +37,8 @@ const RestaurantCard = memo(({
 }: RestaurantCardProps) => {
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
   const { toast } = useToast();
+  const { cityId, city } = useCityContext();
+  const cityLabel = city?.name ?? "맛집";
   const isOpen = useMemo(() => checkIsOpen(restaurant.openingHours), [restaurant.openingHours]);
 
   const distText = distance != null
@@ -44,9 +47,9 @@ const RestaurantCard = memo(({
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/restaurant/${restaurant.slug}`;
+    const url = `${window.location.origin}/${cityId}/restaurant/${restaurant.slug}`;
     if (navigator.share) {
-      try { await navigator.share({ title: `${restaurant.name} - 춘천 맛집`, url }); } catch {}
+      try { await navigator.share({ title: `${restaurant.name} - ${cityLabel} 맛집`, url }); } catch {}
     } else {
       await navigator.clipboard.writeText(url);
       toast({ title: "링크가 복사되었습니다 📋" });
@@ -157,7 +160,7 @@ const RestaurantCard = memo(({
             <span className="text-[11px] font-semibold">방문</span>
           </button>
           <Link
-            to={`/restaurant/${restaurant.slug}`}
+            to={`/${cityId}/restaurant/${restaurant.slug}`}
             onClick={(e) => e.stopPropagation()}
             className="ml-auto flex items-center gap-0.5 text-[11px] font-semibold text-primary px-3 py-1.5 rounded-lg bg-primary/8 active:bg-primary/15 transition-colors"
           >
@@ -321,7 +324,7 @@ const RestaurantCard = memo(({
                 </a>
               )}
               <Link
-                to={`/restaurant/${restaurant.slug}`}
+                to={`/${cityId}/restaurant/${restaurant.slug}`}
                 onClick={(e) => e.stopPropagation()}
                 className="flex items-center gap-0.5 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
               >

@@ -1,15 +1,18 @@
 import { memo } from "react";
 import { useRestaurants } from "@/hooks/useRestaurants";
+import { useCityContext } from "@/contexts/CityContext";
 
 const JsonLd = memo(() => {
-  const { data: restaurants = [] } = useRestaurants();
+  const { cityId, city } = useCityContext();
+  const { data: restaurants = [] } = useRestaurants(cityId || undefined);
+  const cityLabel = city?.name ? `${city.name} ` : "";
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "춘천 맛집지도",
-    description: "춘천시 현지인 추천 맛집을 한눈에! 닭갈비, 막국수 등 업종별 맛집 검색 지도",
-    url: "https://restaurantchuncheon.lovable.app",
+    name: `맛탐 · ${cityLabel}맛집지도`,
+    description: `${cityLabel}현지인 추천 맛집을 한눈에! 업종별 맛집 검색 지도`,
+    url: window.location.origin,
     applicationCategory: "FoodService",
     operatingSystem: "All",
     offers: {

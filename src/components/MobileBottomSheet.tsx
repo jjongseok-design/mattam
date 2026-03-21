@@ -9,6 +9,7 @@ import RandomPickButton from "./RandomPickButton";
 import TourProgress from "./TourProgress";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import type { Restaurant } from "@/hooks/useRestaurants";
+import { useCityContext } from "@/contexts/CityContext";
 
 interface MobileBottomSheetProps {
   restaurants: Restaurant[];
@@ -71,6 +72,8 @@ const MobileBottomSheet = memo(({
   visited,
   onShare,
 }: MobileBottomSheetProps) => {
+  const { city } = useCityContext();
+  const cityName = city?.name;
   const [state, setState] = useState<SheetState>("half");
   const [isDraggable, setIsDraggable] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
@@ -195,7 +198,7 @@ const MobileBottomSheet = memo(({
             {/* 맛집 정복 */}
             {allRestaurants && visited && onShare && (
               <div className="mb-1 px-1 flex-shrink-0">
-                <TourProgress restaurants={allRestaurants} visited={visited} onShare={onShare} compact />
+                <TourProgress restaurants={allRestaurants} visited={visited} onShare={onShare} compact cityName={cityName} />
               </div>
             )}
 

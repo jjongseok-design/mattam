@@ -1,4 +1,4 @@
-const DEVICE_ID_KEY = "chuncheon_device_uuid";
+const DEVICE_ID_KEY = "mattam_device_uuid";
 
 function generateUUID(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {

@@ -7,9 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquarePlus, Send, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCityContext } from "@/contexts/CityContext";
 
 const TipForm = () => {
-  const { data: categories = [] } = useCategories();
+  const { cityId, city } = useCityContext();
+  const { data: categories = [] } = useCategories(cityId || undefined);
+  const cityLabel = city?.name ?? "이 도시";
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -87,7 +90,7 @@ const TipForm = () => {
               </div>
 
               <p className="text-sm text-muted-foreground">
-                숨겨진 춘천 맛집을 알려주세요! 확인 후 등록해 드립니다.
+                숨겨진 {cityLabel} 맛집을 알려주세요! 확인 후 등록해 드립니다.
               </p>
 
               <div className="space-y-3">

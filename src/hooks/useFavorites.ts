@@ -52,13 +52,17 @@ export const useFavorites = () => {
             .delete()
             .eq("device_id", deviceId)
             .eq("restaurant_id", id)
-            .then(() => {});
+            .then(({ error }) => {
+              if (error) setFavorites((s) => { const r = new Set(s); r.add(id); saveLocal(r); return r; });
+            });
         } else {
           next.add(id);
           supabase
             .from("device_favorites")
             .upsert({ device_id: deviceId, restaurant_id: id })
-            .then(() => {});
+            .then(({ error }) => {
+              if (error) setFavorites((s) => { const r = new Set(s); r.delete(id); saveLocal(r); return r; });
+            });
         }
         saveLocal(next);
         return next;

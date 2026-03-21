@@ -55,7 +55,7 @@ const Install = () => {
         <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
         <h1 className="text-2xl font-bold mb-2">설치 완료!</h1>
         <p className="text-muted-foreground text-center mb-6">
-          춘천 맛집지도가 홈화면에 설치되었습니다.
+          맛탐이 홈화면에 설치되었습니다.
         </p>
         <Link to="/">
           <Button>맛집지도 열기</Button>
@@ -67,7 +67,7 @@ const Install = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 safe-area-x bg-background">
       <img src="/pwa-icon-192.png" alt="앱 아이콘" className="w-24 h-24 rounded-2xl mb-6 shadow-lg" />
-      <h1 className="text-2xl font-bold mb-2">춘천 맛집지도</h1>
+      <h1 className="text-2xl font-bold mb-2">맛탐 - 도시별 맛집지도</h1>
       <p className="text-muted-foreground text-center mb-8 max-w-sm">
         홈화면에 설치하면 앱처럼 빠르게 사용할 수 있어요!
       </p>
@@ -94,7 +94,7 @@ const Install = () => {
       ) : (
         <div className="bg-muted rounded-xl p-6 max-w-sm text-center space-y-4">
           <a
-            href="https://restaurantchuncheon.lovable.app/install"
+            href={window.location.origin + "/install"}
             target="_blank"
             rel="noopener noreferrer"
             className="block"

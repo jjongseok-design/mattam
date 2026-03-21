@@ -12,12 +12,13 @@ interface TourProgressProps {
   visited: Set<string>;
   onShare: () => void;
   compact?: boolean;
+  cityName?: string;
 }
 
-const TourProgress = ({ restaurants, visited, onShare, compact = false }: TourProgressProps) => {
+const TourProgress = ({ restaurants, visited, onShare, compact = false, cityName }: TourProgressProps) => {
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<"category" | "missions">("category");
-  const stats = useTourStats(restaurants, visited);
+  const stats = useTourStats(restaurants, visited, cityName);
   const { permission, requestPermission } = useNotifications();
   const { toast } = useToast();
   const prevMasterRef = useRef<string[]>([]);

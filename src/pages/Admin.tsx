@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound, MessageSquarePlus, Check, X, Settings2, Image } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
+import { useCities } from "@/hooks/useCities";
 import { motion } from "framer-motion";
 
 interface RestaurantRow {
@@ -45,14 +46,27 @@ const adminApi = async (pin: string, action: string, data?: any) => {
   const { data: result, error } = await supabase.functions.invoke("admin-api", {
     body: { pin, action, data },
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // supabase.functions.invoke는 4xx/5xx 응답 시 error.context에 실제 Response를 담음.
+    // error.message는 항상 제네릭 문자열이므로 실제 body에서 메시지를 추출함.
+    try {
+      const body = await (error as any).context?.json?.();
+      if (body?.error) throw new Error(body.error);
+    } catch (inner) {
+      if (inner instanceof Error) throw inner;
+    }
+    throw new Error(error.message);
+  }
   if (!result.success) throw new Error(result.error);
   return result;
 };
 
 const Admin = () => {
   const { toast } = useToast();
-  const { data: categories = [] } = useCategories();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: cities = [] } = useCities();
+  const [adminCityId, setAdminCityId] = useState("chuncheon");
+  const { data: categories = [] } = useCategories(adminCityId);
   const invalidateCategories = useInvalidateCategories();
   const [pin, setPin] = useState("");
   const [pinInput, setPinInput] = useState("");
@@ -72,6 +86,7 @@ const Admin = () => {
   const [showTips, setShowTips] = useState(false);
   const [tipsLoading, setTipsLoading] = useState(false);
   const [tipsTab, setTipsTab] = useState<"tips" | "feedback">("tips");
+  const [showNoImage, setShowNoImage] = useState(false);
   const [fetchingImageId, setFetchingImageId] = useState<string | null>(null);
   const [fetchingAllImages, setFetchingAllImages] = useState(false);
   const [fetchingNaverImageId, setFetchingNaverImageId] = useState<string | null>(null);
@@ -110,6 +125,7 @@ const Admin = () => {
     const { data, error } = await supabase
       .from("restaurants")
       .select("*")
+      .eq("city_id", adminCityId)
       .order("name");
     if (error) {
       toast({ title: "오류", description: error.message, variant: "destructive" });
@@ -117,11 +133,22 @@ const Admin = () => {
       setRestaurants((data as any) ?? []);
     }
     setLoading(false);
-  }, [toast]);
+  }, [toast, adminCityId]);
 
   useEffect(() => {
     if (authenticated) fetchAll();
-  }, [authenticated, fetchAll]);
+  }, [authenticated, fetchAll, adminCityId]);
+
+  // ?edit=ID 파라미터 처리: restaurants 로드 후 해당 식당 편집 폼 자동 열기
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (!editId || restaurants.length === 0) return;
+    const target = restaurants.find(r => r.id === editId);
+    if (target) {
+      openEdit(target);
+      setSearchParams({}, { replace: true });
+    }
+  }, [restaurants, searchParams]);
 
   const [loginLocked, setLoginLocked] = useState(false);
 
@@ -172,14 +199,16 @@ const Admin = () => {
     }
   };
 
-  // Filter by admin category tab + search
-  const filtered = restaurants.filter(
-    (r) =>
-      r.category === adminCategory &&
-      (r.name.includes(search) ||
-        r.address.includes(search) ||
-        (r.tags ?? []).some((t) => t.includes(search)))
-  );
+  // Filter by admin category tab + search (이미지 없음 모드는 전체 카테고리 대상)
+  const filtered = restaurants.filter((r) => {
+    const matchCategory = showNoImage ? !r.image_url : r.category === adminCategory;
+    const matchSearch =
+      !search ||
+      r.name.includes(search) ||
+      r.address.includes(search) ||
+      (r.tags ?? []).some((t) => t.includes(search));
+    return matchCategory && matchSearch;
+  });
 
   const categoryCount = (catId: string) => restaurants.filter((r) => r.category === catId).length;
 
@@ -241,17 +270,22 @@ const Admin = () => {
               .filter(Boolean)
           : form.tags,
       description: form.description || null,
+      city_id: adminCityId,
     };
 
     try {
       if (editing) {
         await adminApi(pin, "update", payload);
+        // 즉시 로컬 상태 반영 (낙관적 업데이트)
+        setRestaurants(prev => prev.map(r => r.id === payload.id ? { ...r, ...payload } : r));
       } else {
-        await adminApi(pin, "insert", payload);
+        const res = await adminApi(pin, "insert", payload);
+        setRestaurants(prev => [...prev, res.restaurant ?? { ...payload }]);
       }
       toast({ title: editing ? "수정 완료 ✅" : "추가 완료 ✅" });
       setShowForm(false);
-      fetchAll();
+      setEditing(null);
+      fetchAll(); // 백그라운드로 최신 데이터 동기화
     } catch (err: any) {
       toast({ title: "저장 실패", description: err.message, variant: "destructive" });
     }
@@ -507,6 +541,19 @@ const Admin = () => {
             </Link>
             <h1 className="text-lg font-bold shrink-0">🛠 식당 관리</h1>
             <span className="text-xs text-muted-foreground shrink-0">({restaurants.length})</span>
+            <select
+              value={adminCityId}
+              onChange={(e) => {
+                setAdminCityId(e.target.value);
+                setAdminCategory(categories[0]?.id ?? "");
+                setSearch("");
+              }}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs ml-1 shrink-0"
+            >
+              {cities.filter(c => !c.comingSoon).map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
             <div className="flex-1" />
             <Button variant="ghost" size="sm" className="shrink-0 h-10 text-xs text-muted-foreground px-3" onClick={handleLogout}>
               로그아웃
@@ -584,10 +631,15 @@ const Admin = () => {
             <p className="text-2xl font-bold text-foreground">{restaurants.length}</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">전체 식당</p>
           </div>
-          <div className="bg-card border border-border rounded-lg p-3 text-center">
+          <button
+            onClick={() => { setShowNoImage((v) => !v); setSearch(""); }}
+            className={`border rounded-lg p-3 text-center transition-colors w-full ${showNoImage ? "bg-orange-50 border-orange-300 dark:bg-orange-950/30 dark:border-orange-700" : "bg-card border-border hover:border-orange-300"}`}
+          >
             <p className="text-2xl font-bold text-orange-500">{restaurants.filter(r => !r.image_url).length}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">이미지 없음</p>
-          </div>
+            <p className={`text-[11px] mt-0.5 ${showNoImage ? "text-orange-600 font-semibold" : "text-muted-foreground"}`}>
+              {showNoImage ? "▼ 이미지 없음" : "이미지 없음"}
+            </p>
+          </button>
           <div className="bg-card border border-border rounded-lg p-3 text-center">
             <p className="text-2xl font-bold text-primary">{tips.filter(t => t.status === 'pending').length}</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">미처리 제보</p>
@@ -896,15 +948,61 @@ const Admin = () => {
                 {/* Image Upload */}
                 {editing && (
                   <div className="col-span-2">
-                    <label className="text-sm font-medium">식당 사진</label>
+                    <label className="text-sm font-medium">식당 사진 (최대 5장)</label>
                     <div className="mt-1.5 space-y-3">
-                      {/* Gallery: image_url + extra_images */}
+                      {/* Gallery: image_url + extra_images + 빈 슬롯 */}
                       {(() => {
                         const allImages = [
                           ...(editing.image_url ? [editing.image_url] : []),
                           ...(editing.extra_images ?? []),
                         ];
-                        if (allImages.length === 0) return null;
+                        const emptySlots = Math.max(0, 5 - allImages.length);
+
+                        const handleUpload = async (file: File, slot: number) => {
+                          if (file.size > 10 * 1024 * 1024) {
+                            toast({ title: "파일 크기는 10MB 이하여야 합니다", variant: "destructive" });
+                            return;
+                          }
+                          setSaving(true);
+                          try {
+                            const base64 = await new Promise<string>((resolve, reject) => {
+                              const img = new window.Image();
+                              img.onload = () => {
+                                const maxSize = 1200;
+                                let w = img.width, h = img.height;
+                                if (w > maxSize || h > maxSize) {
+                                  if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                                  else { w = Math.round(w * maxSize / h); h = maxSize; }
+                                }
+                                const canvas = document.createElement("canvas");
+                                canvas.width = w; canvas.height = h;
+                                canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+                                resolve(canvas.toDataURL("image/jpeg", 0.85).split(",")[1]);
+                              };
+                              img.onerror = reject;
+                              img.src = URL.createObjectURL(file);
+                            });
+                            const res = await adminApi(pin, "upload_image", {
+                              restaurant_id: editing.id,
+                              base64,
+                              content_type: "image/jpeg",
+                              file_ext: "jpg",
+                              slot,
+                            });
+                            if (slot === 0) {
+                              setEditing({ ...editing, image_url: res.image_url });
+                            } else {
+                              setEditing({ ...editing, extra_images: res.extra_images });
+                            }
+                            toast({ title: "사진 업로드 완료 ✅" });
+                            fetchAll();
+                          } catch (err: any) {
+                            toast({ title: "업로드 실패", description: err.message, variant: "destructive" });
+                          } finally {
+                            setSaving(false);
+                          }
+                        };
+
                         return (
                           <div className="flex flex-wrap gap-2">
                             {allImages.map((url, idx) => (
@@ -914,9 +1012,14 @@ const Admin = () => {
                                   alt={`${editing.name} ${idx + 1}`}
                                   className="w-20 h-20 rounded-lg object-cover border border-border"
                                 />
-                                {idx === 0 && (
-                                  <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] bg-black/50 text-white rounded-b-lg py-0.5">대표</span>
-                                )}
+                                {/* 대표/추가 라벨 + 교체 버튼 항상 표시 */}
+                                <label
+                                  className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 bg-black/60 text-white rounded-b-lg py-0.5 cursor-pointer hover:bg-primary/80 transition-colors"
+                                  title={idx === 0 ? "대표 이미지 교체" : "이미지 교체"}
+                                >
+                                  <span className="text-[9px]">{idx === 0 ? "대표 교체" : `추가${idx} 교체`}</span>
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, idx); e.target.value = ""; }} />
+                                </label>
                                 <button
                                   type="button"
                                   onClick={async () => {
@@ -944,15 +1047,27 @@ const Admin = () => {
                                       toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
                                     }
                                   }}
-                                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 hover:scale-110 transition-all"
+                                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs hover:scale-110 transition-all"
                                 >
                                   ×
                                 </button>
                               </div>
                             ))}
+                            {/* 빈 슬롯 — 클릭하면 파일 선택 */}
+                            {Array.from({ length: emptySlots }).map((_, i) => {
+                              const slot = allImages.length + i;
+                              return (
+                                <label key={`empty-${i}`} className="w-20 h-20 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/30 transition-colors text-muted-foreground hover:text-primary">
+                                  <span className="text-2xl leading-none">+</span>
+                                  <span className="text-[9px] mt-0.5">{slot === 0 ? "대표" : `추가${slot}`}</span>
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, slot); e.target.value = ""; }} />
+                                </label>
+                              );
+                            })}
                           </div>
                         );
                       })()}
+                      {/* URL 직접 입력 */}
                       <div className="flex gap-2">
                         <Input
                           placeholder="이미지 URL 직접 입력 (https://...)"
@@ -972,42 +1087,7 @@ const Admin = () => {
                         </Button>
                       </div>
                       <div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            if (file.size > 5 * 1024 * 1024) {
-                              toast({ title: "파일 크기는 5MB 이하여야 합니다", variant: "destructive" });
-                              return;
-                            }
-                            setSaving(true);
-                            try {
-                              const reader = new FileReader();
-                              reader.onload = async () => {
-                                const base64 = (reader.result as string).split(",")[1];
-                                const ext = file.name.split(".").pop() || "jpg";
-                                const res = await adminApi(pin, "upload_image", {
-                                  restaurant_id: editing.id,
-                                  base64,
-                                  content_type: file.type,
-                                  file_ext: ext,
-                                });
-                                setEditing({ ...editing, image_url: res.image_url });
-                                toast({ title: "사진 업로드 완료 ✅" });
-                                fetchAll();
-                                setSaving(false);
-                              };
-                              reader.readAsDataURL(file);
-                            } catch (err: any) {
-                              toast({ title: "업로드 실패", description: err.message, variant: "destructive" });
-                              setSaving(false);
-                            }
-                          }}
-                          className="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
-                        />
-                        <p className="text-[10px] text-muted-foreground mt-1">포털에서 검색한 식당 사진을 업로드하세요 (5MB 이하, 최대 3장)</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">포털에서 검색한 식당 사진을 업로드하세요 (10MB 이하, 자동 압축, 최대 5장)</p>
                       </div>
                     </div>
                   </div>
@@ -1019,10 +1099,10 @@ const Admin = () => {
                 )}
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setShowForm(false)}>취소</Button>
+                <Button variant="outline" onClick={() => { setShowForm(false); setEditing(null); }}>닫기</Button>
                 <Button onClick={handleSave} disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                  {editing ? "수정" : "추가"}
+                  {editing ? "수정 저장" : "추가"}
                 </Button>
               </div>
             </div>

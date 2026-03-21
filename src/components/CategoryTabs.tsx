@@ -10,10 +10,11 @@ interface CategoryTabsProps {
   onChange: (id: string) => void;
   variant?: "grid" | "pills";
   categoryCounts?: Record<string, number>;
+  cityId?: string;
 }
 
-const CategoryTabs = ({ active, onChange, categoryCounts = {} }: CategoryTabsProps) => {
-  const { data: categories } = useCategories();
+const CategoryTabs = ({ active, onChange, categoryCounts = {}, cityId }: CategoryTabsProps) => {
+  const { data: categories } = useCategories(cityId);
   const cats = categories && categories.length > 0 ? categories : FALLBACK_CATEGORIES;
   const scrollRef = useRef<HTMLDivElement>(null);
 

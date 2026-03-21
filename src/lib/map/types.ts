@@ -5,6 +5,7 @@ export interface MarkerParams {
   selectedId: string | null;
   visitedIds: Set<string>;
   onSelect: (id: string) => void;
+  cityName?: string;
 }
 
 /** Common interface both Kakao and Leaflet adapters must satisfy */

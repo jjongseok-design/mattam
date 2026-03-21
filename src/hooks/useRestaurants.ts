@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Restaurant {
   id: string;
-  /** URL-friendly identifier used in /restaurant/:slug routes. Falls back to id. */
   slug: string;
   name: string;
   category: string;
@@ -22,24 +21,47 @@ export interface Restaurant {
   openingHours?: string;
   closedDays?: string;
   createdAt?: string;
+  cityId?: string;
 }
 
-export const useRestaurants = () => {
+const getCacheKey = (cityId?: string) => cityId ? `restaurants_cache_${cityId}` : "restaurants_cache";
+
+const loadCache = (cityId?: string): Restaurant[] | null => {
+  try {
+    const raw = localStorage.getItem(getCacheKey(cityId));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+
+const saveCache = (data: Restaurant[], cityId?: string) => {
+  try { localStorage.setItem(getCacheKey(cityId), JSON.stringify(data)); } catch {}
+};
+
+export const useRestaurants = (cityId?: string) => {
   const queryClient = useQueryClient();
+  const queryKey = cityId ? ["restaurants", cityId] : ["restaurants"];
 
   const query = useQuery({
-    queryKey: ["restaurants"],
+    queryKey,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    placeholderData: loadCache(cityId) ?? undefined,
     queryFn: async (): Promise<Restaurant[]> => {
-      const { data, error } = await supabase
+      let q = (supabase
         .from("restaurants")
         .select("*")
-        .order("review_count", { ascending: false });
+        .order("review_count", { ascending: false })) as any;
 
+      if (cityId) {
+        q = q.eq("city_id", cityId);
+      }
+
+      const { data, error } = await q;
       if (error) throw error;
 
-      return (data ?? []).map((r: any) => ({
+      const mapped = (data ?? []).map((r: any) => ({
         id: r.id,
-        slug: r.slug ?? r.id, // falls back to id until migration runs
+        slug: r.slug ?? r.id,
         name: r.name,
         category: r.category,
         address: r.address,
@@ -56,18 +78,21 @@ export const useRestaurants = () => {
         openingHours: r.opening_hours ?? undefined,
         closedDays: r.closed_days ?? undefined,
         createdAt: r.created_at ?? undefined,
+        cityId: r.city_id ?? cityId,
       }));
+      saveCache(mapped, cityId);
+      return mapped;
     },
   });
 
   useEffect(() => {
     const channel = supabase
-      .channel("restaurants-realtime")
+      .channel("restaurants-realtime-" + (cityId ?? "all"))
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "restaurants" },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["restaurants"] });
+          queryClient.invalidateQueries({ queryKey });
         }
       )
       .subscribe();
@@ -75,7 +100,7 @@ export const useRestaurants = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, cityId]);
 
   return query;
 };

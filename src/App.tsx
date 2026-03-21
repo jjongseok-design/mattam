@@ -3,7 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import CitySelect from "./pages/CitySelect";
+import CityMap from "./pages/CityMap";
 import Admin from "./pages/Admin";
 import Install from "./pages/Install";
 import RestaurantDetail from "./pages/RestaurantDetail";
@@ -19,12 +20,15 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/restaurant/:slug" element={<RestaurantDetail />} />
-          <Route path="/tour" element={<Tour />} />
+          {/* 도시 선택 초기 화면 */}
+          <Route path="/" element={<CitySelect />} />
+          {/* 도시별 맛집 지도 */}
+          <Route path="/:cityId" element={<CityMap />} />
+          <Route path="/:cityId/restaurant/:slug" element={<RestaurantDetail />} />
+          <Route path="/:cityId/tour" element={<Tour />} />
+          {/* 공통 페이지 */}
           <Route path="/admin" element={<Admin />} />
           <Route path="/install" element={<Install />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

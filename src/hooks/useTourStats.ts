@@ -39,12 +39,13 @@ const RANKS = [
   { min: 30, label: "맛집 전문가", emoji: "⭐" },
   { min: 50, label: "맛집 마니아", emoji: "🔥" },
   { min: 75, label: "맛집 달인", emoji: "👑" },
-  { min: 100, label: "춘천 미식왕", emoji: "🏆" },
+  { min: 100, label: "미식왕", emoji: "🏆" },
 ];
 
 export const useTourStats = (
   restaurants: Restaurant[],
-  visited: Set<string>
+  visited: Set<string>,
+  cityName?: string
 ): TourStats => {
   return useMemo(() => {
     const byCategory = restaurants.reduce((acc, r) => {
@@ -77,9 +78,13 @@ export const useTourStats = (
       .filter((c) => c.isMaster)
       .map((c) => c.category);
 
-    const dakStat = categoryStats.find((c) => c.category === "닭갈비");
+    // Top category (most restaurants)
+    const topCategoryStat = categoryStats.length > 0
+      ? categoryStats.reduce((max, c) => c.total > max.total ? c : max, categoryStats[0])
+      : null;
 
-    // 미션 시스템
+    const localLabel = cityName ? `${cityName} 토박이` : "현지 토박이";
+
     const missions: Mission[] = [
       {
         id: "first_visit",
@@ -102,14 +107,14 @@ export const useTourStats = (
         target: 5,
       },
       {
-        id: "dak_master",
-        title: "닭갈비 정복",
-        description: "닭갈비 카테고리 전체 방문",
-        emoji: "🍗",
-        completed: dakStat?.isMaster ?? false,
-        progress: dakStat?.percent ?? 0,
-        current: dakStat?.visited ?? 0,
-        target: dakStat?.total ?? 0,
+        id: "top_category",
+        title: `${topCategoryStat?.category ?? "인기"} 정복`,
+        description: `${topCategoryStat?.category ?? "인기"} 카테고리 전체 방문`,
+        emoji: "🍽️",
+        completed: topCategoryStat?.isMaster ?? false,
+        progress: topCategoryStat?.percent ?? 0,
+        current: topCategoryStat?.visited ?? 0,
+        target: topCategoryStat?.total ?? 0,
       },
       {
         id: "category_3",
@@ -133,7 +138,7 @@ export const useTourStats = (
       },
       {
         id: "visited_50",
-        title: "춘천 토박이",
+        title: localLabel,
         description: "50곳의 맛집을 방문하세요",
         emoji: "🏠",
         completed: totalVisited >= 50,
@@ -153,7 +158,7 @@ export const useTourStats = (
       },
       {
         id: "all_visited",
-        title: "춘천 미식왕",
+        title: "미식왕",
         description: "모든 맛집을 정복하세요",
         emoji: "🏆",
         completed: overallPercent === 100 && totalRestaurants > 0,
@@ -176,5 +181,5 @@ export const useTourStats = (
       missions,
       completedMissions,
     };
-  }, [restaurants, visited]);
+  }, [restaurants, visited, cityName]);
 };

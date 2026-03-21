@@ -84,7 +84,7 @@ export class KakaoAdapter implements MapAdapter {
     this.map = null;
   }
 
-  updateMarkers({ restaurants, selectedId, visitedIds, onSelect }: MarkerParams): void {
+  updateMarkers({ restaurants, selectedId, visitedIds, onSelect, cityName }: MarkerParams): void {
     if (!this.map) return;
     this._clearMarkers();
 
@@ -128,7 +128,7 @@ export class KakaoAdapter implements MapAdapter {
         this.nameOverlays.push(nameOverlay);
         normalMarkers.push(marker);
       } else {
-        const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
+        const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name}${cityName ? ` ${cityName}` : ""}`)}`;
         const badge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px;">✓ 방문완료</span>` : "";
         this.infoOverlay = new kakao.maps.CustomOverlay({
           content: `<div style="padding:8px 12px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:160px;"><div style="display:flex;align-items:center;gap:4px;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;color:#111">${r.name}</a>${badge}</div><div style="font-size:11px;color:#666;margin-top:3px;">탭하면 네이버지도로 이동</div></div>`,

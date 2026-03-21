@@ -12,16 +12,23 @@ export interface CategoryRow {
   tag_placeholder: string;
 }
 
-export function useCategories() {
+export function useCategories(cityId?: string) {
   const queryClient = useQueryClient();
+  const queryKey = cityId ? ["categories", cityId] : ["categories"];
 
   const query = useQuery({
-    queryKey: ["categories"],
+    queryKey,
     queryFn: async (): Promise<CategoryRow[]> => {
-      const { data, error } = await supabase
+      let q = (supabase
         .from("categories")
         .select("*")
-        .order("sort_order");
+        .order("sort_order")) as any;
+
+      if (cityId) {
+        q = q.eq("city_id", cityId);
+      }
+
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((d: any) => ({
         id: d.id,
@@ -38,12 +45,12 @@ export function useCategories() {
 
   useEffect(() => {
     const channel = supabase
-      .channel("categories-realtime")
+      .channel("categories-realtime-" + (cityId ?? "all"))
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "categories" },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["categories"] });
+          queryClient.invalidateQueries({ queryKey });
         }
       )
       .subscribe();
@@ -51,12 +58,13 @@ export function useCategories() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, cityId]);
 
   return query;
 }
 
-export function useInvalidateCategories() {
+export function useInvalidateCategories(cityId?: string) {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: ["categories"] });
+  const queryKey = cityId ? ["categories", cityId] : ["categories"];
+  return () => qc.invalidateQueries({ queryKey });
 }

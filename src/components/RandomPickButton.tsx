@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
+import { useCityContext } from "@/contexts/CityContext";
 
 interface RandomPickButtonProps {
   restaurants: Restaurant[];
@@ -12,6 +13,8 @@ interface RandomPickButtonProps {
 const RandomPickButton = ({ restaurants }: RandomPickButtonProps) => {
   const [picked, setPicked] = useState<Restaurant | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
+  const { city } = useCityContext();
+  const cityLabel = city?.name ?? "";
 
   const handlePick = () => {
     if (restaurants.length === 0) return;
@@ -63,7 +66,7 @@ const RandomPickButton = ({ restaurants }: RandomPickButtonProps) => {
             <p className="text-[11px] text-muted-foreground mb-3 truncate">{picked.address}</p>
             <div className="flex gap-2">
               <a
-                href={`https://map.naver.com/v5/search/${encodeURIComponent(picked.name + ' 춘천')}`}
+                href={`https://map.naver.com/v5/search/${encodeURIComponent(picked.name + (cityLabel ? ` ${cityLabel}` : ""))}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 text-center px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors"

@@ -2,18 +2,66 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Restaurant } from "@/hooks/useRestaurants";
+import type { City } from "@/types/city";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 
-const CHUNCHEON_CENTER = { lat: 37.8813, lng: 127.73 };
-const LEAFLET_CENTER: L.LatLngExpression = [37.8813, 127.73];
-const CHUNCHEON_BOUNDS = L.latLngBounds(
-  L.latLng(37.734, 127.58),
-  L.latLng(38.02, 127.92)
-);
+// Defaults (Chuncheon) — overridden by city prop when available
+const DEFAULT_CENTER = { lat: 37.8813, lng: 127.73 };
+const DEFAULT_BOUNDS_SW = { lat: 37.734, lng: 127.58 };
+const DEFAULT_BOUNDS_NE = { lat: 38.02, lng: 127.92 };
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY as string;
 const KAKAO_SCRIPT_ID = "kakao-maps-sdk";
+
+// 모듈 레벨 싱글톤: 여러 MapView 인스턴스(모바일/PC 재마운트)가 동일 Promise를 공유
+let _kakaoReadyPromise: Promise<void> | null = null;
+
+function ensureKakaoMapsReady(appKey: string): Promise<void> {
+  if (_kakaoReadyPromise) return _kakaoReadyPromise;
+  _kakaoReadyPromise = new Promise<void>((resolve, reject) => {
+    if (window.kakao?.maps) {
+      kakao.maps.load(() => resolve());
+      return;
+    }
+    const TIMEOUT = 10_000;
+    const timer = window.setTimeout(() => {
+      reject("카카오 SDK 로드 타임아웃");
+      _kakaoReadyPromise = null;
+    }, TIMEOUT);
+
+    const onLoad = () => {
+      window.clearTimeout(timer);
+      if (!window.kakao?.maps) {
+        reject("카카오 SDK 초기화 실패");
+        _kakaoReadyPromise = null;
+        return;
+      }
+      kakao.maps.load(() => resolve());
+    };
+    const onError = () => {
+      window.clearTimeout(timer);
+      reject("카카오 SDK 로드 실패");
+      _kakaoReadyPromise = null;
+    };
+
+    let script = document.getElementById(KAKAO_SCRIPT_ID) as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement("script");
+      script.id = KAKAO_SCRIPT_ID;
+      script.async = true;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=clusterer`;
+      document.head.appendChild(script);
+    }
+    if ((script as any).readyState === "complete" || (script as any).loaded) {
+      onLoad();
+      return;
+    }
+    script.addEventListener("load", onLoad, { once: true });
+    script.addEventListener("error", onError, { once: true });
+  });
+  return _kakaoReadyPromise;
+}
 
 type MapMode = "loading" | "kakao" | "leaflet";
 
@@ -23,6 +71,7 @@ interface MapViewProps {
   onSelect: (id: string) => void;
   visitedIds?: Set<string>;
   isDarkMode?: boolean;
+  city?: City | null;
 }
 
 const makeEmojiIcon = (emoji: string, isSelected: boolean, isVisited: boolean) => {
@@ -75,9 +124,15 @@ const leafSelectedIcon = new L.Icon({
   className: "selected-marker",
 });
 
-const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), isDarkMode = false }: MapViewProps) => {
+const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), isDarkMode = false, city }: MapViewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const mapCenter = city ? { lat: city.lat, lng: city.lng } : DEFAULT_CENTER;
+  const mapBoundsSW = city ? city.bounds.sw : DEFAULT_BOUNDS_SW;
+  const mapBoundsNE = city ? city.bounds.ne : DEFAULT_BOUNDS_NE;
+  const mapZoom = city?.zoom ?? 12;
+  const cityLabel = city?.name ?? "";
 
   const kakaoMapRef = useRef<kakao.maps.Map | null>(null);
   const kakaoMarkersRef = useRef<kakao.maps.Marker[]>([]);
@@ -108,68 +163,31 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
   }, [toast]);
 
   useEffect(() => {
-    let timeoutId: number | undefined;
+    let cancelled = false;
 
-    if (window.kakao?.maps) {
-      timeoutId = window.setTimeout(() => {
-        if (mode === "loading") handleFallback("카카오 SDK 초기화 타임아웃");
-      }, 7000);
-      kakao.maps.load(() => {
-        window.clearTimeout(timeoutId);
-        setMode("kakao");
+    ensureKakaoMapsReady(KAKAO_APP_KEY)
+      .then(() => {
+        if (!cancelled) setMode("kakao");
+      })
+      .catch((reason: string) => {
+        if (!cancelled) handleFallback(reason);
       });
-      return () => window.clearTimeout(timeoutId);
-    }
 
-    let script = document.getElementById(KAKAO_SCRIPT_ID) as HTMLScriptElement | null;
-    if (!script) {
-      script = document.createElement("script");
-      script.id = KAKAO_SCRIPT_ID;
-      script.async = true;
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false&libraries=clusterer`;
-      document.head.appendChild(script);
-    }
-
-    const onLoad = () => {
-      if (!window.kakao?.maps) {
-        handleFallback("카카오 SDK 초기화 실패");
-        return;
-      }
-      kakao.maps.load(() => setMode("kakao"));
-    };
-
-    const onError = () => {
-      handleFallback("카카오 SDK 로드 실패");
-    };
-
-    script.addEventListener("load", onLoad);
-    script.addEventListener("error", onError);
-
-    timeoutId = window.setTimeout(() => {
-      if (!window.kakao?.maps) {
-        handleFallback("카카오 SDK 로드 타임아웃");
-      }
-    }, 7000);
-
-    return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
-      script?.removeEventListener("load", onLoad);
-      script?.removeEventListener("error", onError);
-    };
+    return () => { cancelled = true; };
   }, [handleFallback]);
 
   useEffect(() => {
     if (mode !== "kakao" || !containerRef.current || kakaoMapRef.current) return;
-    const center = new kakao.maps.LatLng(CHUNCHEON_CENTER.lat, CHUNCHEON_CENTER.lng);
+    const center = new kakao.maps.LatLng(mapCenter.lat, mapCenter.lng);
     const map = new kakao.maps.Map(containerRef.current, { center, level: 7 });
     kakaoMapRef.current = map;
 
-    const sw = new kakao.maps.LatLng(37.734, 127.58);
-    const ne = new kakao.maps.LatLng(38.02, 127.92);
-    const chuncheonCenter = new kakao.maps.LatLng(CHUNCHEON_CENTER.lat, CHUNCHEON_CENTER.lng);
+    const sw = new kakao.maps.LatLng(mapBoundsSW.lat, mapBoundsSW.lng);
+    const ne = new kakao.maps.LatLng(mapBoundsNE.lat, mapBoundsNE.lng);
+    const cityCenter = new kakao.maps.LatLng(mapCenter.lat, mapCenter.lng);
     const bounds = new (kakao.maps as any).LatLngBounds(sw, ne);
 
-    const clampToChuncheon = () => {
+    const clampToCity = () => {
       const c = (map as any).getCenter();
       if (!bounds.contain(c)) {
         const lat = Math.max(sw.getLat(), Math.min(ne.getLat(), c.getLat()));
@@ -178,35 +196,39 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       }
     };
 
-    kakao.maps.event.addListener(map, "dragend", clampToChuncheon);
-    kakao.maps.event.addListener(map, "idle", clampToChuncheon);
+    kakao.maps.event.addListener(map, "dragend", clampToCity);
+    kakao.maps.event.addListener(map, "idle", clampToCity);
 
     kakao.maps.event.addListener(map, "zoom_changed", () => {
       const level = map.getLevel();
       if (level > 7) {
         map.setLevel(7);
-        map.setCenter(chuncheonCenter);
+        map.setCenter(cityCenter);
       }
     });
 
     return () => {
       kakaoMapRef.current = null;
     };
-  }, [mode]);
+  }, [mode, mapCenter, mapBoundsSW, mapBoundsNE]);
 
   useEffect(() => {
     if (mode !== "leaflet" || !containerRef.current || leafMapRef.current) return;
 
+    const cityBounds = L.latLngBounds(
+      L.latLng(mapBoundsSW.lat, mapBoundsSW.lng),
+      L.latLng(mapBoundsNE.lat, mapBoundsNE.lng)
+    );
     const map = L.map(containerRef.current, {
-      maxBounds: CHUNCHEON_BOUNDS,
+      maxBounds: cityBounds,
       maxBoundsViscosity: 1,
       minZoom: 11,
       maxZoom: 18,
-    }).setView(LEAFLET_CENTER, 12);
+    }).setView([mapCenter.lat, mapCenter.lng] as L.LatLngExpression, mapZoom);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      bounds: CHUNCHEON_BOUNDS,
+      bounds: cityBounds,
     }).addTo(map);
 
     leafMapRef.current = map;
@@ -298,7 +320,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       }
 
       if (isSelected) {
-        const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
+        const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name}${cityLabel ? ` ${cityLabel}` : ""}`)}`;
         const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px;">✓ 방문완료</span>` : "";
         const content = `<div style="padding:8px 12px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:160px;"><div style="display:flex;align-items:center;gap:4px;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;font-weight:700;color:#111">${r.name}</a>${visitedBadge}</div><div style="font-size:11px;color:#666;margin-top:3px;">탭하면 네이버지도로 이동</div></div>`;
         kakaoOverlayRef.current = new kakao.maps.CustomOverlay({
@@ -331,7 +353,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     restaurants.forEach((r) => {
       const isSelected = r.id === selectedId;
       const isVisited = visitedIds.has(r.id);
-      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name} 춘천`)}`;
+      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name}${cityLabel ? ` ${cityLabel}` : ""}`)}`;
       const emoji = CATEGORY_EMOJI[r.category] || "🍽️";
       const marker = L.marker([r.lat, r.lng], {
         icon: makeEmojiIcon(emoji, isSelected, isVisited),

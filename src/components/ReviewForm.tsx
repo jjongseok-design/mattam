@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { getDeviceId } from "@/hooks/useDeviceId";
 
 interface ReviewFormProps {
   restaurantId: string;
@@ -98,11 +99,12 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
       rating,
       comment: trimmedComment || null,
       nickname: trimmedNickname || "익명",
+      device_id: getDeviceId(),
     }).select("id").single();
 
     if (error) {
-      if (error.message?.includes("Too many reviews")) {
-        toast({ title: "리뷰 등록 제한", description: "잠시 후 다시 시도해주세요", variant: "destructive" });
+      if (error.code === "42501" || error.message?.includes("rate") || error.message?.includes("policy")) {
+        toast({ title: "5분 후에 다시 작성할 수 있습니다 ⏳", variant: "destructive" });
       } else {
         toast({ title: "리뷰 등록 실패", description: error.message, variant: "destructive" });
       }
