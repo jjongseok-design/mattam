@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, KeyRound, MessageSquarePlus, Check, X, Settings2, Image } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
 import { useCities } from "@/hooks/useCities";
@@ -42,13 +42,11 @@ const getEmptyForm = (category: string) => ({
   description: "",
 });
 
-const adminApi = async (pin: string, action: string, data?: any) => {
+const adminApi = async (action: string, data?: any) => {
   const { data: result, error } = await supabase.functions.invoke("admin-api", {
-    body: { pin, action, data },
+    body: { action, data },
   });
   if (error) {
-    // supabase.functions.invoke는 4xx/5xx 응답 시 error.context에 실제 Response를 담음.
-    // error.message는 항상 제네릭 문자열이므로 실제 body에서 메시지를 추출함.
     try {
       const body = await (error as any).context?.json?.();
       if (body?.error) throw new Error(body.error);
@@ -68,8 +66,9 @@ const Admin = () => {
   const [adminCityId, setAdminCityId] = useState("chuncheon");
   const { data: categories = [] } = useCategories(adminCityId);
   const invalidateCategories = useInvalidateCategories();
-  const [pin, setPin] = useState("");
-  const [pinInput, setPinInput] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [restaurants, setRestaurants] = useState<RestaurantRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,9 +77,9 @@ const Admin = () => {
   const [form, setForm] = useState(getEmptyForm("닭갈비"));
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showPinChange, setShowPinChange] = useState(false);
-  const [newPin, setNewPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
+  const [showPwChange, setShowPwChange] = useState(false);
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
   const [adminCategory, setAdminCategory] = useState<string>("닭갈비");
   const [tips, setTips] = useState<any[]>([]);
   const [showTips, setShowTips] = useState(false);
@@ -106,11 +105,13 @@ const Admin = () => {
   const dragOverItem = useRef<string | null>(null);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("admin_pin");
-    if (saved) {
-      setPin(saved);
-      setAuthenticated(true);
-    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setAuthenticated(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setAuthenticated(!!session);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   // Set initial category when categories load
@@ -150,52 +151,42 @@ const Admin = () => {
     }
   }, [restaurants, searchParams]);
 
-  const [loginLocked, setLoginLocked] = useState(false);
-
   const handleLogin = async () => {
-    if (!pinInput.trim() || loginLocked) return;
+    if (!email.trim() || !password.trim() || loginLoading) return;
+    setLoginLoading(true);
     try {
-      await adminApi(pinInput, "verify");
-      setPin(pinInput);
-      setAuthenticated(true);
-      sessionStorage.setItem("admin_pin", pinInput);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
       toast({ title: "로그인 성공 ✅" });
     } catch (err: any) {
-      const msg = err.message || "PIN이 틀렸습니다";
-      if (msg.includes("너무 많은") || msg.includes("locked")) {
-        setLoginLocked(true);
-        setTimeout(() => setLoginLocked(false), 15 * 60 * 1000);
-      }
-      toast({ title: msg, variant: "destructive" });
+      toast({ title: "로그인 실패", description: err.message || "이메일 또는 비밀번호를 확인하세요", variant: "destructive" });
     }
+    setLoginLoading(false);
   };
 
-  const handleLogout = () => {
-    setAuthenticated(false);
-    setPin("");
-    setPinInput("");
-    sessionStorage.removeItem("admin_pin");
+  const handleLogout = async () => {
+    if (!window.confirm("로그아웃 하시겠습니까?")) return;
+    await supabase.auth.signOut();
   };
 
-  const handleChangePin = async () => {
-    if (newPin !== confirmPin) {
-      toast({ title: "새 PIN이 일치하지 않습니다", variant: "destructive" });
+  const handleChangePassword = async () => {
+    if (newPw !== confirmPw) {
+      toast({ title: "비밀번호가 일치하지 않습니다", variant: "destructive" });
       return;
     }
-    if (newPin.length < 4 || newPin.length > 8) {
-      toast({ title: "PIN은 4~8자리여야 합니다", variant: "destructive" });
+    if (newPw.length < 6) {
+      toast({ title: "비밀번호는 6자 이상이어야 합니다", variant: "destructive" });
       return;
     }
     try {
-      await adminApi(pin, "change_pin", { new_pin: newPin });
-      setPin(newPin);
-      sessionStorage.setItem("admin_pin", newPin);
-      setShowPinChange(false);
-      setNewPin("");
-      setConfirmPin("");
-      toast({ title: "PIN 변경 완료 ✅" });
+      const { error } = await supabase.auth.updateUser({ password: newPw });
+      if (error) throw error;
+      setShowPwChange(false);
+      setNewPw("");
+      setConfirmPw("");
+      toast({ title: "비밀번호 변경 완료 ✅" });
     } catch (err: any) {
-      toast({ title: "PIN 변경 실패", description: err.message, variant: "destructive" });
+      toast({ title: "변경 실패", description: err.message, variant: "destructive" });
     }
   };
 
@@ -275,11 +266,11 @@ const Admin = () => {
 
     try {
       if (editing) {
-        await adminApi(pin, "update", payload);
+        await adminApi("update", payload);
         // 즉시 로컬 상태 반영 (낙관적 업데이트)
         setRestaurants(prev => prev.map(r => r.id === payload.id ? { ...r, ...payload } : r));
       } else {
-        const res = await adminApi(pin, "insert", payload);
+        const res = await adminApi("insert", payload);
         setRestaurants(prev => [...prev, res.restaurant ?? { ...payload }]);
       }
       toast({ title: editing ? "수정 완료 ✅" : "추가 완료 ✅" });
@@ -295,7 +286,7 @@ const Admin = () => {
   const handleFetchImage = async (id: string) => {
     setFetchingImageId(id);
     try {
-      const res = await adminApi(pin, "fetch_restaurant_images", { id });
+      const res = await adminApi("fetch_restaurant_images", { id });
       const r = res.results?.[0];
       if (r?.success) {
         toast({ title: "이미지 가져오기 완료 ✅" });
@@ -313,7 +304,7 @@ const Admin = () => {
     if (!confirm(`"${adminCategory}" 카테고리에서 이미지가 없는 식당의 사진을 Google Places에서 가져옵니다. 계속하시겠습니까?`)) return;
     setFetchingAllImages(true);
     try {
-      const res = await adminApi(pin, "fetch_restaurant_images", { category: adminCategory });
+      const res = await adminApi("fetch_restaurant_images", { category: adminCategory });
       const ok = res.results?.filter((r: any) => r.success).length ?? 0;
       const fail = res.results?.filter((r: any) => !r.success).length ?? 0;
       toast({ title: `완료: ${ok}개 성공, ${fail}개 실패` });
@@ -327,7 +318,7 @@ const Admin = () => {
   const handleFetchNaverImage = async (id: string) => {
     setFetchingNaverImageId(id);
     try {
-      const res = await adminApi(pin, "fetch_naver_images", { id });
+      const res = await adminApi("fetch_naver_images", { id });
       const r = res.results?.[0];
       if (r?.success) {
         toast({ title: "네이버 이미지 가져오기 완료 ✅" });
@@ -345,7 +336,7 @@ const Admin = () => {
     if (!confirm(`"${adminCategory}" 카테고리에서 이미지가 없는 식당의 사진을 네이버 블로그에서 가져옵니다. 계속하시겠습니까?`)) return;
     setFetchingAllNaverImages(true);
     try {
-      const res = await adminApi(pin, "fetch_naver_images", { category: adminCategory });
+      const res = await adminApi("fetch_naver_images", { category: adminCategory });
       const ok = res.results?.filter((r: any) => r.success).length ?? 0;
       const fail = res.results?.filter((r: any) => !r.success).length ?? 0;
       toast({ title: `완료: ${ok}개 성공, ${fail}개 실패` });
@@ -360,7 +351,7 @@ const Admin = () => {
     if (!editing || !imageUrlInput.trim()) return;
     setSavingImageUrl(true);
     try {
-      await adminApi(pin, "update", { id: editing.id, image_url: imageUrlInput.trim() });
+      await adminApi("update", { id: editing.id, image_url: imageUrlInput.trim() });
       setEditing({ ...editing, image_url: imageUrlInput.trim() });
       setImageUrlInput("");
       toast({ title: "이미지 URL 저장 완료 ✅" });
@@ -374,7 +365,7 @@ const Admin = () => {
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`"${name}" 을(를) 삭제하시겠습니까?`)) return;
     try {
-      await adminApi(pin, "delete", { id });
+      await adminApi("delete", { id });
       toast({ title: "삭제 완료 ✅" });
       fetchAll();
     } catch (err: any) {
@@ -429,7 +420,7 @@ const Admin = () => {
         
         if (oldId !== newId) {
           // Insert new category, update restaurants, delete old
-          await adminApi(pin, "category_insert", {
+          await adminApi("category_insert", {
             id: newId,
             label: catForm.label,
             emoji: catForm.emoji,
@@ -438,10 +429,10 @@ const Admin = () => {
             tag_suggestions: tags,
             sort_order: editingCat.sort_order,
           });
-          await adminApi(pin, "bulk_update_category", { old_category: oldId, new_category: newId });
-          await adminApi(pin, "category_delete", { id: oldId });
+          await adminApi("bulk_update_category", { old_category: oldId, new_category: newId });
+          await adminApi("category_delete", { id: oldId });
         } else {
-          await adminApi(pin, "category_update", {
+          await adminApi("category_update", {
             id: editingCat.id,
             label: catForm.label,
             emoji: catForm.emoji,
@@ -452,7 +443,7 @@ const Admin = () => {
         }
       } else {
         const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order), 0);
-        await adminApi(pin, "category_insert", {
+        await adminApi("category_insert", {
           id: catForm.id.trim(),
           label: catForm.label,
           emoji: catForm.emoji,
@@ -480,7 +471,7 @@ const Admin = () => {
     }
     if (!confirm(`"${cat.label}" 카테고리를 삭제하시겠습니까?`)) return;
     try {
-      await adminApi(pin, "category_delete", { id: cat.id });
+      await adminApi("category_delete", { id: cat.id });
       invalidateCategories();
       toast({ title: "카테고리 삭제 완료 ✅" });
     } catch (err: any) {
@@ -489,7 +480,7 @@ const Admin = () => {
   };
 
 
-  // --- PIN Login Screen ---
+  // --- Login Screen ---
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -499,20 +490,26 @@ const Admin = () => {
               <Lock className="h-7 w-7 text-primary-foreground" />
             </div>
             <h1 className="text-xl font-bold">관리자 로그인</h1>
-            <p className="text-sm text-muted-foreground">PIN 번호를 입력하세요</p>
+            <p className="text-sm text-muted-foreground">이메일과 비밀번호를 입력하세요</p>
           </div>
           <div className="space-y-3">
             <Input
-              type="password"
-              placeholder="PIN (기본: 0000)"
-              value={pinInput}
-              onChange={(e) => setPinInput(e.target.value)}
+              type="email"
+              placeholder="관리자 이메일"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              className="text-center text-lg tracking-[0.5em] font-mono"
-              maxLength={8}
               autoFocus
             />
-            <Button onClick={handleLogin} className="w-full">
+            <Input
+              type="password"
+              placeholder="비밀번호"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+            />
+            <Button onClick={handleLogin} className="w-full" disabled={loginLoading}>
+              {loginLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               로그인
             </Button>
           </div>
@@ -569,7 +566,7 @@ const Admin = () => {
                 if (!showTips && tips.length === 0) {
                   setTipsLoading(true);
                   try {
-                    const res = await adminApi(pin, "list_tips");
+                    const res = await adminApi("list_tips");
                     setTips(res.tips || []);
                   } catch { }
                   setTipsLoading(false);
@@ -592,8 +589,8 @@ const Admin = () => {
             >
               <Settings2 className="h-3.5 w-3.5 mr-1" /> {editMode ? "편집 완료" : "카테고리"}
             </Button>
-            <Button variant="outline" size="sm" className="shrink-0 h-10 text-xs px-3" onClick={() => setShowPinChange(true)}>
-              <KeyRound className="h-3.5 w-3.5 mr-1" /> PIN
+            <Button variant="outline" size="sm" className="shrink-0 h-10 text-xs px-3" onClick={() => setShowPwChange(true)}>
+              <Lock className="h-3.5 w-3.5 mr-1" /> 비밀번호
             </Button>
             <Button
               variant="outline"
@@ -682,7 +679,7 @@ const Admin = () => {
                     reordered.splice(toIdx, 0, moved);
                     const updates = reordered.map((c, i) => ({ id: c.id, sort_order: i + 1 }));
                     try {
-                      await adminApi(pin, "category_reorder", { updates });
+                      await adminApi("category_reorder", { updates });
                       invalidateCategories();
                       toast({ title: "순서 변경 완료 ✅" });
                     } catch (err: any) {
@@ -819,38 +816,34 @@ const Admin = () => {
           />
         </div>
 
-        {/* PIN Change Modal */}
-        {showPinChange && (
+        {/* Password Change Modal */}
+        {showPwChange && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-card border border-border rounded-lg w-full max-w-sm p-6 space-y-4">
-              <h2 className="text-lg font-bold">PIN 변경</h2>
+              <h2 className="text-lg font-bold">비밀번호 변경</h2>
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium">새 PIN (4~8자리)</label>
+                  <label className="text-sm font-medium">새 비밀번호 (6자 이상)</label>
                   <Input
                     type="password"
-                    value={newPin}
-                    onChange={(e) => setNewPin(e.target.value)}
-                    maxLength={8}
-                    className="text-center tracking-[0.3em] font-mono"
+                    value={newPw}
+                    onChange={(e) => setNewPw(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">새 PIN 확인</label>
+                  <label className="text-sm font-medium">새 비밀번호 확인</label>
                   <Input
                     type="password"
-                    value={confirmPin}
-                    onChange={(e) => setConfirmPin(e.target.value)}
-                    maxLength={8}
-                    className="text-center tracking-[0.3em] font-mono"
+                    value={confirmPw}
+                    onChange={(e) => setConfirmPw(e.target.value)}
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => { setShowPinChange(false); setNewPin(""); setConfirmPin(""); }}>
+                <Button variant="outline" onClick={() => { setShowPwChange(false); setNewPw(""); setConfirmPw(""); }}>
                   취소
                 </Button>
-                <Button onClick={handleChangePin}>변경</Button>
+                <Button onClick={handleChangePassword}>변경</Button>
               </div>
             </div>
           </div>
@@ -982,7 +975,7 @@ const Admin = () => {
                               img.onerror = reject;
                               img.src = URL.createObjectURL(file);
                             });
-                            const res = await adminApi(pin, "upload_image", {
+                            const res = await adminApi("upload_image", {
                               restaurant_id: editing.id,
                               base64,
                               content_type: "image/jpeg",
@@ -1026,11 +1019,11 @@ const Admin = () => {
                                     try {
                                       if (idx === 0) {
                                         // Delete primary image
-                                        await adminApi(pin, "delete_image", { restaurant_id: editing.id });
+                                        await adminApi("delete_image", { restaurant_id: editing.id });
                                         // Promote first extra image if exists
                                         const extras = editing.extra_images ?? [];
                                         if (extras.length > 0) {
-                                          await adminApi(pin, "update", { id: editing.id, image_url: extras[0], extra_images: extras.slice(1) });
+                                          await adminApi("update", { id: editing.id, image_url: extras[0], extra_images: extras.slice(1) });
                                           setEditing({ ...editing, image_url: extras[0], extra_images: extras.slice(1) });
                                         } else {
                                           setEditing({ ...editing, image_url: null, extra_images: [] });
@@ -1038,7 +1031,7 @@ const Admin = () => {
                                       } else {
                                         // Delete from extra_images
                                         const extras = (editing.extra_images ?? []).filter(u => u !== url);
-                                        await adminApi(pin, "update", { id: editing.id, extra_images: extras });
+                                        await adminApi("update", { id: editing.id, extra_images: extras });
                                         setEditing({ ...editing, extra_images: extras });
                                       }
                                       toast({ title: "사진 삭제 완료 ✅" });
@@ -1323,7 +1316,7 @@ const Admin = () => {
                                       className="text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20"
                                       onClick={async () => {
                                         try {
-                                          await adminApi(pin, "approve_tip", {
+                                          await adminApi("approve_tip", {
                                             tip_id: tip.id,
                                             restaurant_name: tip.restaurant_name,
                                             category: tip.category,
@@ -1349,7 +1342,7 @@ const Admin = () => {
                                       className="text-destructive border-destructive/30 hover:bg-destructive/10"
                                       onClick={async () => {
                                         try {
-                                          await adminApi(pin, "update_tip_status", { id: tip.id, status: "rejected" });
+                                          await adminApi("update_tip_status", { id: tip.id, status: "rejected" });
                                           setTips(tips.map(t => t.id === tip.id ? { ...t, status: "rejected" } : t));
                                           toast({ title: "거절됨" });
                                         } catch (err: any) {
@@ -1368,7 +1361,7 @@ const Admin = () => {
                                   onClick={async () => {
                                     if (!confirm(isFeedback ? "이 피드백을 삭제하시겠습니까?" : "이 제보를 삭제하시겠습니까?")) return;
                                     try {
-                                      await adminApi(pin, "delete_tip", { id: tip.id });
+                                      await adminApi("delete_tip", { id: tip.id });
                                       setTips(tips.filter(t => t.id !== tip.id));
                                       toast({ title: "삭제됨" });
                                     } catch (err: any) {

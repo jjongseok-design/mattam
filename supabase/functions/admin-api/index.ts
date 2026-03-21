@@ -6,12 +6,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCKOUT_MINUTES = 15;
 
-// Returns true if Google Vision API detects faces in the image.
-// Fails open (returns false) if the API call itself errors.
-async function hasFaces(imageBuffer: ArrayBuffer, googleApiKey: string): Promise<boolean> {
+// Signage/exterior labels to prioritize (higher score = more likely exterior/signage shot)
+const SIGNAGE_LABELS = ["signage", "sign", "facade", "storefront", "building", "restaurant", "font", "brand", "logo", "text", "banner", "outdoor", "exterior"];
+const FOOD_LABELS = ["food", "dish", "cuisine", "meal", "ingredient", "recipe", "tableware"];
+
+// Analyzes an image with Vision API.
+// Returns { hasFaces, signageScore }
+// signageScore: 2 = clear signage, 1 = food/interior, 0 = other
+// Fails open on API error.
+async function analyzeImage(imageBuffer: ArrayBuffer, googleApiKey: string): Promise<{ hasFaces: boolean; signageScore: number }> {
   try {
     const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
     const visionRes = await fetch(
@@ -22,25 +26,33 @@ async function hasFaces(imageBuffer: ArrayBuffer, googleApiKey: string): Promise
         body: JSON.stringify({
           requests: [{
             image: { content: base64 },
-            features: [{ type: "FACE_DETECTION", maxResults: 1 }],
+            features: [
+              { type: "FACE_DETECTION", maxResults: 1 },
+              { type: "LABEL_DETECTION", maxResults: 10 },
+            ],
           }],
         }),
       }
     );
     if (!visionRes.ok) {
-      console.warn("Vision API error:", visionRes.status, await visionRes.text());
-      return false; // fail open
+      console.warn("Vision API error:", visionRes.status);
+      return { hasFaces: false, signageScore: 1 };
     }
     const visionData = await visionRes.json();
-    const faces = visionData.responses?.[0]?.faceAnnotations ?? [];
+    const res = visionData.responses?.[0];
+    const faces = res?.faceAnnotations ?? [];
     if (faces.length > 0) {
       console.log(`Face detected (${faces.length}명), 이미지 제외`);
-      return true;
+      return { hasFaces: true, signageScore: 0 };
     }
-    return false;
+    const labels: string[] = (res?.labelAnnotations ?? []).map((l: any) => l.description?.toLowerCase() ?? "");
+    const isSignage = labels.some(l => SIGNAGE_LABELS.includes(l));
+    const isFood = labels.some(l => FOOD_LABELS.includes(l));
+    const signageScore = isSignage ? 2 : isFood ? 1 : 0;
+    return { hasFaces: false, signageScore };
   } catch (e) {
-    console.warn("hasFaces check failed (fail open):", e);
-    return false;
+    console.warn("analyzeImage failed (fail open):", e);
+    return { hasFaces: false, signageScore: 1 };
   }
 }
 
@@ -54,94 +66,52 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  // Extract IP hint from headers for rate limiting
-  const ipHint = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("cf-connecting-ip") || "unknown";
+  // --- Verify JWT ---
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(
+      JSON.stringify({ success: false, error: "인증이 필요합니다" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+  const userClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  );
+
+  const { data: { user }, error: authError } = await userClient.auth.getUser();
+  if (authError || !user) {
+    return new Response(
+      JSON.stringify({ success: false, error: "인증이 유효하지 않습니다" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Check if user is admin
+  const { data: adminRecord } = await supabase
+    .from("admin_emails")
+    .select("email")
+    .eq("email", user.email)
+    .single();
+
+  if (!adminRecord) {
+    return new Response(
+      JSON.stringify({ success: false, error: "관리자 권한이 없습니다" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
   try {
     const body = await req.json();
-    const { action, pin, data } = body;
-
-    // --- Check brute-force lockout BEFORE PIN verification ---
-    const lockoutCutoff = new Date(Date.now() - LOCKOUT_MINUTES * 60 * 1000).toISOString();
-    const { data: recentAttempts } = await supabase
-      .from("admin_login_attempts")
-      .select("id")
-      .eq("ip_hint", ipHint)
-      .eq("success", false)
-      .gte("attempted_at", lockoutCutoff);
-
-    if (recentAttempts && recentAttempts.length >= MAX_LOGIN_ATTEMPTS) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `너무 많은 로그인 시도입니다. ${LOCKOUT_MINUTES}분 후에 다시 시도해주세요.`,
-          locked: true 
-        }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // --- Verify PIN ---
-    const { data: settings, error: settingsErr } = await supabase
-      .from("admin_settings")
-      .select("pin_hash")
-      .eq("id", "default")
-      .single();
-
-    if (settingsErr || !settings) {
-      return new Response(
-        JSON.stringify({ success: false, error: "설정을 불러올 수 없습니다" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (pin !== settings.pin_hash) {
-      // Log failed attempt
-      await supabase.from("admin_login_attempts").insert({
-        ip_hint: ipHint,
-        success: false,
-      });
-
-      // Count remaining attempts
-      const { data: updatedAttempts } = await supabase
-        .from("admin_login_attempts")
-        .select("id")
-        .eq("ip_hint", ipHint)
-        .eq("success", false)
-        .gte("attempted_at", lockoutCutoff);
-
-      const remaining = MAX_LOGIN_ATTEMPTS - (updatedAttempts?.length || 0);
-
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: remaining > 0 
-            ? `PIN이 일치하지 않습니다 (${remaining}회 남음)` 
-            : `너무 많은 로그인 시도입니다. ${LOCKOUT_MINUTES}분 후에 다시 시도해주세요.`,
-          locked: remaining <= 0,
-        }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Log successful attempt (resets lockout for this IP)
-    await supabase.from("admin_login_attempts").insert({
-      ip_hint: ipHint,
-      success: true,
-    });
+    const { action, data } = body;
 
     // --- Handle actions ---
     let result;
 
     switch (action) {
-      case "verify": {
-        return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
       case "insert": {
         const { error } = await supabase.from("restaurants").insert(data);
         if (error) throw error;
@@ -164,22 +134,6 @@ Deno.serve(async (req) => {
         break;
       }
 
-      case "change_pin": {
-        const { new_pin } = data;
-        if (!new_pin || new_pin.length < 4 || new_pin.length > 8) {
-          return new Response(
-            JSON.stringify({ success: false, error: "PIN은 4~8자리여야 합니다" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        const { error } = await supabase
-          .from("admin_settings")
-          .update({ pin_hash: new_pin, updated_at: new Date().toISOString() })
-          .eq("id", "default");
-        if (error) throw error;
-        result = { success: true };
-        break;
-      }
 
       case "list_tips": {
         const { data: tips, error } = await supabase
@@ -378,12 +332,12 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            // Step 2: Get Place Details (up to 5 photos)
+            // Step 2: Get Place Details (up to 10 photos for better selection)
             const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${googleApiKey}`;
             const detailsRes = await fetch(detailsUrl);
             const detailsData = await detailsRes.json();
             const photoRefs: string[] = (detailsData.result?.photos ?? [])
-              .slice(0, 5)
+              .slice(0, 10)
               .map((p: any) => p.photo_reference)
               .filter(Boolean);
             if (photoRefs.length === 0) {
@@ -391,27 +345,35 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            // Step 3: Collect up to 3 face-free photos
-            const chosenPhotos: { buf: ArrayBuffer; ct: string }[] = [];
+            // Step 3: Analyze photos - skip faces, score by signage/exterior
+            const candidates: { buf: ArrayBuffer; ct: string; score: number }[] = [];
             for (const photoRef of photoRefs) {
-              if (chosenPhotos.length >= 3) break;
+              if (candidates.length >= 8) break; // analyze up to 8
               const photoFetchUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${googleApiKey}`;
               const photoRes = await fetch(photoFetchUrl);
               if (!photoRes.ok) continue;
               const buf = await photoRes.arrayBuffer();
               const ct = photoRes.headers.get("content-type") || "image/jpeg";
-              if (await hasFaces(buf, googleApiKey)) continue;
-              chosenPhotos.push({ buf, ct });
+              const { hasFaces, signageScore } = await analyzeImage(buf, googleApiKey);
+              if (hasFaces) continue; // skip faces
+              candidates.push({ buf, ct, score: signageScore });
             }
+            if (candidates.length === 0) {
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "얼굴 없는 사진 없음" });
+              continue;
+            }
+            // Sort: signage/exterior first (score desc), then pick top 3
+            candidates.sort((a, b) => b.score - a.score);
+            const chosenPhotos = candidates.slice(0, 3);
             if (chosenPhotos.length === 0) {
               results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "얼굴 없는 사진 없음" });
               continue;
             }
 
-            // Step 4: Upload all chosen photos to Supabase Storage
+            // Step 4: Upload all chosen photos to Supabase Storage (always overwrite for this restaurant)
             const publicUrls: string[] = [];
             for (let i = 0; i < chosenPhotos.length; i++) {
-              const { buf, ct } = chosenPhotos[i];
+              const { buf, ct } = chosenPhotos[i] as { buf: ArrayBuffer; ct: string; score: number };
               const ext = ct.includes("png") ? "png" : "jpg";
               const filePath = i === 0 ? `${restaurant.id}.${ext}` : `${restaurant.id}_${i}.${ext}`;
               const { error: uploadErr } = await supabase.storage
@@ -505,7 +467,7 @@ Deno.serve(async (req) => {
 
             for (const item of items) {
               if (chosenNaverPhotos.length >= 3) break;
-              const candidate = item.thumbnail || item.link;
+              const candidate = item.link || item.thumbnail;
               if (!candidate || (!candidate.startsWith("http://") && !candidate.startsWith("https://"))) continue;
 
               const imgRes = await fetch(candidate, {
@@ -519,9 +481,12 @@ Deno.serve(async (req) => {
               if (!ct.includes("image")) continue;
 
               const buf = await imgRes.arrayBuffer();
-              if (naverGoogleApiKey && await hasFaces(buf, naverGoogleApiKey)) {
-                console.log(`${restaurant.name}: 얼굴 감지됨, 다음 이미지로`);
-                continue;
+              if (naverGoogleApiKey) {
+                const { hasFaces } = await analyzeImage(buf, naverGoogleApiKey);
+                if (hasFaces) {
+                  console.log(`${restaurant.name}: 얼굴 감지됨, 다음 이미지로`);
+                  continue;
+                }
               }
               chosenNaverPhotos.push({ buf, ct });
             }
@@ -577,6 +542,34 @@ Deno.serve(async (req) => {
         break;
       }
 
+      // === Category ID 변경 (트랜잭션) ===
+      case "category_rename": {
+        const { old_id, new_id, label, emoji, id_prefix, tag_placeholder, tag_suggestions, sort_order } = data;
+        // 1. 새 카테고리 insert
+        const { error: insertErr } = await supabase.from("categories").insert({
+          id: new_id, label, emoji, id_prefix, tag_placeholder, tag_suggestions, sort_order,
+        });
+        if (insertErr) throw insertErr;
+        // 2. 식당 일괄 이동
+        const { error: updateErr } = await supabase
+          .from("restaurants")
+          .update({ category: new_id })
+          .eq("category", old_id);
+        if (updateErr) {
+          await supabase.from("categories").delete().eq("id", new_id);
+          throw updateErr;
+        }
+        // 3. 구 카테고리 삭제
+        const { error: deleteErr } = await supabase.from("categories").delete().eq("id", old_id);
+        if (deleteErr) {
+          await supabase.from("restaurants").update({ category: old_id }).eq("category", new_id);
+          await supabase.from("categories").delete().eq("id", new_id);
+          throw deleteErr;
+        }
+        result = { success: true };
+        break;
+      }
+
       // === Category Management ===
       case "category_insert": {
         const { error } = await supabase.from("categories").insert(data);
@@ -601,44 +594,47 @@ Deno.serve(async (req) => {
       }
 
       case "upload_image": {
-        const { restaurant_id, base64, content_type, file_ext } = data;
+        const { restaurant_id, base64, content_type, file_ext, slot } = data;
         if (!restaurant_id || !base64) throw new Error("restaurant_id and base64 are required");
 
-        const filePath = `${restaurant_id}.${file_ext || "jpg"}`;
-        const buffer = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        // 안전한 base64 디코드
+        const binaryStr = atob(base64);
+        const buffer = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) buffer[i] = binaryStr.charCodeAt(i);
 
-        // Face detection check
-        const uploadGoogleKey = Deno.env.get("GOOGLE_PLACES_API_KEY");
-        if (uploadGoogleKey && await hasFaces(buffer.buffer, uploadGoogleKey)) {
-          return new Response(
-            JSON.stringify({ success: false, error: "사람 얼굴이 포함된 사진은 업로드할 수 없습니다" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+        const ext = file_ext || "jpg";
+        const isPrimary = !slot || slot === 0;
+        // 추가 사진은 타임스탬프로 고유 파일명 생성
+        const filePath = isPrimary
+          ? `${restaurant_id}.${ext}`
+          : `${restaurant_id}_u${Date.now()}.${ext}`;
 
-        // Delete existing image if any
-        await supabase.storage.from("restaurant-images").remove([filePath]);
-        
         const { error: uploadErr } = await supabase.storage
           .from("restaurant-images")
-          .upload(filePath, buffer, {
-            contentType: content_type || "image/jpeg",
-            upsert: true,
-          });
+          .upload(filePath, buffer, { contentType: content_type || "image/jpeg", upsert: true });
         if (uploadErr) throw uploadErr;
-        
-        const { data: urlData } = supabase.storage
-          .from("restaurant-images")
-          .getPublicUrl(filePath);
-        
-        // Update restaurant image_url
+
+        const { data: urlData } = supabase.storage.from("restaurant-images").getPublicUrl(filePath);
+        const publicUrl = urlData.publicUrl;
+
+        // 현재 식당 이미지 상태 조회
+        const { data: curRest } = await supabase
+          .from("restaurants").select("image_url, extra_images").eq("id", restaurant_id).single();
+
+        let updateFields: Record<string, unknown>;
+        if (isPrimary) {
+          updateFields = { image_url: publicUrl };
+        } else {
+          const extras: string[] = curRest?.extra_images ?? [];
+          if (extras.length >= 4) throw new Error("추가 사진은 최대 4장(총 5장)까지 등록 가능합니다.");
+          updateFields = { extra_images: [...extras, publicUrl] };
+        }
+
         const { error: updateErr } = await supabase
-          .from("restaurants")
-          .update({ image_url: urlData.publicUrl })
-          .eq("id", restaurant_id);
+          .from("restaurants").update(updateFields).eq("id", restaurant_id);
         if (updateErr) throw updateErr;
-        
-        result = { success: true, image_url: urlData.publicUrl };
+
+        result = { success: true, image_url: isPrimary ? publicUrl : undefined, extra_images: isPrimary ? undefined : [...(curRest?.extra_images ?? []), publicUrl] };
         break;
       }
 
