@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Restaurant } from "@/hooks/useRestaurants";
@@ -139,6 +139,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
   const kakaoOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const kakaoNameOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
   const kakaoClustererRef = useRef<any>(null);
+  const prevMarkerStateRef = useRef<{ ids: string; selectedId: string | null; mapVersion: number } | null>(null);
 
   const leafMapRef = useRef<L.Map | null>(null);
   const leafMarkersRef = useRef<L.Marker[]>([]);
@@ -247,6 +248,18 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     if (mode !== "kakao") return;
     const map = kakaoMapRef.current;
     if (!map) return;
+
+    // 실제 변경이 없으면 마커 재생성 건너뜀 (참조만 바뀐 경우)
+    const currentIds = restaurants.map((r) => r.id).join(",");
+    const prev = prevMarkerStateRef.current;
+    if (
+      prev &&
+      prev.ids === currentIds &&
+      prev.selectedId === selectedId &&
+      prev.mapVersion === mapVersion &&
+      kakaoClustererRef.current
+    ) return;
+    prevMarkerStateRef.current = { ids: currentIds, selectedId, mapVersion };
 
     kakaoMarkersRef.current.forEach((m) => m.setMap(null));
     kakaoMarkersRef.current = [];
@@ -433,4 +446,16 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
   );
 };
 
-export default MapView;
+const arePropsEqual = (prev: MapViewProps, next: MapViewProps) => {
+  if (prev.selectedId !== next.selectedId) return false;
+  if (prev.visitedIds !== next.visitedIds) return false;
+  if (prev.isDarkMode !== next.isDarkMode) return false;
+  if (prev.city !== next.city) return false;
+  if (prev.onSelect !== next.onSelect) return false;
+  const a = prev.restaurants, b = next.restaurants;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i].id !== b[i].id) return false;
+  return true;
+};
+
+export default memo(MapView, arePropsEqual);
