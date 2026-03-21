@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
@@ -86,8 +87,7 @@ const Admin = () => {
   const [tipsLoading, setTipsLoading] = useState(false);
   const [tipsTab, setTipsTab] = useState<"tips" | "feedback">("tips");
   const [showNoImage, setShowNoImage] = useState(false);
-  const [fetchingImageId, setFetchingImageId] = useState<string | null>(null);
-  const [fetchingAllImages, setFetchingAllImages] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [fetchingNaverImageId, setFetchingNaverImageId] = useState<string | null>(null);
   const [fetchingAllNaverImages, setFetchingAllNaverImages] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState("");
@@ -283,38 +283,6 @@ const Admin = () => {
     setSaving(false);
   };
 
-  const handleFetchImage = async (id: string) => {
-    setFetchingImageId(id);
-    try {
-      const res = await adminApi("fetch_restaurant_images", { id });
-      const r = res.results?.[0];
-      if (r?.success) {
-        toast({ title: "이미지 가져오기 완료 ✅" });
-        fetchAll();
-      } else {
-        toast({ title: "이미지 없음", description: r?.error || "Google Places에서 사진을 찾을 수 없습니다", variant: "destructive" });
-      }
-    } catch (err: any) {
-      toast({ title: "오류", description: err.message, variant: "destructive" });
-    }
-    setFetchingImageId(null);
-  };
-
-  const handleFetchAllImages = async () => {
-    if (!confirm(`"${adminCategory}" 카테고리에서 이미지가 없는 식당의 사진을 Google Places에서 가져옵니다. 계속하시겠습니까?`)) return;
-    setFetchingAllImages(true);
-    try {
-      const res = await adminApi("fetch_restaurant_images", { category: adminCategory });
-      const ok = res.results?.filter((r: any) => r.success).length ?? 0;
-      const fail = res.results?.filter((r: any) => !r.success).length ?? 0;
-      toast({ title: `완료: ${ok}개 성공, ${fail}개 실패` });
-      fetchAll();
-    } catch (err: any) {
-      toast({ title: "오류", description: err.message, variant: "destructive" });
-    }
-    setFetchingAllImages(false);
-  };
-
   const handleFetchNaverImage = async (id: string) => {
     setFetchingNaverImageId(id);
     try {
@@ -362,14 +330,17 @@ const Admin = () => {
     setSavingImageUrl(false);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`"${name}" 을(를) 삭제하시겠습니까?`)) return;
+  const handleDelete = async () => {
+    if (!pendingDeleteId) return;
+    const id = pendingDeleteId;
+    setPendingDeleteId(null);
+    setRestaurants(prev => prev.filter(r => r.id !== id));
     try {
       await adminApi("delete", { id });
       toast({ title: "삭제 완료 ✅" });
-      fetchAll();
     } catch (err: any) {
       toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
+      fetchAll();
     }
   };
 
@@ -596,23 +567,12 @@ const Admin = () => {
               variant="outline"
               size="sm"
               className="shrink-0 h-10 text-xs px-3"
-              onClick={handleFetchAllImages}
-              disabled={fetchingAllImages}
-              title="이미지 없는 식당 사진 일괄 가져오기 (Google)"
-            >
-              {fetchingAllImages ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Image className="h-3.5 w-3.5 mr-1" />}
-              이미지(G)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0 h-10 text-xs px-3"
               onClick={handleFetchAllNaverImages}
               disabled={fetchingAllNaverImages}
               title="이미지 없는 식당 사진 일괄 가져오기 (네이버)"
             >
               {fetchingAllNaverImages ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}
-              이미지(N)
+              이미지
             </Button>
             <Button onClick={openNew} size="sm" className="shrink-0 h-10 text-xs px-3">
               <Plus className="h-3.5 w-3.5 mr-1" /> 추가
@@ -1144,20 +1104,6 @@ const Admin = () => {
                             variant="outline"
                             size="sm"
                             className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
-                            title="Google 사진 가져오기"
-                            disabled={fetchingImageId === r.id}
-                            onClick={() => handleFetchImage(r.id)}
-                          >
-                            {fetchingImageId === r.id
-                              ? <Loader2 className="h-3 w-3 animate-spin" />
-                              : <Image className="h-3 w-3" />
-                            }
-                            <span>G</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
                             title="네이버 사진 가져오기"
                             disabled={fetchingNaverImageId === r.id}
                             onClick={() => handleFetchNaverImage(r.id)}
@@ -1166,7 +1112,7 @@ const Admin = () => {
                               ? <Loader2 className="h-3 w-3 animate-spin" />
                               : <Search className="h-3 w-3" />
                             }
-                            <span>N</span>
+                            <span>이미지</span>
                           </Button>
                           <Button
                             variant="outline"
@@ -1181,7 +1127,7 @@ const Admin = () => {
                             variant="outline"
                             size="sm"
                             className="h-7 px-2 text-[11px] gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
-                            onClick={() => handleDelete(r.id, r.name)}
+                            onClick={() => setPendingDeleteId(r.id)}
                           >
                             <Trash2 className="h-3 w-3" />
                             <span>삭제</span>
@@ -1198,6 +1144,22 @@ const Admin = () => {
             )}
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>식당을 삭제하시겠습니까?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {restaurants.find(r => r.id === pendingDeleteId)?.name} - 삭제 후 복구할 수 없습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">삭제</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Tips Modal */}
         {showTips && (

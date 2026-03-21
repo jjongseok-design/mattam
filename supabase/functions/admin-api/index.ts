@@ -6,56 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-
-// Signage/exterior labels to prioritize (higher score = more likely exterior/signage shot)
-const SIGNAGE_LABELS = ["signage", "sign", "facade", "storefront", "building", "restaurant", "font", "brand", "logo", "text", "banner", "outdoor", "exterior"];
-const FOOD_LABELS = ["food", "dish", "cuisine", "meal", "ingredient", "recipe", "tableware"];
-
-// Analyzes an image with Vision API.
-// Returns { hasFaces, signageScore }
-// signageScore: 2 = clear signage, 1 = food/interior, 0 = other
-// Fails open on API error.
-async function analyzeImage(imageBuffer: ArrayBuffer, googleApiKey: string): Promise<{ hasFaces: boolean; signageScore: number }> {
-  try {
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
-    const visionRes = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${googleApiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requests: [{
-            image: { content: base64 },
-            features: [
-              { type: "FACE_DETECTION", maxResults: 1 },
-              { type: "LABEL_DETECTION", maxResults: 10 },
-            ],
-          }],
-        }),
-      }
-    );
-    if (!visionRes.ok) {
-      console.warn("Vision API error:", visionRes.status);
-      return { hasFaces: false, signageScore: 1 };
-    }
-    const visionData = await visionRes.json();
-    const res = visionData.responses?.[0];
-    const faces = res?.faceAnnotations ?? [];
-    if (faces.length > 0) {
-      console.log(`Face detected (${faces.length}명), 이미지 제외`);
-      return { hasFaces: true, signageScore: 0 };
-    }
-    const labels: string[] = (res?.labelAnnotations ?? []).map((l: any) => l.description?.toLowerCase() ?? "");
-    const isSignage = labels.some(l => SIGNAGE_LABELS.includes(l));
-    const isFood = labels.some(l => FOOD_LABELS.includes(l));
-    const signageScore = isSignage ? 2 : isFood ? 1 : 0;
-    return { hasFaces: false, signageScore };
-  } catch (e) {
-    console.warn("analyzeImage failed (fail open):", e);
-    return { hasFaces: false, signageScore: 1 };
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -289,124 +239,6 @@ Deno.serve(async (req) => {
         break;
       }
 
-      case "fetch_restaurant_images": {
-        const googleApiKey = Deno.env.get("GOOGLE_PLACES_API_KEY");
-        if (!googleApiKey) {
-          throw new Error("GOOGLE_PLACES_API_KEY가 Supabase 시크릿에 설정되지 않았습니다");
-        }
-
-        // Determine targets: specific ID, category, or all without images
-        let targets: { id: string; name: string; address: string }[] = [];
-        if (data?.id) {
-          const { data: rests } = await supabase
-            .from("restaurants")
-            .select("id,name,address")
-            .eq("id", data.id);
-          targets = rests ?? [];
-        } else if (data?.category) {
-          const { data: rests } = await supabase
-            .from("restaurants")
-            .select("id,name,address")
-            .eq("category", data.category)
-            .is("image_url", null);
-          targets = rests ?? [];
-        } else {
-          const { data: rests } = await supabase
-            .from("restaurants")
-            .select("id,name,address")
-            .is("image_url", null);
-          targets = rests ?? [];
-        }
-
-        const results: { id: string; name: string; success: boolean; error?: string }[] = [];
-
-        for (const restaurant of targets) {
-          try {
-            // Step 1: Find Place
-            const findUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(restaurant.name + " 춘천")}&inputtype=textquery&fields=place_id&key=${googleApiKey}`;
-            const findRes = await fetch(findUrl);
-            const findData = await findRes.json();
-            const placeId = findData.candidates?.[0]?.place_id;
-            if (!placeId) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "장소를 찾을 수 없음" });
-              continue;
-            }
-
-            // Step 2: Get Place Details (up to 10 photos for better selection)
-            const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${googleApiKey}`;
-            const detailsRes = await fetch(detailsUrl);
-            const detailsData = await detailsRes.json();
-            const photoRefs: string[] = (detailsData.result?.photos ?? [])
-              .slice(0, 10)
-              .map((p: any) => p.photo_reference)
-              .filter(Boolean);
-            if (photoRefs.length === 0) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "사진 없음" });
-              continue;
-            }
-
-            // Step 3: Analyze photos - skip faces, score by signage/exterior
-            const candidates: { buf: ArrayBuffer; ct: string; score: number }[] = [];
-            for (const photoRef of photoRefs) {
-              if (candidates.length >= 8) break; // analyze up to 8
-              const photoFetchUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${googleApiKey}`;
-              const photoRes = await fetch(photoFetchUrl);
-              if (!photoRes.ok) continue;
-              const buf = await photoRes.arrayBuffer();
-              const ct = photoRes.headers.get("content-type") || "image/jpeg";
-              const { hasFaces, signageScore } = await analyzeImage(buf, googleApiKey);
-              if (hasFaces) continue; // skip faces
-              candidates.push({ buf, ct, score: signageScore });
-            }
-            if (candidates.length === 0) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "얼굴 없는 사진 없음" });
-              continue;
-            }
-            // Sort: signage/exterior first (score desc), then pick top 3
-            candidates.sort((a, b) => b.score - a.score);
-            const chosenPhotos = candidates.slice(0, 3);
-            if (chosenPhotos.length === 0) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "얼굴 없는 사진 없음" });
-              continue;
-            }
-
-            // Step 4: Upload all chosen photos to Supabase Storage (always overwrite for this restaurant)
-            const publicUrls: string[] = [];
-            for (let i = 0; i < chosenPhotos.length; i++) {
-              const { buf, ct } = chosenPhotos[i] as { buf: ArrayBuffer; ct: string; score: number };
-              const ext = ct.includes("png") ? "png" : "jpg";
-              const filePath = i === 0 ? `${restaurant.id}.${ext}` : `${restaurant.id}_${i}.${ext}`;
-              const { error: uploadErr } = await supabase.storage
-                .from("restaurant-images")
-                .upload(filePath, buf, { contentType: ct, upsert: true });
-              if (uploadErr) continue;
-              const { data: urlData } = supabase.storage
-                .from("restaurant-images")
-                .getPublicUrl(filePath);
-              publicUrls.push(urlData.publicUrl);
-            }
-            if (publicUrls.length === 0) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "업로드 실패" });
-              continue;
-            }
-
-            // Step 5: Update restaurant (first = image_url, rest = extra_images)
-            await supabase
-              .from("restaurants")
-              .update({ image_url: publicUrls[0], extra_images: publicUrls.slice(1) })
-              .eq("id", restaurant.id);
-
-            results.push({ id: restaurant.id, name: restaurant.name, success: true, count: publicUrls.length });
-          } catch (e: any) {
-            console.error("Image fetch error for", restaurant.name, e);
-            results.push({ id: restaurant.id, name: restaurant.name, success: false, error: e.message });
-          }
-        }
-
-        result = { success: true, results };
-        break;
-      }
-
       case "fetch_naver_images": {
         const naverClientId = Deno.env.get("NAVER_CLIENT_ID");
         const naverClientSecret = Deno.env.get("NAVER_CLIENT_SECRET");
@@ -461,8 +293,7 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            // Step 2~3: 각 후보 이미지를 순서대로 시도, 얼굴 없는 최대 3장 수집
-            const naverGoogleApiKey = Deno.env.get("GOOGLE_PLACES_API_KEY");
+            // Step 2~3: 각 후보 이미지를 순서대로 시도, 최대 3장 수집
             const chosenNaverPhotos: { buf: ArrayBuffer; ct: string }[] = [];
 
             for (const item of items) {
@@ -481,13 +312,6 @@ Deno.serve(async (req) => {
               if (!ct.includes("image")) continue;
 
               const buf = await imgRes.arrayBuffer();
-              if (naverGoogleApiKey) {
-                const { hasFaces } = await analyzeImage(buf, naverGoogleApiKey);
-                if (hasFaces) {
-                  console.log(`${restaurant.name}: 얼굴 감지됨, 다음 이미지로`);
-                  continue;
-                }
-              }
               chosenNaverPhotos.push({ buf, ct });
             }
 
