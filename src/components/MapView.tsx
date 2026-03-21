@@ -19,8 +19,7 @@ function ensureKakaoMapsReady(appKey: string): Promise<void> {
   if (_kakaoReadyPromise) return _kakaoReadyPromise;
   _kakaoReadyPromise = new Promise<void>((resolve, reject) => {
     if (window.kakao?.maps) { kakao.maps.load(() => resolve()); return; }
-    const TIMEOUT = 10_000;
-    const timer = window.setTimeout(() => { reject("카카오 SDK 로드 타임아웃"); _kakaoReadyPromise = null; }, TIMEOUT);
+    const timer = window.setTimeout(() => { reject("카카오 SDK 타임아웃"); _kakaoReadyPromise = null; }, 10_000);
     const onLoad = () => {
       window.clearTimeout(timer);
       if (!window.kakao?.maps) { reject("카카오 SDK 초기화 실패"); _kakaoReadyPromise = null; return; }
@@ -53,17 +52,15 @@ interface MapViewProps {
   city?: City | null;
 }
 
+// Leaflet emoji 아이콘
 const makeEmojiIcon = (emoji: string, isSelected: boolean, isVisited: boolean) => {
   const size = isSelected ? 40 : 32;
   const bg = isSelected ? "#f97316" : isVisited ? "#16a34a" : "#ffffff";
   const border = isSelected ? "#ea580c" : isVisited ? "#15803d" : "#e2e8f0";
   const shadow = isSelected ? "0 2px 8px rgba(249,115,22,0.5)" : "0 1px 4px rgba(0,0,0,0.2)";
   return L.divIcon({
-    html: `<div style="width:${size}px;height:${size}px;background:${bg};border:2px solid ${border};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${isSelected ? 20 : 16}px;box-shadow:${shadow};transition:all .15s;">${emoji}</div>`,
-    className: "",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -(size / 2) - 4],
+    html: `<div style="width:${size}px;height:${size}px;background:${bg};border:2px solid ${border};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${isSelected ? 20 : 16}px;box-shadow:${shadow};">${emoji}</div>`,
+    className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2], popupAnchor: [0, -(size / 2) - 4],
   });
 };
 
@@ -74,7 +71,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// 마커 이미지 URL
 const IMG_DEFAULT = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
 const IMG_VISITED = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png";
 
@@ -89,30 +85,13 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
   const cityId = city?.id ?? "";
   const cityLabel = city?.name ?? "";
 
-  // refs — 이벤트 핸들러 stale 클로저 방지
-  const mapCenterRef = useRef(mapCenter);
   const mapBoundsSWRef = useRef(mapBoundsSW);
   const mapBoundsNERef = useRef(mapBoundsNE);
-  const restaurantsRef = useRef(restaurants);
-
-  useEffect(() => {
-    mapCenterRef.current = mapCenter;
-    mapBoundsSWRef.current = mapBoundsSW;
-    mapBoundsNERef.current = mapBoundsNE;
-  }, [mapCenter, mapBoundsSW, mapBoundsNE]);
-
-  useEffect(() => { restaurantsRef.current = restaurants; }, [restaurants]);
+  useEffect(() => { mapBoundsSWRef.current = mapBoundsSW; mapBoundsNERef.current = mapBoundsNE; }, [mapBoundsSW, mapBoundsNE]);
 
   const kakaoMapRef = useRef<kakao.maps.Map | null>(null);
-
-  // 마커/오버레이를 ID별로 관리
-  const markersRef = useRef<Map<string, kakao.maps.Marker>>(new Map());
-  const nameOverlaysRef = useRef<Map<string, kakao.maps.CustomOverlay>>(new Map());
-  const selectedOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
-
-  // 이전 상태 추적
-  const prevIdsRef = useRef<string>("");
-  const prevSelectedIdRef = useRef<string | null>(null);
+  const kakaoMarkersRef = useRef<kakao.maps.Marker[]>([]);
+  const kakaoOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
 
   const leafMapRef = useRef<L.Map | null>(null);
   const leafMarkersRef = useRef<L.Marker[]>([]);
@@ -126,202 +105,138 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     setMode("leaflet");
     if (!fallbackNotified.current) {
       fallbackNotified.current = true;
-      setTimeout(() => {
-        toast({ title: "🗺️ 기본 지도로 전환되었습니다", description: `카카오맵 대신 기본 지도를 표시합니다. (${reason})` });
-      }, 500);
+      setTimeout(() => toast({ title: "🗺️ 기본 지도로 전환", description: reason }), 500);
     }
   }, [toast]);
 
-  // 카카오맵 SDK 로드
+  // ── 카카오 SDK 로드 ──────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     ensureKakaoMapsReady(KAKAO_APP_KEY)
       .then(() => { if (!cancelled) setMode("kakao"); })
-      .catch((reason: string) => { if (!cancelled) handleFallback(reason); });
+      .catch((r: string) => { if (!cancelled) handleFallback(r); });
     return () => { cancelled = true; };
   }, [handleFallback]);
 
-  // 맵 최초 1회 생성 (mode === "kakao"일 때만)
+  // ── 카카오맵 최초 1회 생성 ────────────────────────────────────────────────
   useEffect(() => {
     if (mode !== "kakao" || !containerRef.current || kakaoMapRef.current) return;
 
-    const mc = mapCenterRef.current;
     const map = new kakao.maps.Map(containerRef.current, {
-      center: new kakao.maps.LatLng(mc.lat, mc.lng),
+      center: new kakao.maps.LatLng(mapCenter.lat, mapCenter.lng),
       level: 7,
     });
     kakaoMapRef.current = map;
 
     // 도시 경계 이탈 방지
-    const clampToCity = () => {
+    const clamp = () => {
       const c = map.getCenter();
-      const sw = mapBoundsSWRef.current;
-      const ne = mapBoundsNERef.current;
-      const lat = c.getLat(), lng = c.getLng();
-      if (lat < sw.lat || lat > ne.lat || lng < sw.lng || lng > ne.lng) {
-        map.setCenter(new kakao.maps.LatLng(
-          Math.max(sw.lat, Math.min(ne.lat, lat)),
-          Math.max(sw.lng, Math.min(ne.lng, lng))
-        ));
-      }
+      const sw = mapBoundsSWRef.current, ne = mapBoundsNERef.current;
+      const lat = Math.max(sw.lat, Math.min(ne.lat, c.getLat()));
+      const lng = Math.max(sw.lng, Math.min(ne.lng, c.getLng()));
+      if (lat !== c.getLat() || lng !== c.getLng()) map.setCenter(new kakao.maps.LatLng(lat, lng));
     };
-    kakao.maps.event.addListener(map, "dragend", clampToCity);
-    kakao.maps.event.addListener(map, "idle", clampToCity);
+    kakao.maps.event.addListener(map, "dragend", clamp);
 
-    return () => {
-      kakaoMapRef.current = null;
-    };
+    return () => { kakaoMapRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
-  // city 변경 시만 지도 중심 이동 (원시값 비교 → 카테고리 변경 시 재실행 안 함)
-  useEffect(() => {
-    const map = kakaoMapRef.current;
-    if (!map || mode !== "kakao") return;
-    map.setCenter(new kakao.maps.LatLng(mapCenter.lat, mapCenter.lng));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, mapCenter.lat, mapCenter.lng]);
-
-  // ─── 카카오 마커 이펙트 ──────────────────────────────────────────────────
+  // ── 카카오 마커 전체 재생성 ───────────────────────────────────────────────
+  // restaurants 또는 selectedId 가 바뀔 때마다 마커를 완전히 지우고 다시 그린다.
+  // 단순하고 확실한 방식 — 선택적 업데이트 없음.
   useEffect(() => {
     if (mode !== "kakao") return;
     const map = kakaoMapRef.current;
     if (!map) return;
 
-    const defaultImage = new kakao.maps.MarkerImage(IMG_DEFAULT, new kakao.maps.Size(24, 35));
-    const selectedImage = new kakao.maps.MarkerImage(IMG_DEFAULT, new kakao.maps.Size(32, 46));
-    const visitedImage = new kakao.maps.MarkerImage(IMG_VISITED, new kakao.maps.Size(24, 35));
+    // 기존 마커/오버레이 제거
+    kakaoMarkersRef.current.forEach(m => m.setMap(null));
+    kakaoMarkersRef.current = [];
+    kakaoOverlaysRef.current.forEach(o => o.setMap(null));
+    kakaoOverlaysRef.current = [];
 
-    const buildNameOverlay = (r: Restaurant, pos: kakao.maps.LatLng, isVisited: boolean) => {
-      const bg = isVisited ? "#16a34a" : "white";
-      const color = isVisited ? "white" : "#222";
-      const border = isVisited ? "none" : "1px solid rgba(0,0,0,0.12)";
-      return new kakao.maps.CustomOverlay({
-        content: `<div style="background:${bg};color:${color};border:${border};border-radius:5px;padding:2px 7px;font-size:11px;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,0.18);white-space:nowrap;pointer-events:none;">${r.name}</div>`,
-        position: pos, map, yAnchor: 2.8, xAnchor: 0.5,
+    const imgDefault = new kakao.maps.MarkerImage(IMG_DEFAULT, new kakao.maps.Size(24, 35));
+    const imgSelected = new kakao.maps.MarkerImage(IMG_DEFAULT, new kakao.maps.Size(36, 52));
+    const imgVisited = new kakao.maps.MarkerImage(IMG_VISITED, new kakao.maps.Size(24, 35));
+
+    let selectedRestaurant: Restaurant | null = null;
+
+    restaurants.forEach(r => {
+      const isSelected = r.id === selectedId;
+      const isVisited = visitedIds.has(r.id);
+      const pos = new kakao.maps.LatLng(r.lat, r.lng);
+
+      // 마커 생성 — 모두 map에 직접 추가
+      const marker = new kakao.maps.Marker({
+        position: pos,
+        map,
+        image: isSelected ? imgSelected : isVisited ? imgVisited : imgDefault,
+        zIndex: isSelected ? 10 : isVisited ? 5 : 1,
       });
-    };
+      kakao.maps.event.addListener(marker, "click", () => onSelect(r.id));
+      kakaoMarkersRef.current.push(marker);
 
-    const buildSelectedOverlay = (r: Restaurant, pos: kakao.maps.LatLng, isVisited: boolean) => {
-      const detailUrl = cityId ? `/${cityId}/restaurant/${r.slug}` : null;
-      const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px;">✓ 방문</span>` : "";
-      const ratingEl = r.rating ? `<span style="font-size:11px;color:#f97316;margin-left:4px;">★ ${r.rating.toFixed(1)}</span>` : "";
-      const nameEl = detailUrl
-        ? `<a href="${detailUrl}" style="text-decoration:none;font-weight:700;color:#111;font-size:14px;">${r.name}</a>`
-        : `<span style="font-weight:700;color:#111;font-size:14px;">${r.name}</span>`;
-      const hint = detailUrl ? `<div style="font-size:11px;color:#2563eb;margin-top:4px;font-weight:500;">▶ 탭하면 상세보기</div>` : "";
-      return new kakao.maps.CustomOverlay({
-        content: `<div style="padding:10px 14px;background:white;border-radius:10px;box-shadow:0 3px 12px rgba(0,0,0,0.18);min-width:150px;"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${nameEl}${visitedBadge}${ratingEl}</div>${hint}</div>`,
-        position: pos, map, yAnchor: 1.4, xAnchor: 0.5,
-      });
-    };
-
-    const currentIds = restaurants.map(r => r.id).join(",");
-    const restaurantsChanged = prevIdsRef.current !== currentIds;
-    const selectedChanged = prevSelectedIdRef.current !== selectedId;
-
-    if (restaurantsChanged) {
-      // ── 식당 목록 변경 시 전체 재생성 ──
-      prevIdsRef.current = currentIds;
-
-      // 기존 마커/오버레이 모두 제거
-      markersRef.current.forEach(m => m.setMap(null));
-      markersRef.current.clear();
-      nameOverlaysRef.current.forEach(o => o.setMap(null));
-      nameOverlaysRef.current.clear();
-      selectedOverlayRef.current?.setMap(null);
-      selectedOverlayRef.current = null;
-
-      // 새 마커 생성 — 모두 직접 map에 추가 (클러스터러 미사용)
-      restaurants.forEach(r => {
-        const isSelected = r.id === selectedId;
-        const isVisited = visitedIds.has(r.id);
-        const pos = new kakao.maps.LatLng(r.lat, r.lng);
-
-        const marker = new kakao.maps.Marker({
-          position: pos,
-          map,                // 모든 마커를 직접 map에 추가
-          image: isSelected ? selectedImage : isVisited ? visitedImage : defaultImage,
-          zIndex: isSelected ? 10 : isVisited ? 5 : 1,
+      if (isSelected) {
+        selectedRestaurant = r;
+        // 선택 팝업 오버레이
+        const detailUrl = cityId ? `/${cityId}/restaurant/${r.slug}` : null;
+        const visitedBadge = isVisited ? `<span style="background:#22c55e;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px;">✓방문</span>` : "";
+        const ratingEl = r.rating ? `<span style="font-size:11px;color:#f97316;margin-left:4px;">★${r.rating.toFixed(1)}</span>` : "";
+        const nameEl = detailUrl
+          ? `<a href="${detailUrl}" style="text-decoration:none;font-weight:700;color:#111;font-size:14px;">${r.name}</a>`
+          : `<span style="font-weight:700;color:#111;font-size:14px;">${r.name}</span>`;
+        const hint = detailUrl ? `<div style="font-size:11px;color:#2563eb;margin-top:4px;font-weight:500;">▶ 탭하면 상세보기</div>` : "";
+        const popup = new kakao.maps.CustomOverlay({
+          content: `<div style="padding:10px 14px;background:#fff;border-radius:10px;box-shadow:0 3px 12px rgba(0,0,0,0.2);min-width:150px;"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">${nameEl}${visitedBadge}${ratingEl}</div>${hint}</div>`,
+          position: pos, map, yAnchor: 1.5, xAnchor: 0.5,
         });
-        kakao.maps.event.addListener(marker, "click", () => onSelect(r.id));
-        markersRef.current.set(r.id, marker);
-
-        if (isSelected) {
-          selectedOverlayRef.current = buildSelectedOverlay(r, pos, isVisited);
-        } else {
-          nameOverlaysRef.current.set(r.id, buildNameOverlay(r, pos, isVisited));
-        }
-      });
-
-    } else if (selectedChanged) {
-      // ── selectedId만 변경 — 해당 마커 2개만 업데이트 (flash 없음) ──
-      const prevSel = prevSelectedIdRef.current;
-
-      // 이전 선택 → 일반으로 복원
-      if (prevSel) {
-        const m = markersRef.current.get(prevSel);
-        const r = restaurants.find(x => x.id === prevSel);
-        if (m && r) {
-          const isVisited = visitedIds.has(prevSel);
-          m.setImage(isVisited ? visitedImage : defaultImage);
-          m.setZIndex(isVisited ? 5 : 1);
-          nameOverlaysRef.current.get(prevSel)?.setMap(null);
-          nameOverlaysRef.current.set(prevSel, buildNameOverlay(r, m.getPosition(), isVisited));
-        }
-        selectedOverlayRef.current?.setMap(null);
-        selectedOverlayRef.current = null;
+        kakaoOverlaysRef.current.push(popup);
+      } else {
+        // 이름 레이블
+        const bg = isVisited ? "#16a34a" : "#fff";
+        const color = isVisited ? "#fff" : "#222";
+        const border = isVisited ? "none" : "1px solid rgba(0,0,0,0.12)";
+        const label = new kakao.maps.CustomOverlay({
+          content: `<div style="background:${bg};color:${color};border:${border};border-radius:5px;padding:2px 7px;font-size:11px;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;pointer-events:none;">${r.name}</div>`,
+          position: pos, map, yAnchor: 2.8, xAnchor: 0.5,
+        });
+        kakaoOverlaysRef.current.push(label);
       }
+    });
 
-      // 새 선택 → 선택 상태로 변경
-      if (selectedId) {
-        const m = markersRef.current.get(selectedId);
-        const r = restaurants.find(x => x.id === selectedId);
-        if (m && r) {
-          const isVisited = visitedIds.has(selectedId);
-          m.setImage(selectedImage);
-          m.setZIndex(10);
-          nameOverlaysRef.current.get(selectedId)?.setMap(null);
-          nameOverlaysRef.current.delete(selectedId);
-          selectedOverlayRef.current = buildSelectedOverlay(r, m.getPosition(), isVisited);
-        }
-      }
+    // 선택된 식당이 있으면 그 위치로 지도 이동
+    if (selectedRestaurant) {
+      const sel = selectedRestaurant as Restaurant;
+      const targetPos = new kakao.maps.LatLng(sel.lat, sel.lng);
+      if (map.getLevel() > 5) map.setLevel(5);
+      map.setCenter(targetPos);
     }
-
-    prevSelectedIdRef.current = selectedId;
   }, [mode, restaurants, selectedId, onSelect, visitedIds, cityId]);
 
-  // 카드 클릭 시 선택된 식당으로 지도 중앙 이동
-  useEffect(() => {
-    if (!selectedId || mode !== "kakao") return;
-    const map = kakaoMapRef.current;
-    if (!map) return;
-    const r = restaurantsRef.current.find(x => x.id === selectedId);
-    if (!r) return;
-    if (map.getLevel() > 5) map.setLevel(5, { animate: true });
-    map.panTo(new kakao.maps.LatLng(r.lat, r.lng));
-  }, [mode, selectedId]);
-
-  // ─── Leaflet 이펙트 ──────────────────────────────────────────────────────
+  // ── Leaflet 맵 최초 생성 ──────────────────────────────────────────────────
   useEffect(() => {
     if (mode !== "leaflet" || !containerRef.current || leafMapRef.current) return;
 
-    const cityBounds = L.latLngBounds(
+    const bounds = L.latLngBounds(
       L.latLng(mapBoundsSW.lat, mapBoundsSW.lng),
       L.latLng(mapBoundsNE.lat, mapBoundsNE.lng)
     );
     const map = L.map(containerRef.current, {
-      maxBounds: cityBounds, maxBoundsViscosity: 1, minZoom: 11, maxZoom: 18,
+      maxBounds: bounds, maxBoundsViscosity: 1, minZoom: 11, maxZoom: 18,
     }).setView([mapCenter.lat, mapCenter.lng] as L.LatLngExpression, mapZoom);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      bounds: cityBounds,
+      bounds,
     }).addTo(map);
     leafMapRef.current = map;
 
     return () => { map.remove(); leafMapRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
+  // ── Leaflet 마커 ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (mode !== "leaflet") return;
     const map = leafMapRef.current;
@@ -333,7 +248,6 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     restaurants.forEach(r => {
       const isSelected = r.id === selectedId;
       const isVisited = visitedIds.has(r.id);
-      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name}${cityLabel ? ` ${cityLabel}` : ""}`)}`;
       const emoji = CATEGORY_EMOJI[r.category] || "🍽️";
       const marker = L.marker([r.lat, r.lng], {
         icon: makeEmojiIcon(emoji, isSelected, isVisited),
@@ -348,15 +262,14 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       }
 
       const detailUrl = cityId ? `/${cityId}/restaurant/${r.slug}` : null;
-      const visitedBadge = isVisited ? `<span style="background:#22c55e;color:white;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;">✓ 방문완료</span>` : "";
-      const nameLink = detailUrl
-        ? `<a href="${detailUrl}" style="text-decoration:none;font-weight:700;color:#111;">${r.name}</a>`
-        : `<span style="font-weight:700;">${r.name}</span>`;
+      const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${r.name}${cityLabel ? ` ${cityLabel}` : ""}`)}`;
+      const visitedBadge = isVisited ? `<span style="background:#22c55e;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;">✓방문</span>` : "";
+      const nameLink = detailUrl ? `<a href="${detailUrl}" style="text-decoration:none;font-weight:700;color:#111;">${r.name}</a>` : `<span style="font-weight:700;">${r.name}</span>`;
       const hint = detailUrl
         ? `<div style="font-size:11px;color:#2563eb;margin-top:3px;font-weight:500;">▶ 탭하면 상세보기</div>`
-        : `<div style="font-size:12px;opacity:.7;margin-top:3px;"><a href="${naverUrl}" target="_blank" rel="noopener noreferrer">네이버지도로 이동</a></div>`;
+        : `<div style="font-size:12px;opacity:.7;margin-top:3px;"><a href="${naverUrl}" target="_blank" rel="noopener">네이버지도로 이동</a></div>`;
       marker.bindPopup(
-        `<div style="min-width:160px;line-height:1.4;"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px;">${nameLink}${visitedBadge}</div>${hint}</div>`,
+        `<div style="min-width:155px;line-height:1.4;"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px;">${nameLink}${visitedBadge}</div>${hint}</div>`,
         { closeButton: false, autoPan: true }
       );
       marker.on("click", () => { onSelect(r.id); marker.openPopup(); });
@@ -365,6 +278,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     });
   }, [mode, restaurants, selectedId, onSelect, visitedIds, cityLabel, cityId]);
 
+  // ── 로딩 화면 ─────────────────────────────────────────────────────────────
   if (mode === "loading") {
     return (
       <div className="h-full w-full flex items-center justify-center bg-muted/30">
@@ -392,12 +306,13 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
   );
 };
 
+// selectedId나 restaurants(ID 기준)가 바뀔 때만 MapView 리렌더
 const arePropsEqual = (prev: MapViewProps, next: MapViewProps) => {
   if (prev.selectedId !== next.selectedId) return false;
-  if (prev.visitedIds !== next.visitedIds) return false;
   if (prev.isDarkMode !== next.isDarkMode) return false;
   if (prev.city !== next.city) return false;
   if (prev.onSelect !== next.onSelect) return false;
+  if (prev.visitedIds !== next.visitedIds) return false;
   const a = prev.restaurants, b = next.restaurants;
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) if (a[i].id !== b[i].id) return false;
