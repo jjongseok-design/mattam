@@ -141,6 +141,16 @@ const Admin = () => {
     setLoading(false);
   }, [toast, adminCityId]);
 
+  // 로딩 스피너 없이 백그라운드 동기화 (작업 후 사용)
+  const silentRefresh = useCallback(async () => {
+    const { data } = await supabase
+      .from("restaurants")
+      .select("*")
+      .eq("city_id", adminCityId)
+      .order("name");
+    if (data) setRestaurants(data as any);
+  }, [adminCityId]);
+
   useEffect(() => {
     if (authenticated) fetchAll();
   }, [authenticated, fetchAll, adminCityId]);
@@ -281,7 +291,7 @@ const Admin = () => {
       toast({ title: editing ? "수정 완료 ✅" : "추가 완료 ✅" });
       setShowForm(false);
       setEditing(null);
-      fetchAll(); // 백그라운드로 최신 데이터 동기화
+      silentRefresh();
     } catch (err: any) {
       toast({ title: "저장 실패", description: err.message, variant: "destructive" });
     }
@@ -295,7 +305,7 @@ const Admin = () => {
       const r = res.results?.[0];
       if (r?.success) {
         toast({ title: "네이버 이미지 가져오기 완료 ✅" });
-        fetchAll();
+        silentRefresh();
       } else {
         toast({ title: "이미지 없음", description: r?.error || "네이버에서 사진을 찾을 수 없습니다", variant: "destructive" });
       }
@@ -313,7 +323,7 @@ const Admin = () => {
       const ok = res.results?.filter((r: any) => r.success).length ?? 0;
       const fail = res.results?.filter((r: any) => !r.success).length ?? 0;
       toast({ title: `완료: ${ok}개 성공, ${fail}개 실패` });
-      fetchAll();
+      silentRefresh();
     } catch (err: any) {
       toast({ title: "오류", description: err.message, variant: "destructive" });
     }
@@ -327,7 +337,10 @@ const Admin = () => {
       if (res.success) {
         const updated = Object.keys(res.updates ?? {}).join(", ");
         toast({ title: `정보 업데이트 완료 ✅`, description: updated || "변경 없음" });
-        fetchAll();
+        if (res.updates && editing?.id === res.id) {
+          setRestaurants(prev => prev.map(r => r.id === res.id ? { ...r, ...res.updates } : r));
+        }
+        silentRefresh();
       } else {
         toast({ title: "정보 없음", description: res.error, variant: "destructive" });
       }
@@ -366,10 +379,12 @@ const Admin = () => {
     setSavingImageUrl(true);
     try {
       await adminApi("update", { id: editing.id, image_url: imageUrlInput.trim() });
-      setEditing({ ...editing, image_url: imageUrlInput.trim() });
+      const newUrl = imageUrlInput.trim();
+      setEditing({ ...editing, image_url: newUrl });
+      setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, image_url: newUrl } : r));
       setImageUrlInput("");
       toast({ title: "이미지 URL 저장 완료 ✅" });
-      fetchAll();
+      silentRefresh();
     } catch (err: any) {
       toast({ title: "저장 실패", description: err.message, variant: "destructive" });
     }
@@ -390,8 +405,9 @@ const Admin = () => {
     try {
       await adminApi("update", { id: editing.id, image_url: newImageUrl, extra_images: newExtraImages });
       setEditing({ ...editing, image_url: newImageUrl, extra_images: newExtraImages });
-      fetchAll();
+      setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, image_url: newImageUrl, extra_images: newExtraImages } : r));
       toast({ title: "사진 순서 변경 완료 ✅" });
+      silentRefresh();
     } catch (err: any) {
       toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
     }
@@ -492,7 +508,7 @@ const Admin = () => {
         });
       }
       invalidateCategories();
-      fetchAll();
+      silentRefresh();
       setShowCatForm(false);
       toast({ title: editingCat ? "카테고리 수정 완료 ✅" : "카테고리 추가 완료 ✅" });
     } catch (err: any) {
@@ -1030,11 +1046,13 @@ const Admin = () => {
                             });
                             if (slot === 0) {
                               setEditing({ ...editing, image_url: res.image_url });
+                              setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, image_url: res.image_url } : r));
                             } else {
                               setEditing({ ...editing, extra_images: res.extra_images });
+                              setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, extra_images: res.extra_images } : r));
                             }
                             toast({ title: "사진 업로드 완료 ✅" });
-                            fetchAll();
+                            silentRefresh();
                           } catch (err: any) {
                             toast({ title: "업로드 실패", description: err.message, variant: "destructive" });
                           } finally {
@@ -1090,16 +1108,19 @@ const Admin = () => {
                                         if (extras.length > 0) {
                                           await adminApi("update", { id: editing.id, image_url: extras[0], extra_images: extras.slice(1) });
                                           setEditing({ ...editing, image_url: extras[0], extra_images: extras.slice(1) });
+                                          setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, image_url: extras[0], extra_images: extras.slice(1) } : r));
                                         } else {
                                           setEditing({ ...editing, image_url: null, extra_images: [] });
+                                          setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, image_url: null, extra_images: [] } : r));
                                         }
                                       } else {
                                         const extras = (editing.extra_images ?? []).filter(u => u !== url);
                                         await adminApi("update", { id: editing.id, extra_images: extras });
                                         setEditing({ ...editing, extra_images: extras });
+                                        setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, extra_images: extras } : r));
                                       }
                                       toast({ title: "사진 삭제 완료 ✅" });
-                                      fetchAll();
+                                      silentRefresh();
                                     } catch (err: any) {
                                       toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
                                     }
@@ -1404,7 +1425,7 @@ const Admin = () => {
                                             reason: tip.reason,
                                           });
                                           setTips(tips.map(t => t.id === tip.id ? { ...t, status: "approved" } : t));
-                                          fetchAll();
+                                          silentRefresh();
                                           toast({
                                             title: "승인 완료 ✅",
                                             description: `"${tip.restaurant_name}"이(가) ${tip.category} 카테고리에 추가되었습니다`,
