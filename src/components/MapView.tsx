@@ -145,6 +145,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
 
   const [mode, setMode] = useState<MapMode>("loading");
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const [mapVersion, setMapVersion] = useState(0);
   const fallbackNotified = useRef(false);
 
   const handleFallback = useCallback((reason: string) => {
@@ -207,8 +208,11 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       }
     });
 
+    setMapVersion(v => v + 1);
+
     return () => {
       kakaoMapRef.current = null;
+      kakaoClustererRef.current = null;
     };
   }, [mode, mapCenter, mapBoundsSW, mapBoundsNE]);
 
@@ -252,6 +256,8 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     kakaoNameOverlaysRef.current = [];
     if (kakaoClustererRef.current) {
       kakaoClustererRef.current.clear();
+      try { (kakaoClustererRef.current as any).setMap(null); } catch {}
+      kakaoClustererRef.current = null;
     }
 
     const defaultImage = new kakao.maps.MarkerImage(
@@ -267,8 +273,8 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       new kakao.maps.Size(24, 35)
     );
 
-    // 클러스터러 초기화 (선택된 마커 제외, 일반 마커만 클러스터링)
-    if (!kakaoClustererRef.current && (window as any).kakao?.maps?.MarkerClusterer) {
+    // 클러스터러 초기화 (선택된 마커 제외, 일반 마커만 클러스터링) — 항상 현재 map으로 새로 생성
+    if ((window as any).kakao?.maps?.MarkerClusterer) {
       kakaoClustererRef.current = new (kakao.maps as any).MarkerClusterer({
         map,
         averageCenter: true,
@@ -340,7 +346,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     if (kakaoClustererRef.current) {
       kakaoClustererRef.current.addMarkers(normalMarkers);
     }
-  }, [mode, restaurants, selectedId, onSelect, visitedIds]);
+  }, [mode, restaurants, selectedId, onSelect, visitedIds, mapVersion]);
 
   useEffect(() => {
     if (mode !== "leaflet") return;
