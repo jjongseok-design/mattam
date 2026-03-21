@@ -31,7 +31,7 @@ function ensureKakaoMapsReady(appKey: string): Promise<void> {
       script = document.createElement("script");
       script.id = KAKAO_SCRIPT_ID;
       script.async = true;
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=clusterer`;
       document.head.appendChild(script);
     }
     if ((script as any).readyState === "complete" || (script as any).loaded) { onLoad(); return; }
