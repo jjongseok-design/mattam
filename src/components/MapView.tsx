@@ -139,14 +139,18 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
   const kakaoOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const kakaoNameOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
   const kakaoClustererRef = useRef<any>(null);
-  const prevMarkerStateRef = useRef<{ ids: string; selectedId: string | null; mapVersion: number } | null>(null);
+  const prevMarkerStateRef = useRef<{ ids: string; selectedId: string | null } | null>(null);
+
+  // city props를 ref로 유지 — 이벤트 핸들러에서 항상 최신값 참조
+  const mapCenterRef = useRef(mapCenter);
+  const mapBoundsSWRef = useRef(mapBoundsSW);
+  const mapBoundsNERef = useRef(mapBoundsNE);
 
   const leafMapRef = useRef<L.Map | null>(null);
   const leafMarkersRef = useRef<L.Marker[]>([]);
 
   const [mode, setMode] = useState<MapMode>("loading");
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
-  const [mapVersion, setMapVersion] = useState(0);
   const fallbackNotified = useRef(false);
 
   const handleFallback = useCallback((reason: string) => {
@@ -164,6 +168,20 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     }
   }, [toast]);
 
+  // city 변경 시 ref 동기화 (이벤트 핸들러 stale 클로저 방지)
+  useEffect(() => {
+    mapCenterRef.current = mapCenter;
+    mapBoundsSWRef.current = mapBoundsSW;
+    mapBoundsNERef.current = mapBoundsNE;
+  }, [mapCenter, mapBoundsSW, mapBoundsNE]);
+
+  // city 로드 후 맵 중심 업데이트 — 맵 재생성 없이 setCenter만 호출
+  useEffect(() => {
+    const map = kakaoMapRef.current;
+    if (!map || mode !== "kakao") return;
+    map.setCenter(new kakao.maps.LatLng(mapCenter.lat, mapCenter.lng));
+  }, [mode, mapCenter]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -178,44 +196,66 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     return () => { cancelled = true; };
   }, [handleFallback]);
 
+  // 맵은 mode가 "kakao"가 된 후 딱 한 번만 생성 — city 변경 시 재생성하지 않음
   useEffect(() => {
     if (mode !== "kakao" || !containerRef.current || kakaoMapRef.current) return;
-    const center = new kakao.maps.LatLng(mapCenter.lat, mapCenter.lng);
+
+    const mc = mapCenterRef.current;
+    const center = new kakao.maps.LatLng(mc.lat, mc.lng);
     const map = new kakao.maps.Map(containerRef.current, { center, level: 7 });
     kakaoMapRef.current = map;
 
-    const sw = new kakao.maps.LatLng(mapBoundsSW.lat, mapBoundsSW.lng);
-    const ne = new kakao.maps.LatLng(mapBoundsNE.lat, mapBoundsNE.lng);
-    const cityCenter = new kakao.maps.LatLng(mapCenter.lat, mapCenter.lng);
-    const bounds = new (kakao.maps as any).LatLngBounds(sw, ne);
-
+    // 지도 이동 시 도시 경계 안으로 clamping (항상 최신 bounds ref 사용)
     const clampToCity = () => {
       const c = (map as any).getCenter();
-      if (!bounds.contain(c)) {
-        const lat = Math.max(sw.getLat(), Math.min(ne.getLat(), c.getLat()));
-        const lng = Math.max(sw.getLng(), Math.min(ne.getLng(), c.getLng()));
-        map.setCenter(new kakao.maps.LatLng(lat, lng));
+      const sw = mapBoundsSWRef.current;
+      const ne = mapBoundsNERef.current;
+      const lat = c.getLat(), lng = c.getLng();
+      if (lat < sw.lat || lat > ne.lat || lng < sw.lng || lng > ne.lng) {
+        map.setCenter(new kakao.maps.LatLng(
+          Math.max(sw.lat, Math.min(ne.lat, lat)),
+          Math.max(sw.lng, Math.min(ne.lng, lng))
+        ));
       }
     };
 
     kakao.maps.event.addListener(map, "dragend", clampToCity);
     kakao.maps.event.addListener(map, "idle", clampToCity);
-
     kakao.maps.event.addListener(map, "zoom_changed", () => {
       const level = map.getLevel();
       if (level > 7) {
+        const mc2 = mapCenterRef.current;
         map.setLevel(7);
-        map.setCenter(cityCenter);
+        map.setCenter(new kakao.maps.LatLng(mc2.lat, mc2.lng));
       }
     });
 
-    setMapVersion(v => v + 1);
+    // 클러스터러도 맵과 함께 한 번만 생성
+    if ((window as any).kakao?.maps?.MarkerClusterer) {
+      kakaoClustererRef.current = new (kakao.maps as any).MarkerClusterer({
+        map,
+        averageCenter: true,
+        minLevel: 5,
+        disableClickZoom: false,
+        styles: [{
+          width: "44px", height: "44px",
+          background: "rgba(var(--primary-rgb, 59 130 246) / 0.85)",
+          borderRadius: "50%",
+          color: "#fff",
+          textAlign: "center",
+          fontWeight: "700",
+          lineHeight: "44px",
+          fontSize: "14px",
+          border: "2px solid rgba(255,255,255,0.6)",
+        }],
+      });
+    }
 
     return () => {
       kakaoMapRef.current = null;
       kakaoClustererRef.current = null;
     };
-  }, [mode, mapCenter, mapBoundsSW, mapBoundsNE]);
+  }, [mode]); // mode에만 의존 — city 변경 시 맵 재생성하지 않음
 
   useEffect(() => {
     if (mode !== "leaflet" || !containerRef.current || leafMapRef.current) return;
@@ -252,26 +292,17 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     // 실제 변경이 없으면 마커 재생성 건너뜀 (참조만 바뀐 경우)
     const currentIds = restaurants.map((r) => r.id).join(",");
     const prev = prevMarkerStateRef.current;
-    if (
-      prev &&
-      prev.ids === currentIds &&
-      prev.selectedId === selectedId &&
-      prev.mapVersion === mapVersion &&
-      kakaoClustererRef.current
-    ) return;
-    prevMarkerStateRef.current = { ids: currentIds, selectedId, mapVersion };
+    if (prev && prev.ids === currentIds && prev.selectedId === selectedId && kakaoClustererRef.current) return;
+    prevMarkerStateRef.current = { ids: currentIds, selectedId };
 
+    // 기존 마커 제거
     kakaoMarkersRef.current.forEach((m) => m.setMap(null));
     kakaoMarkersRef.current = [];
     kakaoOverlayRef.current?.setMap(null);
     kakaoOverlayRef.current = null;
     kakaoNameOverlaysRef.current.forEach((o) => o.setMap(null));
     kakaoNameOverlaysRef.current = [];
-    if (kakaoClustererRef.current) {
-      kakaoClustererRef.current.clear();
-      try { (kakaoClustererRef.current as any).setMap(null); } catch {}
-      kakaoClustererRef.current = null;
-    }
+    if (kakaoClustererRef.current) kakaoClustererRef.current.clear();
 
     const defaultImage = new kakao.maps.MarkerImage(
       "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
@@ -285,27 +316,6 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png",
       new kakao.maps.Size(24, 35)
     );
-
-    // 클러스터러 초기화 (선택된 마커 제외, 일반 마커만 클러스터링) — 항상 현재 map으로 새로 생성
-    if ((window as any).kakao?.maps?.MarkerClusterer) {
-      kakaoClustererRef.current = new (kakao.maps as any).MarkerClusterer({
-        map,
-        averageCenter: true,
-        minLevel: 5,
-        disableClickZoom: false,
-        styles: [{
-          width: "44px", height: "44px",
-          background: "rgba(var(--primary-rgb, 59 130 246) / 0.85)",
-          borderRadius: "50%",
-          color: "#fff",
-          textAlign: "center",
-          fontWeight: "700",
-          lineHeight: "44px",
-          fontSize: "14px",
-          border: "2px solid rgba(255,255,255,0.6)",
-        }],
-      });
-    }
 
     const normalMarkers: kakao.maps.Marker[] = [];
 
@@ -359,7 +369,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     if (kakaoClustererRef.current) {
       kakaoClustererRef.current.addMarkers(normalMarkers);
     }
-  }, [mode, restaurants, selectedId, onSelect, visitedIds, mapVersion]);
+  }, [mode, restaurants, selectedId, onSelect, visitedIds]);
 
   useEffect(() => {
     if (mode !== "leaflet") return;
