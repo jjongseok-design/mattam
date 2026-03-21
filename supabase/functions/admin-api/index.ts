@@ -364,6 +364,35 @@ Deno.serve(async (req) => {
         result = { success: true, results };
         break;
       }
+      case "search_naver_place": {
+        // 식당명으로 네이버 지역 검색 → 도로명주소·전화번호·좌표 반환 (신규 식당 폼용)
+        const naverClientId = Deno.env.get("NAVER_CLIENT_ID");
+        const naverClientSecret = Deno.env.get("NAVER_CLIENT_SECRET");
+        if (!naverClientId || !naverClientSecret) throw new Error("NAVER 키 미설정");
+
+        const stripHtml = (s: string) => s?.replace(/<[^>]+>/g, "") ?? "";
+        const { name: searchName } = data;
+        const searchRes = await fetch(
+          `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(searchName)}&display=5`,
+          { headers: { "X-Naver-Client-Id": naverClientId, "X-Naver-Client-Secret": naverClientSecret } }
+        );
+        if (!searchRes.ok) throw new Error(`네이버 검색 오류 (${searchRes.status})`);
+        const searchData = await searchRes.json();
+        const items: any[] = (searchData.items ?? []).map((item: any) => {
+          const lat = parseInt(item.mapy) / 10000000;
+          const lng = parseInt(item.mapx) / 10000000;
+          return {
+            name: stripHtml(item.title ?? ""),
+            address: stripHtml(item.roadAddress || item.address || ""),
+            phone: stripHtml(item.telephone ?? ""),
+            lat: (lat > 33 && lat < 39) ? lat : null,
+            lng: (lng > 124 && lng < 132) ? lng : null,
+          };
+        });
+        result = { success: true, items };
+        break;
+      }
+
       case "fetch_naver_info": {
         // 네이버 지역 검색으로 식당 정보(전화번호, 주소, 영업시간) 업데이트
         const naverClientId = Deno.env.get("NAVER_CLIENT_ID");

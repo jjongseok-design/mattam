@@ -78,6 +78,8 @@ const Admin = () => {
   const [form, setForm] = useState(getEmptyForm("닭갈비"));
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [naverSearching, setNaverSearching] = useState(false);
+  const [naverResults, setNaverResults] = useState<{ name: string; address: string; phone: string; lat: number | null; lng: number | null }[]>([]);
   const [showPwChange, setShowPwChange] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
@@ -331,6 +333,30 @@ const Admin = () => {
       toast({ title: "오류", description: err.message, variant: "destructive" });
     }
     setFetchingNaverInfoId(null);
+  };
+
+  const handleNaverSearch = async () => {
+    if (!form.name.trim()) return;
+    setNaverSearching(true);
+    setNaverResults([]);
+    try {
+      const res = await adminApi("search_naver_place", { name: form.name });
+      setNaverResults(res.items ?? []);
+    } catch (err: any) {
+      toast({ title: "검색 오류", description: err.message, variant: "destructive" });
+    }
+    setNaverSearching(false);
+  };
+
+  const applyNaverResult = (item: typeof naverResults[0]) => {
+    setForm(f => ({
+      ...f,
+      address: item.address || f.address,
+      phone: item.phone || f.phone,
+      lat: item.lat ?? f.lat,
+      lng: item.lng ?? f.lng,
+    }));
+    setNaverResults([]);
   };
 
   const handleSaveImageUrl = async () => {
@@ -839,11 +865,29 @@ const Admin = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium">이름 *</label>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <div className="flex gap-2">
+                    <Input value={form.name} onChange={(e) => { setForm({ ...form, name: e.target.value }); setNaverResults([]); }} />
+                    <Button type="button" variant="outline" size="sm" className="shrink-0 h-10 text-xs px-3 gap-1" onClick={handleNaverSearch} disabled={naverSearching || !form.name.trim()}>
+                      {naverSearching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                      네이버
+                    </Button>
+                  </div>
+                  {naverResults.length > 0 && (
+                    <div className="mt-1 border border-border rounded-lg overflow-hidden text-xs shadow-md bg-card z-10">
+                      {naverResults.map((item, i) => (
+                        <button key={i} type="button" onClick={() => applyNaverResult(item)}
+                          className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b border-border/40 last:border-0 transition-colors">
+                          <div className="font-semibold text-foreground">{item.name}</div>
+                          <div className="text-muted-foreground truncate">{item.address}</div>
+                          {item.phone && <div className="text-muted-foreground">{item.phone}</div>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="col-span-2">
-                  <label className="text-sm font-medium">주소 *</label>
-                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                  <label className="text-sm font-medium">주소 * <span className="text-[10px] text-muted-foreground font-normal">(도로명주소)</span></label>
+                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="네이버 검색으로 자동 입력 또는 직접 입력" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">전화번호</label>
