@@ -95,6 +95,8 @@ const Admin = () => {
   const [fetchingAllNaverImages, setFetchingAllNaverImages] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [savingImageUrl, setSavingImageUrl] = useState(false);
+  const [dragImageIdx, setDragImageIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   // Category management state
   const [editMode, setEditMode] = useState(false);
@@ -372,6 +374,27 @@ const Admin = () => {
       toast({ title: "저장 실패", description: err.message, variant: "destructive" });
     }
     setSavingImageUrl(false);
+  };
+
+  const handleReorderImages = async (fromIdx: number, toIdx: number) => {
+    if (!editing || fromIdx === toIdx) return;
+    const allImages = [
+      ...(editing.image_url ? [editing.image_url] : []),
+      ...(editing.extra_images ?? []),
+    ];
+    const reordered = [...allImages];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+    const newImageUrl = reordered[0] ?? null;
+    const newExtraImages = reordered.slice(1);
+    try {
+      await adminApi("update", { id: editing.id, image_url: newImageUrl, extra_images: newExtraImages });
+      setEditing({ ...editing, image_url: newImageUrl, extra_images: newExtraImages });
+      fetchAll();
+      toast({ title: "사진 순서 변경 완료 ✅" });
+    } catch (err: any) {
+      toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
+    }
   };
 
   const handleDelete = async () => {
@@ -974,6 +997,7 @@ const Admin = () => {
                         const emptySlots = Math.max(0, 5 - allImages.length);
 
                         const handleUpload = async (file: File, slot: number) => {
+                          // slot은 현재 allImages 기준 인덱스
                           if (file.size > 10 * 1024 * 1024) {
                             toast({ title: "파일 크기는 10MB 이하여야 합니다", variant: "destructive" });
                             return;
@@ -1021,28 +1045,47 @@ const Admin = () => {
                         return (
                           <div className="flex flex-wrap gap-2">
                             {allImages.map((url, idx) => (
-                              <div key={url} className="relative group">
+                              <div
+                                key={url}
+                                draggable
+                                onDragStart={() => setDragImageIdx(idx)}
+                                onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx); }}
+                                onDragEnd={() => { setDragImageIdx(null); setDragOverIdx(null); }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  if (dragImageIdx !== null) handleReorderImages(dragImageIdx, idx);
+                                  setDragImageIdx(null);
+                                  setDragOverIdx(null);
+                                }}
+                                className={`relative group cursor-grab transition-all duration-150 ${dragImageIdx === idx ? "opacity-40 scale-95" : ""} ${dragOverIdx === idx && dragImageIdx !== idx ? "ring-2 ring-primary scale-105" : ""}`}
+                              >
                                 <img
                                   src={url}
                                   alt={`${editing.name} ${idx + 1}`}
                                   className="w-20 h-20 rounded-lg object-cover border border-border"
+                                  draggable={false}
                                 />
-                                {/* 대표/추가 라벨 + 교체 버튼 항상 표시 */}
+                                {/* 대표 배지 */}
+                                {idx === 0 && (
+                                  <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-tl-lg rounded-br-lg">
+                                    대표
+                                  </div>
+                                )}
+                                {/* 파일 교체 버튼 */}
                                 <label
                                   className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 bg-black/60 text-white rounded-b-lg py-0.5 cursor-pointer hover:bg-primary/80 transition-colors"
-                                  title={idx === 0 ? "대표 이미지 교체" : "이미지 교체"}
+                                  title={idx === 0 ? "대표 이미지 교체 (로컬 파일)" : "이미지 교체 (로컬 파일)"}
                                 >
-                                  <span className="text-[9px]">{idx === 0 ? "대표 교체" : `추가${idx} 교체`}</span>
+                                  <span className="text-[9px]">교체</span>
                                   <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, idx); e.target.value = ""; }} />
                                 </label>
+                                {/* 삭제 버튼 */}
                                 <button
                                   type="button"
                                   onClick={async () => {
                                     try {
                                       if (idx === 0) {
-                                        // Delete primary image
                                         await adminApi("delete_image", { restaurant_id: editing.id });
-                                        // Promote first extra image if exists
                                         const extras = editing.extra_images ?? [];
                                         if (extras.length > 0) {
                                           await adminApi("update", { id: editing.id, image_url: extras[0], extra_images: extras.slice(1) });
@@ -1051,7 +1094,6 @@ const Admin = () => {
                                           setEditing({ ...editing, image_url: null, extra_images: [] });
                                         }
                                       } else {
-                                        // Delete from extra_images
                                         const extras = (editing.extra_images ?? []).filter(u => u !== url);
                                         await adminApi("update", { id: editing.id, extra_images: extras });
                                         setEditing({ ...editing, extra_images: extras });
@@ -1102,7 +1144,7 @@ const Admin = () => {
                         </Button>
                       </div>
                       <div>
-                        <p className="text-[10px] text-muted-foreground mt-1">포털에서 검색한 식당 사진을 업로드하세요 (10MB 이하, 자동 압축, 최대 5장)</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">드래그로 순서 변경 (첫 번째가 대표사진) · 교체는 파일 선택 · 10MB 이하 자동 압축</p>
                       </div>
                     </div>
                   </div>
