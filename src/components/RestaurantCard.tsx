@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Star, MapPin, Phone, CheckCircle2, Share2, Clock, Heart, Navigation, ChevronRight } from "lucide-react";
+import { Star, MapPin, Phone, CheckCircle2, Share2, Heart, Navigation, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import type { Restaurant } from "@/hooks/useRestaurants";
@@ -19,14 +19,18 @@ interface RestaurantCardProps {
   onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
-type OpenStatus = 'open' | 'closed' | 'holiday' | null;
+type OpenStatus = 'open' | 'lastorder' | 'closed' | 'holiday' | null;
 
-const checkOpenStatus = (openingHours?: string, closedDays?: string): OpenStatus => {
+interface StatusResult {
+  status: OpenStatus;
+  closeTime?: string; // 라스트오더 표시용 마감시각
+}
+
+const checkOpenStatus = (openingHours?: string, closedDays?: string): StatusResult => {
   const now = new Date();
-  const day = now.getDay(); // 0=일,1=월,...,6=토
+  const day = now.getDay();
   const DAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
-  // 휴무일 확인
   if (closedDays) {
     const cd = closedDays;
     const todayKo = DAY_KO[day];
@@ -43,17 +47,28 @@ const checkOpenStatus = (openingHours?: string, closedDays?: string): OpenStatus
       (cd.includes('목요일') && day === 4) ||
       (cd.includes('금요일') && day === 5) ||
       (cd.includes('토요일') && day === 6)
-    ) return 'holiday';
+    ) return { status: 'holiday' };
   }
 
-  if (!openingHours) return null;
+  if (!openingHours) return { status: null };
   const match = openingHours.match(/(\d{1,2}):(\d{2})\s*[-~]\s*(\d{1,2}):(\d{2})/);
-  if (!match) return null;
+  if (!match) return { status: null };
+
   const cur = now.getHours() * 60 + now.getMinutes();
   const open = parseInt(match[1]) * 60 + parseInt(match[2]);
-  const close = parseInt(match[3]) * 60 + parseInt(match[4]);
+  const closeH = parseInt(match[3]);
+  const closeM = parseInt(match[4]);
+  const close = closeH * 60 + closeM;
+  const closeLabel = `${String(closeH).padStart(2, '0')}:${String(closeM).padStart(2, '0')}`;
+
   const isOpen = close <= open ? (cur >= open || cur < close) : (cur >= open && cur < close);
-  return isOpen ? 'open' : 'closed';
+  if (!isOpen) return { status: 'closed' };
+
+  // 마감 30분 이내 → 라스트오더
+  const minsUntilClose = close > cur ? close - cur : close + 1440 - cur;
+  if (minsUntilClose <= 30) return { status: 'lastorder', closeTime: closeLabel };
+
+  return { status: 'open' };
 };
 
 const RestaurantCard = memo(({
@@ -64,7 +79,7 @@ const RestaurantCard = memo(({
   const { toast } = useToast();
   const { cityId, city } = useCityContext();
   const cityLabel = city?.name ?? "맛집";
-  const openStatus = useMemo(() => checkOpenStatus(restaurant.openingHours, restaurant.closedDays), [restaurant.openingHours, restaurant.closedDays]);
+  const { status: openStatus, closeTime } = useMemo(() => checkOpenStatus(restaurant.openingHours, restaurant.closedDays), [restaurant.openingHours, restaurant.closedDays]);
 
   const distText = distance != null
     ? distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
@@ -147,6 +162,9 @@ const RestaurantCard = memo(({
                 ))}
                 {openStatus === 'open' && (
                   <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold ml-auto">영업중</span>
+                )}
+                {openStatus === 'lastorder' && (
+                  <span className="text-[9px] text-orange-500 font-semibold ml-auto">라스트오더 {closeTime}</span>
                 )}
                 {openStatus === 'closed' && (
                   <span className="text-[9px] text-muted-foreground/50 ml-auto">영업종료</span>
@@ -252,6 +270,9 @@ const RestaurantCard = memo(({
                 {openStatus === 'open' && (
                   <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">영업중</span>
                 )}
+                {openStatus === 'lastorder' && (
+                  <span className="text-[9px] bg-orange-50 dark:bg-orange-950/50 text-orange-500 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">라스트오더 {closeTime}</span>
+                )}
                 {openStatus === 'closed' && (
                   <span className="text-[9px] text-muted-foreground/40 flex-shrink-0">영업종료</span>
                 )}
@@ -280,17 +301,6 @@ const RestaurantCard = memo(({
               </span>
             )}
           </div>
-
-          {/* Hours */}
-          {restaurant.openingHours && (
-            <div className="flex items-center gap-1.5 mb-1">
-              <Clock className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
-              <span className="text-[11px] text-muted-foreground">{restaurant.openingHours}</span>
-              {restaurant.closedDays && (
-                <span className="text-[10px] text-muted-foreground/40 flex-shrink-0">· 휴 {restaurant.closedDays}</span>
-              )}
-            </div>
-          )}
 
           {/* Tags */}
           {restaurant.tags.length > 0 && (
