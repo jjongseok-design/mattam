@@ -271,52 +271,62 @@ Deno.serve(async (req) => {
 
         const results: { id: string; name: string; success: boolean; error?: string }[] = [];
 
-        for (const restaurant of targets) {
+        // 이미지 다운로드 헬퍼
+        const downloadImage = async (url: string): Promise<{ buf: ArrayBuffer; ct: string } | null> => {
           try {
-            // Step 1: Naver Image Search API (직접 이미지 URL 반환)
-            const query = encodeURIComponent(`${restaurant.name} 춘천 맛집`);
-            const searchUrl = `https://openapi.naver.com/v1/search/image.json?query=${query}&display=5&filter=large`;
-            const searchRes = await fetch(searchUrl, {
+            const res = await fetch(url, {
               headers: {
-                "X-Naver-Client-Id": naverClientId,
-                "X-Naver-Client-Secret": naverClientSecret,
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "https://www.naver.com/",
               },
             });
-            if (!searchRes.ok) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: `네이버 이미지 API 오류 (${searchRes.status})` });
-              continue;
-            }
-            const searchData = await searchRes.json();
-            const items = searchData.items ?? [];
-            if (items.length === 0) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "이미지 검색 결과 없음" });
-              continue;
-            }
+            if (!res.ok) return null;
+            const ct = res.headers.get("content-type") || "";
+            if (!ct.includes("image")) return null;
+            const buf = await res.arrayBuffer();
+            return { buf, ct };
+          } catch {
+            return null;
+          }
+        };
 
-            // Step 2~3: 각 후보 이미지를 순서대로 시도, 최대 3장 수집
+        // 네이버 이미지 검색 헬퍼
+        const naverSearch = async (query: string, display = 5): Promise<any[]> => {
+          const res = await fetch(
+            `https://openapi.naver.com/v1/search/image.json?query=${encodeURIComponent(query)}&display=${display}&filter=large`,
+            { headers: { "X-Naver-Client-Id": naverClientId, "X-Naver-Client-Secret": naverClientSecret } }
+          );
+          if (!res.ok) return [];
+          const data = await res.json();
+          return data.items ?? [];
+        };
+
+        for (const restaurant of targets) {
+          try {
             const chosenNaverPhotos: { buf: ArrayBuffer; ct: string }[] = [];
 
-            for (const item of items) {
-              if (chosenNaverPhotos.length >= 3) break;
+            // Step 1: 간판 이미지 우선 검색 → 대표 이미지
+            const signageItems = await naverSearch(`${restaurant.name} 간판`);
+            for (const item of signageItems) {
+              if (chosenNaverPhotos.length >= 1) break;
               const candidate = item.link || item.thumbnail;
-              if (!candidate || (!candidate.startsWith("http://") && !candidate.startsWith("https://"))) continue;
+              if (!candidate?.startsWith("http")) continue;
+              const img = await downloadImage(candidate);
+              if (img) chosenNaverPhotos.push(img);
+            }
 
-              const imgRes = await fetch(candidate, {
-                headers: {
-                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                  "Referer": "https://www.naver.com/",
-                },
-              });
-              if (!imgRes.ok) continue;
-              const ct = imgRes.headers.get("content-type") || "";
-              if (!ct.includes("image")) continue;
-
-              const buf = await imgRes.arrayBuffer();
-              chosenNaverPhotos.push({ buf, ct });
+            // Step 2: 맛집 검색 → 나머지 4장
+            const foodItems = await naverSearch(`${restaurant.name} 맛집`, 8);
+            for (const item of foodItems) {
+              if (chosenNaverPhotos.length >= 5) break;
+              const candidate = item.link || item.thumbnail;
+              if (!candidate?.startsWith("http")) continue;
+              const img = await downloadImage(candidate);
+              if (img) chosenNaverPhotos.push(img);
             }
 
             if (chosenNaverPhotos.length === 0) {
-              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "얼굴 없는 이미지 없음" });
+              results.push({ id: restaurant.id, name: restaurant.name, success: false, error: "이미지 없음" });
               continue;
             }
 
