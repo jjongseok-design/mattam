@@ -46,7 +46,16 @@
       "Bash(cmd /c \"cd C:\\\\Users\\\\DELL\\\\mattam && npx tsc --noEmit 2>&1\")",
       "Bash(powershell.exe -Command \"Set-Location 'C:\\\\Users\\\\DELL\\\\mattam'; git add -A; git commit -m 'feat: 데스크탑 카테고리 스크롤 수정 + 정렬필터 목록 내부 이동 + 관리자 이미지 가져오기 추가'\" 2>&1)",
       "Bash(powershell.exe -Command \"Set-Location 'C:\\\\Users\\\\DELL\\\\mattam'; git push origin main\" 2>&1)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(echo $ANTHROPIC_API_KEY)",
+      "Bash(node:*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(DRY_RUN=1 LIMIT=3 node scripts/auto-sort-images.mjs)",
+      "Bash(powershell -Command '$env:DRY_RUN=\"\"1\"\"; $env:LIMIT=\"\"3\"\"; node scripts/auto-sort-images.mjs')",
+      "Bash(DRY_RUN=1 LIMIT=3 ANTHROPIC_API_KEY=\"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\" node scripts/auto-sort-images.mjs)",
+      "Bash(DRY_RUN=1 ANTHROPIC_API_KEY=\"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\" node scripts/auto-sort-images.mjs)"
     ]
   }
 }
