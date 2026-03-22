@@ -21,30 +21,14 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        // Stale-while-revalidate for Supabase API calls
+        // 구버전 workbox 프리캐시 자동 삭제
+        cleanupOutdatedCaches: true,
+        // Supabase API는 SW에서 캐시하지 않음:
+        //   - React Query + realtime 구독으로 freshness를 관리
+        //   - StaleWhileRevalidate 캐시가 구 데이터를 서빙하면 카테고리 필터·마커 클릭이 깨짐
         runtimeCaching: [
           {
-            // Supabase REST API — serve cached data instantly, refresh in background
-            urlPattern: ({ url }) => url.hostname.endsWith(".supabase.co"),
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "supabase-api",
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 }, // 24h
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            // Restaurant images (Supabase Storage / external CDN)
-            urlPattern: ({ request }) => request.destination === "image",
-            handler: "CacheFirst",
-            options: {
-              cacheName: "restaurant-images",
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 }, // 30d
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            // OpenStreetMap tiles (Leaflet fallback)
+            // OpenStreetMap tiles (Leaflet 폴백용)
             urlPattern: ({ url }) => url.hostname.includes("tile.openstreetmap.org"),
             handler: "CacheFirst",
             options: {
