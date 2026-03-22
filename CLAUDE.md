@@ -90,6 +90,25 @@
 
 ---
 
+## 다음 작업 목록
+
+### TODO 1: 이미지 자동 정렬 전체 적용
+- `scripts/auto-sort-images.mjs` 전체 437개 실제 실행
+- DRY RUN 결과: 변경 대상 12개 확인 완료
+- 실행 명령:
+  ```bash
+  ANTHROPIC_API_KEY="sk-ant-api03-Xuw..." node scripts/auto-sort-images.mjs
+  ```
+- 소요 시간: 약 60분 (437개 × 8초 간격)
+
+### TODO 2: 방문 통계 기능 추가
+- **식당 상세 페이지**: 방문자 N명 표시 (`device_visits` 테이블 집계)
+- **관리자 페이지**: 식당별 방문 통계 열람 기능
+- 관련 테이블: `device_visits` (이미 RLS anon read 정책 적용됨)
+- 작업 전 반드시 git commit으로 현재 상태 저장 후 시작
+
+---
+
 ## 과거 트러블슈팅 기록
 
 ### Vercel에서 카테고리 필터·마커 클릭·식당 선택 미동작 (2026-03-22 해결)
