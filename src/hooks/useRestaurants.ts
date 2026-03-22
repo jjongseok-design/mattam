@@ -97,7 +97,7 @@ export const useRestaurants = (cityId?: string) => {
           if (debounceRef.current) clearTimeout(debounceRef.current);
           debounceRef.current = setTimeout(() => {
             queryClient.invalidateQueries({ queryKey });
-          }, 3000);
+          }, 500);
         }
       )
       .subscribe();

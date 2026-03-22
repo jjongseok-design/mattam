@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,7 @@ const adminApi = async (action: string, data?: any) => {
 
 const Admin = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: cities = [] } = useCities();
   const [adminCityId, setAdminCityId] = useState("chuncheon");
@@ -281,17 +283,31 @@ const Admin = () => {
 
     try {
       if (editing) {
-        await adminApi("update", payload);
-        // 즉시 로컬 상태 반영 (낙관적 업데이트)
+        // 낙관적 업데이트: API 응답 전 즉시 화면 반영
         setRestaurants(prev => prev.map(r => r.id === payload.id ? { ...r, ...payload } : r));
+        setShowForm(false);
+        setEditing(null);
+        setSaving(false);
+        toast({ title: "수정 완료 ✅" });
+        try {
+          await adminApi("update", payload);
+          silentRefresh();
+          queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
+        } catch (err: any) {
+          // 실패 시 롤백
+          fetchAll();
+          toast({ title: "저장 실패", description: err.message, variant: "destructive" });
+        }
+        return;
       } else {
         const res = await adminApi("insert", payload);
         setRestaurants(prev => [...prev, res.restaurant ?? { ...payload }]);
+        toast({ title: "추가 완료 ✅" });
+        setShowForm(false);
+        setEditing(null);
+        silentRefresh();
+        queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
       }
-      toast({ title: editing ? "수정 완료 ✅" : "추가 완료 ✅" });
-      setShowForm(false);
-      setEditing(null);
-      silentRefresh();
     } catch (err: any) {
       toast({ title: "저장 실패", description: err.message, variant: "destructive" });
     }
@@ -421,6 +437,8 @@ const Admin = () => {
     try {
       await adminApi("delete", { id });
       toast({ title: "삭제 완료 ✅" });
+      silentRefresh();
+      queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
     } catch (err: any) {
       toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
       fetchAll();
