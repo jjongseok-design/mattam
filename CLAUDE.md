@@ -20,6 +20,7 @@
 
 ### Supabase
 - **프로젝트명**: `resstaurantchuncheon`
+- **Supabase URL**: `https://cblckdcrsotqynngblyb.supabase.co` ← 맛탐 전용 (신규)
 - **환경변수**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (anon key)
 - **RLS 정책**: 아래 테이블에 `anon` 역할 read 허용 정책 추가됨
   - `restaurants`
@@ -28,7 +29,11 @@
   - `device_visits`
   - `device_favorites`
 
-> **주의**: 새 테이블 추가 시 RLS 정책을 반드시 설정해야 Vercel에서 데이터가 조회됨.
+> **⚠️ 절대 혼동 금지**:
+> - `cblckdcrsotqynngblyb` → **맛탐 전용 Supabase** (resstaurantchuncheon). 사용 O
+> - `suwvgtidfknbnwgibrjm` → **구 Lovable Supabase**. 맛탐 앱에서 절대 사용 금지.
+>
+> 새 테이블 추가 시 RLS 정책을 반드시 설정해야 Vercel에서 데이터가 조회됨.
 > 로컬에서는 `.env`의 키로 직접 접근하므로 RLS 없이도 작동할 수 있음.
 
 ### Vercel
