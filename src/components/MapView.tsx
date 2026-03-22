@@ -87,11 +87,15 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
 
   const mapBoundsSWRef = useRef(mapBoundsSW);
   const mapBoundsNERef = useRef(mapBoundsNE);
+  const mapCenterRef = useRef(mapCenter);
+  const mapZoomRef = useRef(mapZoom);
   useEffect(() => { mapBoundsSWRef.current = mapBoundsSW; mapBoundsNERef.current = mapBoundsNE; }, [mapBoundsSW, mapBoundsNE]);
+  useEffect(() => { mapCenterRef.current = mapCenter; mapZoomRef.current = mapZoom; }, [mapCenter, mapZoom]);
 
   const kakaoMapRef = useRef<kakao.maps.Map | null>(null);
   const kakaoMarkersRef = useRef<kakao.maps.Marker[]>([]);
   const kakaoOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
+  const prevSelectedIdRef = useRef<string | null>(null);
 
   const leafMapRef = useRef<L.Map | null>(null);
   const leafMarkersRef = useRef<L.Marker[]>([]);
@@ -205,13 +209,17 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       }
     });
 
-    // 선택된 식당이 있으면 그 위치로 지도 이동
+    // 선택된 식당이 있으면 그 위치로 지도 이동, 없고 이전에 선택했었으면 도시 기본 위치로 복귀
     if (selectedRestaurant) {
       const sel = selectedRestaurant as Restaurant;
       const targetPos = new kakao.maps.LatLng(sel.lat, sel.lng);
       if (map.getLevel() > 5) map.setLevel(5);
       map.setCenter(targetPos);
+    } else if (prevSelectedIdRef.current !== null) {
+      map.setLevel(7);
+      map.setCenter(new kakao.maps.LatLng(mapCenterRef.current.lat, mapCenterRef.current.lng));
     }
+    prevSelectedIdRef.current = selectedId;
   }, [mode, restaurants, selectedId, onSelect, visitedIds, cityId]);
 
   // ── Leaflet 맵 최초 생성 ──────────────────────────────────────────────────
@@ -276,6 +284,11 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       if (isSelected) { marker.openPopup(); map.setView([r.lat, r.lng], 15, { animate: true }); }
       leafMarkersRef.current.push(marker);
     });
+
+    if (!restaurants.some(r => r.id === selectedId) && prevSelectedIdRef.current !== null) {
+      map.setView([mapCenterRef.current.lat, mapCenterRef.current.lng], mapZoomRef.current, { animate: true });
+    }
+    prevSelectedIdRef.current = selectedId;
   }, [mode, restaurants, selectedId, onSelect, visitedIds, cityLabel, cityId]);
 
   // ── 로딩 화면 ─────────────────────────────────────────────────────────────
