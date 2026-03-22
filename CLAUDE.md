@@ -55,6 +55,41 @@
 
 ---
 
+## 작업 이력
+
+### 2026-03-22 작업 내용
+
+#### 1. 관리자 모드 버그 수정 (`src/pages/Admin.tsx`, `src/hooks/useRestaurants.ts`)
+- **수정 (느린 반응)**: `handleSave` 편집 시 낙관적 업데이트를 API 호출 전으로 이동 → 폼이 즉시 닫히고 목록 즉시 반영
+- **수정 (삭제 후 미동기화)**: `handleDelete` 성공 후 `silentRefresh()` + `queryClient.invalidateQueries` 추가
+- **수정 (메인화면 지연)**: `useRestaurants` 리얼타임 디바운스 3000ms → 500ms 단축
+- **수정 (크로스페이지 동기화)**: Admin에 `useQueryClient` 추가 → 관리자 조작 후 CityMap React Query 캐시 즉시 무효화
+
+#### 2. 지도 카테고리 탭 복귀 시 줌아웃 (`src/components/MapView.tsx`)
+- 식당 선택 후 카테고리 탭 클릭 시 도시 기본 위치·줌 레벨(level 7)로 복귀
+- `prevSelectedIdRef`로 이전 선택 여부 추적 → 초기 로딩 시에는 동작 안 함
+- 카카오맵·Leaflet 모두 적용
+
+#### 3. 식당 대표 이미지 자동 정렬 스크립트 (`scripts/auto-sort-images.mjs`)
+- 각 식당 이미지 중 외관/간판 사진을 Claude Vision으로 찾아 `image_url`(대표)로 설정
+- Supabase 공개 URL을 Claude API에 직접 전달 (base64 다운로드 없음)
+- **실행 방법**:
+  ```bash
+  # 미리보기 (DB 변경 없음)
+  DRY_RUN=1 ANTHROPIC_API_KEY="sk-ant-..." node scripts/auto-sort-images.mjs
+
+  # 실제 적용
+  ANTHROPIC_API_KEY="sk-ant-..." node scripts/auto-sort-images.mjs
+  ```
+- **옵션**: `LIMIT=10` (개수 제한), `CITY=chuncheon` (도시 필터), `DRY_RUN=1` (미리보기)
+- **주의사항**:
+  - Tier 1 API 계정: 분당 50,000 토큰 한도 → 8초 간격 적용
+  - 429 rate limit 발생 시 자동 재시도 (30초/60초/90초)
+  - DRY RUN 결과: 437개 중 변경 대상 12개, 건너뜀 146개
+  - **미완료**: 전체 437개 실제 적용 필요 (내일 실행 예정)
+
+---
+
 ## 과거 트러블슈팅 기록
 
 ### Vercel에서 카테고리 필터·마커 클릭·식당 선택 미동작 (2026-03-22 해결)
