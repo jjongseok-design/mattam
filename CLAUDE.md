@@ -103,9 +103,44 @@
 
 ---
 
-## 다음 작업 목록
+## 작업 현황 (2026-03-23 기준)
 
-### TODO 1: 이미지 자동 정렬 전체 적용
+### ✅ 완료된 작업
+
+#### 방문 통계 시스템
+- 카드 목록: `👥 방문 N명` 표시 (첫 방문자 수, `useFirstVisitorCounts`)
+- 식당 상세: `총 방문 N회 · 내가 방문 N회` 표시
+- 재방문 팝업: 재방문 추가 / 방문 취소 / 닫기 버튼
+- 재방문 추가 시 상세페이지 카운트 즉시 반영 (React Query 캐시 낙관적 업데이트)
+- 성능 최적화: `useFirstVisitorCounts` 카드별 호출 → 상위 컴포넌트에서 1회 호출 후 prop 전달
+- 관리자 페이지: 방문 통계 패널 (식당별 방문수 조회)
+
+#### 리뷰 시스템
+- 리뷰 등록: 별점(1~5) + 한 줄 코멘트(15자 이내), device_id 기반 익명
+- 리뷰 수정: 내 리뷰 수정 버튼 → 별점·코멘트 재입력
+- 리뷰 삭제: 내 리뷰 삭제 버튼 (ReviewForm 요약 뷰 + ReviewList 목록)
+- 관리자 페이지: 전체 리뷰 조회·삭제 패널
+- 카드·상세: 맛탐 평균 별점 표시 (네이버 별점/리뷰수 숨김)
+- DB: `reviews` 테이블 (id, restaurant_id, device_id, rating, comment, created_at)
+- RLS: `reviews_open` 정책 (FOR ALL TO anon) + RLS 비활성화로 최종 해결
+- Supabase 스키마 캐시 이슈: `NOTIFY pgrst, 'reload schema'`로 해결
+
+#### 기타
+- `visitCountStore` 모듈 레벨 변수로 페이지 전환 시에도 카운트 즉시 반영
+- CLAUDE.md: resstaurantchuncheon/mattam Supabase 혼동 금지 규칙 추가
+
+---
+
+### ❌ 미완료 / 알려진 이슈
+
+- `reviews` 테이블 RLS 정책이 복잡한 과정 끝에 비활성화로 우회 — 향후 정책 재설계 필요
+- `device_visits` 테이블 PK를 UUID로 변경함 (재방문 중복 insert 허용) — 기존 데이터 영향 없음 확인 필요
+
+---
+
+### 📋 다음 작업 목록 (TODO)
+
+#### TODO 1: 이미지 자동 정렬 전체 적용
 - `scripts/auto-sort-images.mjs` 전체 437개 실제 실행
 - DRY RUN 결과: 변경 대상 12개 확인 완료
 - 실행 명령:
@@ -114,11 +149,22 @@
   ```
 - 소요 시간: 약 60분 (437개 × 8초 간격)
 
-### TODO 2: 방문 통계 기능 추가
-- **식당 상세 페이지**: 방문자 N명 표시 (`device_visits` 테이블 집계)
-- **관리자 페이지**: 식당별 방문 통계 열람 기능
-- 관련 테이블: `device_visits` (이미 RLS anon read 정책 적용됨)
-- 작업 전 반드시 git commit으로 현재 상태 저장 후 시작
+#### TODO 2: Supabase를 맛탐 전용 프로젝트로 분리
+- 현재 `resstaurantchuncheon` 프로젝트는 다른 용도와 공유 중일 수 있음
+- 맛탐 전용 Supabase 프로젝트 신규 생성 후 데이터 마이그레이션
+- 작업 순서:
+  1. 새 Supabase 프로젝트 생성 (이름: `mattam` 또는 원하는 이름)
+  2. 테이블 스키마 마이그레이션 (restaurants, categories, cities, device_visits, device_favorites, reviews)
+  3. RLS 정책 재설정
+  4. 데이터 이전 (pg_dump 또는 Supabase 대시보드 export)
+  5. `.env` 및 Vercel 환경변수 교체
+  6. 카카오 개발자 콘솔 도메인 재확인
+- **주의**: 마이그레이션 완료 전까지 기존 `resstaurantchuncheon` 유지
+
+#### TODO 3: reviews RLS 정책 재설계
+- 현재 RLS 비활성화 상태 → 보안상 정책 복구 필요
+- 원인 파악 후 올바른 anon 정책으로 재설정
+- `NOTIFY pgrst, 'reload schema'` 실행 필수 (스키마 캐시 반영)
 
 ---
 
