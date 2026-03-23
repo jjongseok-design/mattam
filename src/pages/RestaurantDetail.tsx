@@ -293,8 +293,8 @@ const RestaurantDetail = () => {
                 <Star className="h-5 w-5 text-rating fill-current" />
                 <span className="text-2xl font-bold text-foreground">{restaurant.rating}</span>
               </div>
-              <span className="text-[10px] text-muted-foreground">네이버 리뷰 {restaurant.reviewCount}개</span>
             </div>
+            <span className="text-[10px] text-muted-foreground">네이버 리뷰 {restaurant.reviewCount}개</span>
             {visitCount !== undefined && (
               <div className="flex items-center gap-1 bg-muted/40 px-2.5 py-1 rounded-lg">
                 <Users className="h-3 w-3 text-muted-foreground" />
