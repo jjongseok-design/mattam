@@ -101,16 +101,14 @@ export const useVisited = () => {
           .then(({ error }) => {
             if (error) {
               console.warn("[useVisited] first visit error:", error.message);
-              // 롤백
               queryClient.setQueryData<Record<string, number>>(
                 ["first-visitor-counts"],
                 (old) => ({ ...(old ?? {}), [id]: Math.max(0, ((old ?? {})[id] ?? 1) - 1) })
               );
               queryClient.setQueryData<number>(["visit-count", id], (old) => Math.max(0, (old ?? 1) - 1));
-            } else {
-              queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
-              queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
             }
+            queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+            queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
           });
       } else {
         // ── 방문 취소 (기존 기록 삭제) ──
@@ -136,7 +134,6 @@ export const useVisited = () => {
           .then(({ error }) => {
             if (error) {
               console.warn("[useVisited] cancel visit error:", error.message);
-              // 롤백
               setVisited((prev) => {
                 const next = new Set(prev);
                 next.add(id);
@@ -148,10 +145,9 @@ export const useVisited = () => {
                 (old) => ({ ...(old ?? {}), [id]: ((old ?? {})[id] ?? 0) + 1 })
               );
               queryClient.setQueryData<number>(["visit-count", id], (old) => (old ?? 0) + 1);
-            } else {
-              queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
-              queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
             }
+            queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+            queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
           });
       }
     },

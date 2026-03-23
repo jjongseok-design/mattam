@@ -15,7 +15,7 @@ export const useVisitCount = (restaurantId: string | undefined) => {
       return count ?? 0;
     },
     enabled: !!restaurantId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 };
 
@@ -39,7 +39,7 @@ export const useFirstVisitorCounts = () => {
       });
       return map;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 };
 
