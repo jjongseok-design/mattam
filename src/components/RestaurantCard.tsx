@@ -120,9 +120,7 @@ const RestaurantCard = memo(({
       queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => Math.max(0, (old ?? 1) - 1));
       queryClient.setQueryData<number>(["my-visit-count", restaurant.id, deviceId], (old) => Math.max(0, (old ?? 1) - 1));
     }
-    queryClient.invalidateQueries({ queryKey: ["visit-count", restaurant.id] });
     queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
-    queryClient.invalidateQueries({ queryKey: ["my-visit-count", restaurant.id] });
   };
 
   // 기존 방문 취소: onToggleVisited 호출 → useVisited.toggle이 삭제 처리

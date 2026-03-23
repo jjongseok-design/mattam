@@ -104,9 +104,9 @@ export const useVisited = () => {
                 (old) => ({ ...(old ?? {}), [id]: Math.max(0, ((old ?? {})[id] ?? 1) - 1) })
               );
               queryClient.setQueryData<number>(["visit-count", id], (old) => Math.max(0, (old ?? 1) - 1));
+              queryClient.setQueryData<number>(["my-visit-count", id, deviceId], (old) => Math.max(0, (old ?? 1) - 1));
             }
             queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
-            queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
           });
       } else {
         // ── 방문 취소 (기존 기록 삭제) ──
@@ -144,9 +144,9 @@ export const useVisited = () => {
                 (old) => ({ ...(old ?? {}), [id]: ((old ?? {})[id] ?? 0) + 1 })
               );
               queryClient.setQueryData<number>(["visit-count", id], (old) => (old ?? 0) + 1);
+              queryClient.setQueryData<number>(["my-visit-count", id, deviceId], (old) => (old ?? 0) + 1);
             }
             queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
-            queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
           });
       }
     },
