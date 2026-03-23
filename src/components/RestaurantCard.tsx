@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, forwardRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Star, MapPin, Phone, CheckCircle2, Share2, Heart, Navigation, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
@@ -79,10 +79,10 @@ const checkOpenStatus = (openingHours?: string, closedDays?: string): StatusResu
   return { status: 'open' };
 };
 
-const RestaurantCard = memo(({
+const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
   restaurant, isSelected, isVisited, isFavorite, distance, compact, visitCount,
   onClick, onToggleVisited, onToggleFavorite,
-}: RestaurantCardProps) => {
+}, ref) => {
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
   const { toast } = useToast();
   const { cityId, city } = useCityContext();
@@ -177,6 +177,7 @@ const RestaurantCard = memo(({
       <>
         {revisitDialog}
       <motion.div
+        ref={ref}
         layout
         data-restaurant-id={restaurant.id}
         initial={{ opacity: 0, y: 5 }}
@@ -305,6 +306,7 @@ const RestaurantCard = memo(({
     <>
       {revisitDialog}
     <motion.div
+      ref={ref}
       layout
       data-restaurant-id={restaurant.id}
       initial={{ opacity: 0, y: 6 }}
@@ -388,7 +390,7 @@ const RestaurantCard = memo(({
           </div>
 
           {/* Tags */}
-          {restaurant.tags.length > 0 && (
+          {(restaurant.tags.length > 0 || (cardVisitCount !== undefined && cardVisitCount > 0)) && (
             <div className="flex gap-1 flex-wrap mb-auto pt-1">
               {restaurant.tags.slice(0, 4).map((tag) => (
                 <span
@@ -398,6 +400,11 @@ const RestaurantCard = memo(({
                   {tag}
                 </span>
               ))}
+              {cardVisitCount !== undefined && cardVisitCount > 0 && (
+                <span className="text-[10px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
+                  👥 방문 {cardVisitCount}명
+                </span>
+              )}
             </div>
           )}
 
@@ -461,7 +468,7 @@ const RestaurantCard = memo(({
     </motion.div>
     </>
   );
-});
+}));
 
 RestaurantCard.displayName = "RestaurantCard";
 export default RestaurantCard;

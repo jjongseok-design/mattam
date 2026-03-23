@@ -27,6 +27,7 @@ import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import { CityContext } from "@/contexts/CityContext";
+import { useFirstVisitorCounts } from "@/hooks/useVisitCount";
 
 const INDEX_STATE_KEY = "index_scroll_state";
 
@@ -78,6 +79,7 @@ const CityMap = () => {
 
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants(cityId);
+  const { data: visitCounts } = useFirstVisitorCounts();
   const { visited, isVisited, toggle: toggleVisited } = useVisited();
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
   const { position, request: requestGeo } = useGeolocation();
@@ -238,6 +240,7 @@ const CityMap = () => {
           isVisited={isVisited(restaurant.id)}
           isFavorite={isFavorite(restaurant.id)}
           distance={dist}
+          visitCount={visitCounts?.[restaurant.id]}
           onClick={() => handleSelect(restaurant.id)}
           onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
           onToggleFavorite={(e) => { e.stopPropagation(); toggleFavorite(restaurant.id); }}

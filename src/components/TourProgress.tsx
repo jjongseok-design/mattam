@@ -56,9 +56,12 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false, cityName
   if (compact) {
     return (
       <div>
-        <button
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center gap-2 py-1"
+          onKeyDown={(e) => e.key === 'Enter' && setExpanded(!expanded)}
+          className="w-full flex items-center gap-2 py-1 cursor-pointer"
         >
           <span className="text-xl">{stats.rankEmoji}</span>
           <div className="flex-1 min-w-0">
@@ -90,7 +93,7 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false, cityName
           >
             <Share2 className="h-4 w-4" />
           </button>
-        </button>
+        </div>
 
         <AnimatePresence>
           {expanded && (
@@ -166,9 +169,12 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false, cityName
   return (
     <div className="bg-gradient-to-br from-card via-card to-primary/5 border border-border/50 rounded-2xl overflow-hidden">
       {/* Header - Always visible */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center gap-3 text-left hover:bg-muted/30 transition-colors"
+        onKeyDown={(e) => e.key === 'Enter' && setExpanded(!expanded)}
+        className="w-full p-4 flex items-center gap-3 text-left hover:bg-muted/30 transition-colors cursor-pointer"
       >
         {/* Rank Badge */}
         <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center text-2xl shadow-sm">
@@ -232,7 +238,7 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false, cityName
             <ChevronDown className="h-5 w-5 text-muted-foreground" />
           )}
         </div>
-      </button>
+      </div>
 
       {/* Expanded content */}
       <AnimatePresence>
