@@ -239,7 +239,7 @@ const RestaurantCard = memo(({
                 ))}
                 {cardVisitCount !== undefined && cardVisitCount > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
-                    👥 {cardVisitCount}명
+                    👥 방문 {cardVisitCount}명
                   </span>
                 )}
                 {openStatus === 'open' && (

@@ -309,7 +309,7 @@ const RestaurantDetail = () => {
                 <span className="text-[11px] text-muted-foreground">
                   총 방문 {visitCount}회
                   {myVisitCount !== undefined && myVisitCount > 0 && (
-                    <span className="text-primary/70 font-medium"> · 내 방문 {myVisitCount}회</span>
+                    <span className="text-primary/70 font-medium"> · 내가 방문 {myVisitCount}회</span>
                   )}
                 </span>
               </div>
