@@ -224,22 +224,41 @@ const RestaurantDetail = () => {
         const allImages = [restaurant.imageUrl, ...(restaurant.extraImages ?? [])].filter(Boolean);
         if (allImages.length === 1) {
           return (
-            <div className="w-full max-w-2xl mx-auto h-56 sm:h-72 overflow-hidden">
-              <img src={allImages[0]} alt={restaurant.name} className="w-full h-full object-cover" />
+            <div className="w-full max-w-2xl mx-auto h-56 sm:h-72 overflow-hidden bg-muted/40 animate-pulse">
+              <img
+                src={allImages[0]}
+                alt={restaurant.name}
+                decoding="async"
+                className="w-full h-full object-cover"
+                onLoad={(e) => { (e.target as HTMLImageElement).parentElement!.classList.remove("animate-pulse", "bg-muted/40"); }}
+              />
             </div>
           );
         }
         return (
           <div className="w-full max-w-2xl mx-auto">
             <div className="flex gap-1 h-56 sm:h-72 overflow-hidden rounded-none">
-              <div className="flex-1 overflow-hidden">
-                <img src={allImages[0]} alt={restaurant.name} className="w-full h-full object-cover" />
+              <div className="flex-1 overflow-hidden bg-muted/40 animate-pulse">
+                <img
+                  src={allImages[0]}
+                  alt={restaurant.name}
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                  onLoad={(e) => { (e.target as HTMLImageElement).parentElement!.classList.remove("animate-pulse", "bg-muted/40"); }}
+                />
               </div>
               {allImages.length > 1 && (
                 <div className="flex flex-col gap-1 w-[35%]">
                   {allImages.slice(1, 3).map((url, i) => (
-                    <div key={url} className="flex-1 overflow-hidden relative">
-                      <img src={url} alt={`${restaurant.name} ${i + 2}`} className="w-full h-full object-cover" />
+                    <div key={url} className="flex-1 overflow-hidden relative bg-muted/40 animate-pulse">
+                      <img
+                        src={url}
+                        alt={`${restaurant.name} ${i + 2}`}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                        onLoad={(e) => { (e.target as HTMLImageElement).parentElement!.classList.remove("animate-pulse", "bg-muted/40"); }}
+                      />
                       {i === 1 && allImages.length > 3 && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <span className="text-white text-sm font-bold">+{allImages.length - 3}</span>

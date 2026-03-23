@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { Star, MapPin, Phone, CheckCircle2, Share2, Heart, Navigation, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -78,6 +78,8 @@ const RestaurantCard = memo(({
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
   const { toast } = useToast();
   const { cityId, city } = useCityContext();
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const cityLabel = city?.name ?? "맛집";
   const { status: openStatus, closeTime } = useMemo(() => checkOpenStatus(restaurant.openingHours, restaurant.closedDays), [restaurant.openingHours, restaurant.closedDays]);
 
@@ -114,18 +116,16 @@ const RestaurantCard = memo(({
         <button onClick={onClick} className="w-full text-left p-3 pb-2">
           <div className="flex gap-3">
             {/* Thumbnail */}
-            <div className="w-[65px] h-[65px] rounded-xl overflow-hidden flex-shrink-0 bg-secondary/60 flex items-center justify-center">
-              {restaurant.imageUrl ? (
+            <div className={`w-[65px] h-[65px] rounded-xl overflow-hidden flex-shrink-0 relative flex items-center justify-center ${!imgLoaded && !imgError && restaurant.imageUrl ? "bg-muted/60 animate-pulse" : "bg-secondary/60"}`}>
+              {restaurant.imageUrl && !imgError ? (
                 <img
                   src={restaurant.imageUrl}
                   alt={restaurant.name}
                   loading="lazy"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const el = e.target as HTMLImageElement;
-                    el.style.display = "none";
-                    el.parentElement!.innerHTML = `<span style="font-size:24px">${emoji}</span>`;
-                  }}
+                  decoding="async"
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => setImgError(true)}
                 />
               ) : (
                 <span className="text-2xl">{emoji}</span>
@@ -234,17 +234,16 @@ const RestaurantCard = memo(({
     >
       <div className="flex min-h-[108px]">
         {/* Image / emoji */}
-        <div className="w-[92px] flex-shrink-0 overflow-hidden self-stretch">
-          {restaurant.imageUrl ? (
+        <div className={`w-[92px] flex-shrink-0 overflow-hidden self-stretch relative flex items-center justify-center ${!imgLoaded && !imgError && restaurant.imageUrl ? "bg-muted/60 animate-pulse" : "bg-gradient-to-br from-secondary to-secondary/40"}`}>
+          {restaurant.imageUrl && !imgError ? (
             <img
               src={restaurant.imageUrl}
               alt={restaurant.name}
               loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-              onError={(e) => {
-                const el = e.target as HTMLImageElement;
-                el.parentElement!.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-secondary to-secondary/40 flex items-center justify-center text-3xl">${emoji}</div>`;
-              }}
+              decoding="async"
+              className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-[1.04] ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setImgError(true)}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-secondary to-secondary/40 flex items-center justify-center text-3xl">
