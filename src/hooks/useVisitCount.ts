@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-/** 식당 상세용: 총 방문 횟수 (첫방문 + 재방문 합계) */
+/** 식당 상세용: 총 방문 횟수 */
 export const useVisitCount = (restaurantId: string | undefined) => {
   return useQuery({
     queryKey: ["visit-count", restaurantId],
@@ -19,33 +19,23 @@ export const useVisitCount = (restaurantId: string | undefined) => {
   });
 };
 
-/** 카드 목록용: 식당별 첫 방문자 수 맵 { restaurant_id: count } */
+/** 카드 목록용: 식당별 방문 수 맵 { restaurant_id: count } */
 export const useFirstVisitorCounts = () => {
   return useQuery({
     queryKey: ["first-visitor-counts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("device_visits")
-        .select("restaurant_id, is_first_visit");
+        .select("restaurant_id");
 
-      // is_first_visit 컬럼 없으면 전체 방문 수로 폴백
       if (error) {
-        console.warn("[useFirstVisitorCounts] is_first_visit 쿼리 실패, 폴백 사용:", error.message);
-        const { data: fallback } = await supabase
-          .from("device_visits")
-          .select("restaurant_id");
-        const map: Record<string, number> = {};
-        (fallback ?? []).forEach((row: { restaurant_id: string }) => {
-          map[row.restaurant_id] = (map[row.restaurant_id] ?? 0) + 1;
-        });
-        return map;
+        console.warn("[useFirstVisitorCounts] 쿼리 실패:", error.message);
+        return {} as Record<string, number>;
       }
 
       const map: Record<string, number> = {};
-      (data ?? []).forEach((row: { restaurant_id: string; is_first_visit: boolean | null }) => {
-        if (row.is_first_visit !== false) {
-          map[row.restaurant_id] = (map[row.restaurant_id] ?? 0) + 1;
-        }
+      (data ?? []).forEach((row: { restaurant_id: string }) => {
+        map[row.restaurant_id] = (map[row.restaurant_id] ?? 0) + 1;
       });
       return map;
     },
@@ -60,20 +50,17 @@ export const useAllVisitCounts = (enabled: boolean) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("device_visits")
-        .select("restaurant_id, is_first_visit");
+        .select("restaurant_id");
       if (error) {
         console.warn("[useAllVisitCounts] error:", error.message);
         return { firstVisitors: {} as Record<string, number>, totalVisits: {} as Record<string, number> };
       }
-      const firstVisitors: Record<string, number> = {};
       const totalVisits: Record<string, number> = {};
-      (data ?? []).forEach((row: { restaurant_id: string; is_first_visit: boolean | null }) => {
+      (data ?? []).forEach((row: { restaurant_id: string }) => {
         totalVisits[row.restaurant_id] = (totalVisits[row.restaurant_id] ?? 0) + 1;
-        if (row.is_first_visit !== false) {
-          firstVisitors[row.restaurant_id] = (firstVisitors[row.restaurant_id] ?? 0) + 1;
-        }
       });
-      return { firstVisitors, totalVisits };
+      // 관리자 페이지에서 firstVisitors = totalVisits (is_first_visit 구분 없이 표시)
+      return { firstVisitors: totalVisits, totalVisits };
     },
     enabled,
     staleTime: 2 * 60 * 1000,

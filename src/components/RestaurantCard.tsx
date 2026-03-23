@@ -107,7 +107,7 @@ const RestaurantCard = memo(({
     queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => (old ?? 0) + 1);
     const { error } = await supabase
       .from("device_visits")
-      .insert({ device_id: deviceId, restaurant_id: restaurant.id, is_first_visit: false });
+      .insert({ device_id: deviceId, restaurant_id: restaurant.id });
     if (error) {
       console.warn("[RestaurantCard] revisit error:", error.message);
       queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => Math.max(0, (old ?? 1) - 1));

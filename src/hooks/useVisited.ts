@@ -61,19 +61,6 @@ export const useVisited = () => {
         }
       } catch {}
 
-      // first-visited 동기화 (is_first_visit 컬럼 필요 → 실패해도 OK)
-      try {
-        const { data: firstData } = await supabase
-          .from("device_visits")
-          .select("restaurant_id, is_first_visit")
-          .eq("device_id", deviceId)
-          .eq("is_first_visit", true);
-        if (firstData) {
-          const firstVisited = loadFirstVisited();
-          firstData.forEach((r: { restaurant_id: string }) => firstVisited.add(r.restaurant_id));
-          saveFirstVisited(firstVisited);
-        }
-      } catch {}
     };
     sync();
   }, [deviceId]);
@@ -110,7 +97,7 @@ export const useVisited = () => {
 
         supabase
           .from("device_visits")
-          .insert({ device_id: deviceId, restaurant_id: id, is_first_visit: true })
+          .insert({ device_id: deviceId, restaurant_id: id })
           .then(({ error }) => {
             if (error) {
               console.warn("[useVisited] first visit error:", error.message);
