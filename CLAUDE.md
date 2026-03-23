@@ -7,6 +7,18 @@
 
 ---
 
+## ⚠️ Supabase 프로젝트 혼동 금지 (최우선 규칙)
+
+> **맛탐 앱의 Supabase는 오직 `resstaurantchuncheon` 프로젝트 하나뿐이다.**
+>
+> - ✅ **사용**: `resstaurantchuncheon` (URL: `https://cblckdcrsotqynngblyb.supabase.co`)
+> - ❌ **절대 사용 금지**: `mattam`이라는 이름의 Supabase 프로젝트 — 맛탐 앱과 **완전히 무관**
+>
+> SQL 작업 안내 시 반드시 **resstaurantchuncheon Supabase (cblckdcrsotqynngblyb)** 라고 명시한다.
+> `mattam Supabase`에서 실행하라고 안내하는 것은 **절대 금지**된 오류다.
+
+---
+
 ## 작업 규칙 (반드시 준수)
 
 1. **기존 기능 보호**: 현재 작동 중인 기능은 절대 건드리지 않는다. 요청받은 기능만 수정한다.
