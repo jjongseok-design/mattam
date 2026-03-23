@@ -103,11 +103,14 @@ const RestaurantCard = memo(({
   const handleRevisit = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowRevisitDialog(false);
+    // 낙관적 업데이트: 총 방문수 즉시 +1
+    queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => (old ?? 0) + 1);
     const { error } = await supabase
       .from("device_visits")
       .insert({ device_id: deviceId, restaurant_id: restaurant.id, is_first_visit: false });
     if (error) {
       console.warn("[RestaurantCard] revisit error:", error.message);
+      queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => Math.max(0, (old ?? 1) - 1));
     } else {
       queryClient.invalidateQueries({ queryKey: ["visit-count", restaurant.id] });
     }
@@ -225,7 +228,7 @@ const RestaurantCard = memo(({
                     {tag}
                   </span>
                 ))}
-                {!!visitCount && (
+                {visitCount !== undefined && (
                   <span className="text-[9px] px-1.5 py-0.5 bg-primary/8 rounded-md text-primary/60 font-medium">
                     방문 {visitCount}명
                   </span>

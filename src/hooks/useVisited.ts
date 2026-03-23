@@ -98,12 +98,28 @@ export const useVisited = () => {
         firstVisited.add(id);
         saveFirstVisited(firstVisited);
 
+        // 낙관적 업데이트: 클릭 즉시 카운트 반영
+        queryClient.setQueryData<Record<string, number>>(
+          ["first-visitor-counts"],
+          (old) => ({ ...(old ?? {}), [id]: ((old ?? {})[id] ?? 0) + 1 })
+        );
+        queryClient.setQueryData<number>(
+          ["visit-count", id],
+          (old) => (old ?? 0) + 1
+        );
+
         supabase
           .from("device_visits")
           .insert({ device_id: deviceId, restaurant_id: id, is_first_visit: true })
           .then(({ error }) => {
             if (error) {
               console.warn("[useVisited] first visit error:", error.message);
+              // 롤백
+              queryClient.setQueryData<Record<string, number>>(
+                ["first-visitor-counts"],
+                (old) => ({ ...(old ?? {}), [id]: Math.max(0, ((old ?? {})[id] ?? 1) - 1) })
+              );
+              queryClient.setQueryData<number>(["visit-count", id], (old) => Math.max(0, (old ?? 1) - 1));
             } else {
               queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
               queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
@@ -117,6 +133,13 @@ export const useVisited = () => {
           saveLocal(next);
           return next;
         });
+
+        // 낙관적 업데이트: 클릭 즉시 카운트 감소
+        queryClient.setQueryData<Record<string, number>>(
+          ["first-visitor-counts"],
+          (old) => ({ ...(old ?? {}), [id]: Math.max(0, ((old ?? {})[id] ?? 1) - 1) })
+        );
+        queryClient.setQueryData<number>(["visit-count", id], (old) => Math.max(0, (old ?? 1) - 1));
 
         supabase
           .from("device_visits")
@@ -133,6 +156,11 @@ export const useVisited = () => {
                 saveLocal(next);
                 return next;
               });
+              queryClient.setQueryData<Record<string, number>>(
+                ["first-visitor-counts"],
+                (old) => ({ ...(old ?? {}), [id]: ((old ?? {})[id] ?? 0) + 1 })
+              );
+              queryClient.setQueryData<number>(["visit-count", id], (old) => (old ?? 0) + 1);
             } else {
               queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
               queryClient.invalidateQueries({ queryKey: ["visit-count", id] });

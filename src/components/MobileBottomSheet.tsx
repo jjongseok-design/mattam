@@ -243,7 +243,7 @@ const MobileBottomSheet = memo(({
                     isFavorite={isFavorite(restaurant.id)}
                     distance={dist}
                     compact
-                    visitCount={firstVisitorCounts?.[restaurant.id]}
+                    visitCount={firstVisitorCounts ? (firstVisitorCounts[restaurant.id] ?? 0) : undefined}
                     onClick={() => {
                       onSelect(restaurant.id);
                       setState("half");
