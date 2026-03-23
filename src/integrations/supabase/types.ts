@@ -121,16 +121,22 @@ export type Database = {
       device_visits: {
         Row: {
           device_id: string
+          id: string
+          is_first_visit: boolean
           restaurant_id: string
           visited_at: string
         }
         Insert: {
           device_id: string
+          id?: string
+          is_first_visit?: boolean
           restaurant_id: string
           visited_at?: string
         }
         Update: {
           device_id?: string
+          id?: string
+          is_first_visit?: boolean
           restaurant_id?: string
           visited_at?: string
         }

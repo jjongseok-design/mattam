@@ -298,7 +298,7 @@ const RestaurantDetail = () => {
             {!!visitCount && (
               <div className="flex items-center gap-1 bg-muted/40 px-2.5 py-1 rounded-lg">
                 <Users className="h-3 w-3 text-muted-foreground" />
-                <span className="text-[11px] text-muted-foreground">방문 {visitCount}명</span>
+                <span className="text-[11px] text-muted-foreground">총 방문 {visitCount}회</span>
               </div>
             )}
           </div>

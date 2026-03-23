@@ -14,6 +14,7 @@ interface RestaurantCardProps {
   isFavorite?: boolean;
   distance?: number | null;
   compact?: boolean;
+  visitCount?: number;
   onClick: () => void;
   onToggleVisited: (e: React.MouseEvent) => void;
   onToggleFavorite?: (e: React.MouseEvent) => void;
@@ -72,7 +73,7 @@ const checkOpenStatus = (openingHours?: string, closedDays?: string): StatusResu
 };
 
 const RestaurantCard = memo(({
-  restaurant, isSelected, isVisited, isFavorite, distance, compact,
+  restaurant, isSelected, isVisited, isFavorite, distance, compact, visitCount,
   onClick, onToggleVisited, onToggleFavorite,
 }: RestaurantCardProps) => {
   const emoji = CATEGORY_EMOJI[restaurant.category] || "🍽️";
@@ -160,6 +161,11 @@ const RestaurantCard = memo(({
                     {tag}
                   </span>
                 ))}
+                {!!visitCount && (
+                  <span className="text-[9px] px-1.5 py-0.5 bg-primary/8 rounded-md text-primary/60 font-medium">
+                    방문 {visitCount}명
+                  </span>
+                )}
                 {openStatus === 'open' && (
                   <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold ml-auto">영업중</span>
                 )}

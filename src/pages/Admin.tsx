@@ -730,15 +730,22 @@ const Admin = () => {
             ) : (
               <div className="space-y-1 max-h-72 overflow-y-auto">
                 {[...restaurants]
-                  .map((r) => ({ ...r, visits: visitCounts?.[r.id] ?? 0 }))
-                  .sort((a, b) => b.visits - a.visits)
+                  .map((r) => ({
+                    ...r,
+                    firstVisitors: visitCounts?.firstVisitors?.[r.id] ?? 0,
+                    totalVisits: visitCounts?.totalVisits?.[r.id] ?? 0,
+                  }))
+                  .sort((a, b) => b.totalVisits - a.totalVisits)
                   .map((r) => (
                     <div key={r.id} className="flex items-center gap-2 text-[12px] py-1 border-b border-border/30 last:border-0">
                       <span className="flex-1 truncate font-medium text-foreground">{r.name}</span>
                       <span className="text-muted-foreground shrink-0">{r.category}</span>
-                      <div className="flex items-center gap-1 min-w-[52px] justify-end shrink-0">
-                        <Users className="h-3 w-3 text-primary/60" />
-                        <span className="font-semibold text-foreground">{r.visits}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-muted-foreground text-[11px]">첫방문 <span className="font-semibold text-foreground">{r.firstVisitors}명</span></span>
+                        <div className="flex items-center gap-0.5">
+                          <Users className="h-3 w-3 text-primary/60" />
+                          <span className="font-semibold text-foreground">{r.totalVisits}회</span>
+                        </div>
                       </div>
                     </div>
                   ))}
