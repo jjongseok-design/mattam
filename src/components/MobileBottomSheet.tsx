@@ -10,7 +10,6 @@ import TourProgress from "./TourProgress";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import type { Restaurant } from "@/hooks/useRestaurants";
 import { useCityContext } from "@/contexts/CityContext";
-import { useFirstVisitorCounts } from "@/hooks/useVisitCount";
 
 interface MobileBottomSheetProps {
   restaurants: Restaurant[];
@@ -75,7 +74,6 @@ const MobileBottomSheet = memo(({
 }: MobileBottomSheetProps) => {
   const { city } = useCityContext();
   const cityName = city?.name;
-  const { data: firstVisitorCounts } = useFirstVisitorCounts();
   const [state, setState] = useState<SheetState>("half");
   const [isDraggable, setIsDraggable] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
@@ -243,7 +241,6 @@ const MobileBottomSheet = memo(({
                     isFavorite={isFavorite(restaurant.id)}
                     distance={dist}
                     compact
-                    visitCount={firstVisitorCounts ? (firstVisitorCounts[restaurant.id] ?? 0) : undefined}
                     onClick={() => {
                       onSelect(restaurant.id);
                       setState("half");

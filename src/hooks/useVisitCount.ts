@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getDeviceId } from "./useDeviceId";
 
 /** 식당 상세용: 총 방문 횟수 */
 export const useVisitCount = (restaurantId: string | undefined) => {
@@ -11,6 +12,26 @@ export const useVisitCount = (restaurantId: string | undefined) => {
         .from("device_visits")
         .select("*", { count: "exact", head: true })
         .eq("restaurant_id", restaurantId);
+      if (error) return 0;
+      return count ?? 0;
+    },
+    enabled: !!restaurantId,
+    staleTime: 0,
+  });
+};
+
+/** 상세용: 이 기기가 이 식당에 방문한 횟수 */
+export const useMyVisitCount = (restaurantId: string | undefined) => {
+  const deviceId = getDeviceId();
+  return useQuery({
+    queryKey: ["my-visit-count", restaurantId, deviceId],
+    queryFn: async () => {
+      if (!restaurantId) return 0;
+      const { count, error } = await supabase
+        .from("device_visits")
+        .select("*", { count: "exact", head: true })
+        .eq("restaurant_id", restaurantId)
+        .eq("device_id", deviceId);
       if (error) return 0;
       return count ?? 0;
     },

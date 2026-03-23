@@ -10,7 +10,7 @@ import ReviewList from "@/components/ReviewList";
 import ErrorState from "@/components/ErrorState";
 import { useToast } from "@/hooks/use-toast";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
-import { useVisitCount } from "@/hooks/useVisitCount";
+import { useVisitCount, useMyVisitCount } from "@/hooks/useVisitCount";
 import { useReviews } from "@/hooks/useReviews";
 import { supabase } from "@/integrations/supabase/client";
 import { CityContext } from "@/contexts/CityContext";
@@ -75,6 +75,7 @@ const RestaurantDetail = () => {
   const restaurant = restaurants.find((r) => r.slug === slug || r.id === slug);
   const id = restaurant?.id;
   const { data: visitCount } = useVisitCount(id);
+  const { data: myVisitCount } = useMyVisitCount(id);
   const { data: reviews = [] } = useReviews(id);
   const matamAvg = reviews.length > 0
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
@@ -302,10 +303,15 @@ const RestaurantDetail = () => {
                 <span className="text-[10px] text-muted-foreground whitespace-nowrap">맛탐 리뷰 {reviews.length}개</span>
               </div>
             )}
-            {visitCount !== undefined && (
+            {visitCount !== undefined && visitCount > 0 && (
               <div className="flex items-center gap-1 bg-muted/40 px-2.5 py-1 rounded-lg">
                 <Users className="h-3 w-3 text-muted-foreground" />
-                <span className="text-[11px] text-muted-foreground">총 방문 {visitCount}회</span>
+                <span className="text-[11px] text-muted-foreground">
+                  총 방문 {visitCount}회
+                  {myVisitCount !== undefined && myVisitCount > 0 && (
+                    <span className="text-primary/70 font-medium"> · 내 방문 {myVisitCount}회</span>
+                  )}
+                </span>
               </div>
             )}
           </div>

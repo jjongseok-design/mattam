@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/hooks/useDeviceId";
 import { useAllAvgRatings } from "@/hooks/useReviews";
+import { useFirstVisitorCounts } from "@/hooks/useVisitCount";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -92,6 +93,8 @@ const RestaurantCard = memo(({
   const deviceId = getDeviceId();
   const { data: allRatings } = useAllAvgRatings();
   const matamRating = allRatings?.[restaurant.id];
+  const { data: visitCounts } = useFirstVisitorCounts();
+  const cardVisitCount = visitCounts?.[restaurant.id];
 
   const handleVisitClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -114,9 +117,10 @@ const RestaurantCard = memo(({
     if (error) {
       console.warn("[RestaurantCard] revisit error:", error.message);
       queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => Math.max(0, (old ?? 1) - 1));
-    } else {
-      queryClient.invalidateQueries({ queryKey: ["visit-count", restaurant.id] });
     }
+    queryClient.invalidateQueries({ queryKey: ["visit-count", restaurant.id] });
+    queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+    queryClient.invalidateQueries({ queryKey: ["my-visit-count", restaurant.id] });
   };
 
   // 기존 방문 취소: onToggleVisited 호출 → useVisited.toggle이 삭제 처리
@@ -233,9 +237,9 @@ const RestaurantCard = memo(({
                     {tag}
                   </span>
                 ))}
-                {visitCount !== undefined && (
+                {cardVisitCount !== undefined && cardVisitCount > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
-                    👥 {visitCount}명
+                    👥 {cardVisitCount}명
                   </span>
                 )}
                 {openStatus === 'open' && (
