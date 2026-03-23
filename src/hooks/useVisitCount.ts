@@ -16,7 +16,7 @@ export const useVisitCount = (restaurantId: string | undefined) => {
       return count ?? 0;
     },
     enabled: !!restaurantId,
-    staleTime: 0,
+    staleTime: 30 * 1000,
   });
 };
 
@@ -36,7 +36,7 @@ export const useMyVisitCount = (restaurantId: string | undefined) => {
       return count ?? 0;
     },
     enabled: !!restaurantId,
-    staleTime: 0,
+    staleTime: 30 * 1000,
   });
 };
 

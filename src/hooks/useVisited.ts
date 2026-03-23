@@ -90,10 +90,8 @@ export const useVisited = () => {
           ["first-visitor-counts"],
           (old) => ({ ...(old ?? {}), [id]: ((old ?? {})[id] ?? 0) + 1 })
         );
-        queryClient.setQueryData<number>(
-          ["visit-count", id],
-          (old) => (old ?? 0) + 1
-        );
+        queryClient.setQueryData<number>(["visit-count", id], (old) => (old ?? 0) + 1);
+        queryClient.setQueryData<number>(["my-visit-count", id, deviceId], (old) => (old ?? 0) + 1);
 
         supabase
           .from("device_visits")
@@ -125,6 +123,7 @@ export const useVisited = () => {
           (old) => ({ ...(old ?? {}), [id]: Math.max(0, ((old ?? {})[id] ?? 1) - 1) })
         );
         queryClient.setQueryData<number>(["visit-count", id], (old) => Math.max(0, (old ?? 1) - 1));
+        queryClient.setQueryData<number>(["my-visit-count", id, deviceId], (old) => Math.max(0, (old ?? 1) - 1));
 
         supabase
           .from("device_visits")
