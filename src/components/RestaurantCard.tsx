@@ -6,6 +6,7 @@ import type { Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import { useToast } from "@/hooks/use-toast";
 import { useCityContext } from "@/contexts/CityContext";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -81,6 +82,16 @@ const RestaurantCard = memo(({
   const { cityId, city } = useCityContext();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [showRevisitDialog, setShowRevisitDialog] = useState(false);
+
+  const handleVisitClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isVisited) {
+      onToggleVisited(e);
+    } else {
+      setShowRevisitDialog(true);
+    }
+  };
   const cityLabel = city?.name ?? "맛집";
   const { status: openStatus, closeTime } = useMemo(() => checkOpenStatus(restaurant.openingHours, restaurant.closedDays), [restaurant.openingHours, restaurant.closedDays]);
 
@@ -99,9 +110,36 @@ const RestaurantCard = memo(({
     }
   };
 
+  const revisitDialog = (
+    <AlertDialog open={showRevisitDialog} onOpenChange={setShowRevisitDialog}>
+      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>재방문이신가요?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {restaurant.name}을(를) 다시 방문하셨나요? 재방문으로 기록됩니다.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowRevisitDialog(false);
+              onToggleVisited(e);
+            }}
+          >
+            확인
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   /* ──────────────── MOBILE COMPACT ──────────────── */
   if (compact) {
     return (
+      <>
+        {revisitDialog}
       <motion.div
         layout
         data-restaurant-id={restaurant.id}
@@ -200,16 +238,16 @@ const RestaurantCard = memo(({
             </button>
           )}
           <button
-            onClick={onToggleVisited}
+            onClick={handleVisitClick}
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all duration-200 ${
               isVisited
                 ? "bg-primary text-white shadow-sm"
                 : "bg-primary/8 dark:bg-primary/15 text-primary/70 border border-primary/20"
             }`}
-            aria-label={isVisited ? "방문 취소" : "방문 표시"}
+            aria-label={isVisited ? "재방문 기록" : "방문 표시"}
           >
             <CheckCircle2 className={`h-4 w-4 ${isVisited ? "fill-white/30" : ""}`} />
-            <span className="text-[11px] font-semibold">방문</span>
+            <span className="text-[11px] font-semibold">{isVisited ? "재방문" : "방문"}</span>
           </button>
           <Link
             to={`/${cityId}/restaurant/${restaurant.slug}`}
@@ -220,11 +258,14 @@ const RestaurantCard = memo(({
           </Link>
         </div>
       </motion.div>
+      </>
     );
   }
 
   /* ──────────────── DESKTOP FULL (Horizontal) ──────────────── */
   return (
+    <>
+      {revisitDialog}
     <motion.div
       layout
       data-restaurant-id={restaurant.id}
@@ -338,13 +379,13 @@ const RestaurantCard = memo(({
                 </button>
               )}
               <button
-                onClick={onToggleVisited}
+                onClick={handleVisitClick}
                 className={`p-1.5 rounded-lg transition-colors ${
                   isVisited
                     ? "text-primary bg-primary/8"
                     : "text-muted-foreground/25 hover:text-primary/60 hover:bg-primary/5"
                 }`}
-                aria-label={isVisited ? "방문 취소" : "방문 표시"}
+                aria-label={isVisited ? "재방문 기록" : "방문 표시"}
               >
                 <CheckCircle2 className={`h-3.5 w-3.5 ${isVisited ? "fill-primary/15" : ""}`} />
               </button>
@@ -379,6 +420,7 @@ const RestaurantCard = memo(({
         </div>
       </div>
     </motion.div>
+    </>
   );
 });
 

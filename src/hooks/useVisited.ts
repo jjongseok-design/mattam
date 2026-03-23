@@ -40,7 +40,7 @@ export const useVisited = () => {
   // 앱 시작 시 Supabase에서 병합 동기화
   useEffect(() => {
     const sync = async () => {
-      // 1. visited 동기화 (restaurant_id만 조회 → 안정적)
+      // visited 동기화 (restaurant_id만 조회)
       try {
         const { data } = await supabase
           .from("device_visits")
@@ -62,7 +62,7 @@ export const useVisited = () => {
         }
       } catch {}
 
-      // 2. first-visited 동기화 (is_first_visit 컬럼 필요 → 실패해도 OK)
+      // first-visited 동기화 (is_first_visit 컬럼 필요 → 실패해도 OK)
       try {
         const { data: firstData } = await supabase
           .from("device_visits")
@@ -79,52 +79,52 @@ export const useVisited = () => {
     sync();
   }, [deviceId]);
 
+  /**
+   * toggle(id):
+   *  - 미방문 → 첫방문 기록 (is_first_visit=true), visited Set에 추가
+   *  - 이미 방문 → 재방문 기록 (is_first_visit=false), visited Set 변화 없음
+   *  (취소/삭제 기능 없음)
+   */
   const toggle = useCallback(
     (id: string) => {
-      setVisited((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) {
-          // 방문 취소: DB에서 해당 기기의 모든 방문 기록 삭제 (낙관적 업데이트)
-          next.delete(id);
-          supabase
-            .from("device_visits")
-            .delete()
-            .eq("device_id", deviceId)
-            .eq("restaurant_id", id)
-            .then(({ error }) => {
-              if (error) {
-                console.warn("[useVisited] delete error:", error.message);
-              } else {
-                queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
-                queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
-              }
-            });
-        } else {
-          // 방문 표시: 첫방문 여부 판별 후 insert (낙관적 업데이트)
+      if (!visited.has(id)) {
+        // ── 첫 방문 ──
+        setVisited((prev) => {
+          const next = new Set(prev);
           next.add(id);
-          const firstVisited = loadFirstVisited();
-          const isFirstVisit = !firstVisited.has(id);
-          if (isFirstVisit) {
-            firstVisited.add(id);
-            saveFirstVisited(firstVisited);
-          }
-          supabase
-            .from("device_visits")
-            .insert({ device_id: deviceId, restaurant_id: id, is_first_visit: isFirstVisit })
-            .then(({ error }) => {
-              if (error) {
-                console.warn("[useVisited] insert error:", error.message);
-              } else {
-                queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
-                queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
-              }
-            });
-        }
-        saveLocal(next);
-        return next;
-      });
+          saveLocal(next);
+          return next;
+        });
+        const firstVisited = loadFirstVisited();
+        firstVisited.add(id);
+        saveFirstVisited(firstVisited);
+
+        supabase
+          .from("device_visits")
+          .insert({ device_id: deviceId, restaurant_id: id, is_first_visit: true })
+          .then(({ error }) => {
+            if (error) {
+              console.warn("[useVisited] first visit insert error:", error.message);
+            } else {
+              queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+              queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
+            }
+          });
+      } else {
+        // ── 재방문 (로컬 상태 변화 없음) ──
+        supabase
+          .from("device_visits")
+          .insert({ device_id: deviceId, restaurant_id: id, is_first_visit: false })
+          .then(({ error }) => {
+            if (error) {
+              console.warn("[useVisited] revisit insert error:", error.message);
+            } else {
+              queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
+            }
+          });
+      }
     },
-    [deviceId]
+    [deviceId, visited, queryClient]
   );
 
   const isVisited = useCallback((id: string) => visited.has(id), [visited]);
