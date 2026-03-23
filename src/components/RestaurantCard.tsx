@@ -229,8 +229,8 @@ const RestaurantCard = memo(({
                   </span>
                 ))}
                 {visitCount !== undefined && (
-                  <span className="text-[9px] px-1.5 py-0.5 bg-primary/8 rounded-md text-primary/60 font-medium">
-                    방문 {visitCount}명
+                  <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
+                    👥 {visitCount}명
                   </span>
                 )}
                 {openStatus === 'open' && (
