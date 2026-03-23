@@ -1,4 +1,5 @@
 import { memo, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Star, MapPin, Phone, CheckCircle2, Share2, Heart, Navigation, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -6,7 +7,10 @@ import type { Restaurant } from "@/hooks/useRestaurants";
 import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import { useToast } from "@/hooks/use-toast";
 import { useCityContext } from "@/contexts/CityContext";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { getDeviceId } from "@/hooks/useDeviceId";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -83,6 +87,8 @@ const RestaurantCard = memo(({
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [showRevisitDialog, setShowRevisitDialog] = useState(false);
+  const queryClient = useQueryClient();
+  const deviceId = getDeviceId();
 
   const handleVisitClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -91,6 +97,27 @@ const RestaurantCard = memo(({
     } else {
       setShowRevisitDialog(true);
     }
+  };
+
+  // 재방문 기록: DB 직접 insert (방문 상태는 그대로 유지)
+  const handleRevisit = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowRevisitDialog(false);
+    const { error } = await supabase
+      .from("device_visits")
+      .insert({ device_id: deviceId, restaurant_id: restaurant.id, is_first_visit: false });
+    if (error) {
+      console.warn("[RestaurantCard] revisit error:", error.message);
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["visit-count", restaurant.id] });
+    }
+  };
+
+  // 기존 방문 취소: onToggleVisited 호출 → useVisited.toggle이 삭제 처리
+  const handleCancelVisit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowRevisitDialog(false);
+    onToggleVisited(e);
   };
   const cityLabel = city?.name ?? "맛집";
   const { status: openStatus, closeTime } = useMemo(() => checkOpenStatus(restaurant.openingHours, restaurant.closedDays), [restaurant.openingHours, restaurant.closedDays]);
@@ -114,22 +141,21 @@ const RestaurantCard = memo(({
     <AlertDialog open={showRevisitDialog} onOpenChange={setShowRevisitDialog}>
       <AlertDialogContent onClick={(e) => e.stopPropagation()}>
         <AlertDialogHeader>
-          <AlertDialogTitle>재방문이신가요?</AlertDialogTitle>
+          <AlertDialogTitle>{restaurant.name}</AlertDialogTitle>
           <AlertDialogDescription>
-            {restaurant.name}을(를) 다시 방문하셨나요? 재방문으로 기록됩니다.
+            이미 방문한 식당입니다. 어떻게 하시겠어요?
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>취소</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowRevisitDialog(false);
-              onToggleVisited(e);
-            }}
-          >
-            확인
-          </AlertDialogAction>
+        <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+          <Button onClick={handleRevisit} className="w-full">
+            재방문 기록
+          </Button>
+          <Button variant="destructive" onClick={handleCancelVisit} className="w-full">
+            기존 방문 취소
+          </Button>
+          <Button variant="outline" onClick={(e) => { e.stopPropagation(); setShowRevisitDialog(false); }} className="w-full">
+            닫기
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

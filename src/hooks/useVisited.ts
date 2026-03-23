@@ -40,7 +40,6 @@ export const useVisited = () => {
   // 앱 시작 시 Supabase에서 병합 동기화
   useEffect(() => {
     const sync = async () => {
-      // visited 동기화 (restaurant_id만 조회)
       try {
         const { data } = await supabase
           .from("device_visits")
@@ -81,9 +80,9 @@ export const useVisited = () => {
 
   /**
    * toggle(id):
-   *  - 미방문 → 첫방문 기록 (is_first_visit=true), visited Set에 추가
-   *  - 이미 방문 → 재방문 기록 (is_first_visit=false), visited Set 변화 없음
-   *  (취소/삭제 기능 없음)
+   *  - 미방문 → 첫방문 기록 (is_first_visit=true), visited=true
+   *  - 이미 방문 → 방문 취소 (DB 삭제), visited=false
+   * (재방문 기록은 RestaurantCard에서 직접 처리)
    */
   const toggle = useCallback(
     (id: string) => {
@@ -104,21 +103,38 @@ export const useVisited = () => {
           .insert({ device_id: deviceId, restaurant_id: id, is_first_visit: true })
           .then(({ error }) => {
             if (error) {
-              console.warn("[useVisited] first visit insert error:", error.message);
+              console.warn("[useVisited] first visit error:", error.message);
             } else {
               queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
               queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
             }
           });
       } else {
-        // ── 재방문 (로컬 상태 변화 없음) ──
+        // ── 방문 취소 (기존 기록 삭제) ──
+        setVisited((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          saveLocal(next);
+          return next;
+        });
+
         supabase
           .from("device_visits")
-          .insert({ device_id: deviceId, restaurant_id: id, is_first_visit: false })
+          .delete()
+          .eq("device_id", deviceId)
+          .eq("restaurant_id", id)
           .then(({ error }) => {
             if (error) {
-              console.warn("[useVisited] revisit insert error:", error.message);
+              console.warn("[useVisited] cancel visit error:", error.message);
+              // 롤백
+              setVisited((prev) => {
+                const next = new Set(prev);
+                next.add(id);
+                saveLocal(next);
+                return next;
+              });
             } else {
+              queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
               queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
             }
           });
