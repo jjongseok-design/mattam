@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils, MapPin, Phone, Clock, XCircle, Tag, Banknote, Navigation, ChefHat, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Star, ExternalLink, Share2, Loader2, Utensils, MapPin, Phone, Clock, XCircle, Tag, Banknote, Navigation, ChefHat, AlertTriangle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
@@ -10,6 +10,7 @@ import ReviewList from "@/components/ReviewList";
 import ErrorState from "@/components/ErrorState";
 import { useToast } from "@/hooks/use-toast";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+import { useVisitCount } from "@/hooks/useVisitCount";
 import { supabase } from "@/integrations/supabase/client";
 import { CityContext } from "@/contexts/CityContext";
 import { useCity } from "@/hooks/useCities";
@@ -72,6 +73,7 @@ const RestaurantDetail = () => {
   // Match by slug first, then fall back to id for backwards compat
   const restaurant = restaurants.find((r) => r.slug === slug || r.id === slug);
   const id = restaurant?.id;
+  const { data: visitCount } = useVisitCount(id);
 
   useEffect(() => {
     if (id) addViewed(id);
@@ -285,12 +287,20 @@ const RestaurantDetail = () => {
             <h2 className="text-xl font-bold text-foreground">{restaurant.name}</h2>
             <span className="text-sm text-muted-foreground">{emoji} {restaurant.category}</span>
           </div>
-          <div className="flex flex-col items-center gap-0.5 bg-muted/50 px-3 py-2 rounded-xl flex-shrink-0">
-            <div className="flex items-center gap-1">
-              <Star className="h-5 w-5 text-rating fill-current" />
-              <span className="text-2xl font-bold text-foreground">{restaurant.rating}</span>
+          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+            <div className="flex flex-col items-center gap-0.5 bg-muted/50 px-3 py-2 rounded-xl">
+              <div className="flex items-center gap-1">
+                <Star className="h-5 w-5 text-rating fill-current" />
+                <span className="text-2xl font-bold text-foreground">{restaurant.rating}</span>
+              </div>
+              <span className="text-[10px] text-muted-foreground">리뷰 {restaurant.reviewCount}개</span>
             </div>
-            <span className="text-[10px] text-muted-foreground">리뷰 {restaurant.reviewCount}개</span>
+            {!!visitCount && (
+              <div className="flex items-center gap-1 bg-muted/40 px-2.5 py-1 rounded-lg">
+                <Users className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground">방문 {visitCount}명</span>
+              </div>
+            )}
           </div>
         </div>
 

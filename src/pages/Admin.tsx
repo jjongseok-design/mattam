@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image, MapPin } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image, MapPin, Users } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
 import { useCities } from "@/hooks/useCities";
+import { useAllVisitCounts } from "@/hooks/useVisitCount";
 import { motion } from "framer-motion";
 
 interface RestaurantRow {
@@ -99,6 +100,9 @@ const Admin = () => {
   const [savingImageUrl, setSavingImageUrl] = useState(false);
   const [dragImageIdx, setDragImageIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [showVisitStats, setShowVisitStats] = useState(false);
+
+  const { data: visitCounts, isLoading: visitCountsLoading } = useAllVisitCounts(authenticated && showVisitStats);
 
   // Category management state
   const [editMode, setEditMode] = useState(false);
@@ -675,6 +679,14 @@ const Admin = () => {
               {fetchingAllNaverImages ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}
               이미지
             </Button>
+            <Button
+              variant={showVisitStats ? "default" : "outline"}
+              size="sm"
+              className="shrink-0 h-10 text-xs px-3"
+              onClick={() => setShowVisitStats((v) => !v)}
+            >
+              <Users className="h-3.5 w-3.5 mr-1" /> 방문통계
+            </Button>
             <Button onClick={openNew} size="sm" className="shrink-0 h-10 text-xs px-3">
               <Plus className="h-3.5 w-3.5 mr-1" /> 추가
             </Button>
@@ -703,6 +715,37 @@ const Admin = () => {
             <p className="text-[11px] text-muted-foreground mt-0.5">미처리 제보</p>
           </div>
         </div>
+
+        {/* 방문 통계 패널 */}
+        {showVisitStats && (
+          <div className="bg-card border border-border rounded-lg p-3 mb-3">
+            <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
+              <Users className="h-4 w-4 text-primary/60" />
+              방문 통계 ({cities.find(c => c.id === adminCityId)?.name ?? adminCityId})
+            </h2>
+            {visitCountsLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-1 max-h-72 overflow-y-auto">
+                {[...restaurants]
+                  .map((r) => ({ ...r, visits: visitCounts?.[r.id] ?? 0 }))
+                  .sort((a, b) => b.visits - a.visits)
+                  .map((r) => (
+                    <div key={r.id} className="flex items-center gap-2 text-[12px] py-1 border-b border-border/30 last:border-0">
+                      <span className="flex-1 truncate font-medium text-foreground">{r.name}</span>
+                      <span className="text-muted-foreground shrink-0">{r.category}</span>
+                      <div className="flex items-center gap-1 min-w-[52px] justify-end shrink-0">
+                        <Users className="h-3 w-3 text-primary/60" />
+                        <span className="font-semibold text-foreground">{r.visits}</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-4">
