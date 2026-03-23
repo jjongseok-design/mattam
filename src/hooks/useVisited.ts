@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "./useDeviceId";
 
@@ -34,6 +35,7 @@ const saveFirstVisited = (set: Set<string>) => {
 export const useVisited = () => {
   const [visited, setVisited] = useState<Set<string>>(loadLocal);
   const deviceId = getDeviceId();
+  const queryClient = useQueryClient();
 
   // 앱 시작 시 Supabase에서 병합 동기화
   useEffect(() => {
@@ -90,7 +92,12 @@ export const useVisited = () => {
             .eq("device_id", deviceId)
             .eq("restaurant_id", id)
             .then(({ error }) => {
-              if (error) console.warn("[useVisited] delete error:", error.message);
+              if (error) {
+                console.warn("[useVisited] delete error:", error.message);
+              } else {
+                queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+                queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
+              }
             });
         } else {
           // 방문 표시: 첫방문 여부 판별 후 insert (낙관적 업데이트)
@@ -105,7 +112,12 @@ export const useVisited = () => {
             .from("device_visits")
             .insert({ device_id: deviceId, restaurant_id: id, is_first_visit: isFirstVisit })
             .then(({ error }) => {
-              if (error) console.warn("[useVisited] insert error:", error.message);
+              if (error) {
+                console.warn("[useVisited] insert error:", error.message);
+              } else {
+                queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+                queryClient.invalidateQueries({ queryKey: ["visit-count", id] });
+              }
             });
         }
         saveLocal(next);
