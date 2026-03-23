@@ -11,7 +11,7 @@ export const useVisitCount = (restaurantId: string | undefined) => {
         .from("device_visits")
         .select("*", { count: "exact", head: true })
         .eq("restaurant_id", restaurantId);
-      if (error) throw error;
+      if (error) return 0;
       return count ?? 0;
     },
     enabled: !!restaurantId,
@@ -19,19 +19,24 @@ export const useVisitCount = (restaurantId: string | undefined) => {
   });
 };
 
-/** 카드 목록용: 식당별 첫 방문자 수 맵 { restaurant_id: count } */
+/** 카드 목록용: 식당별 첫 방문자 수 맵 { restaurant_id: count } — JS로 필터링해 안정적 */
 export const useFirstVisitorCounts = () => {
   return useQuery({
     queryKey: ["first-visitor-counts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("device_visits")
-        .select("restaurant_id")
-        .eq("is_first_visit", true);
-      if (error) throw error;
+        .select("restaurant_id, is_first_visit");
+      if (error) {
+        console.warn("[useFirstVisitorCounts] error:", error.message);
+        return {} as Record<string, number>;
+      }
       const map: Record<string, number> = {};
-      (data ?? []).forEach((row: { restaurant_id: string }) => {
-        map[row.restaurant_id] = (map[row.restaurant_id] ?? 0) + 1;
+      (data ?? []).forEach((row: { restaurant_id: string; is_first_visit: boolean | null }) => {
+        // is_first_visit이 true이거나 null(컬럼 없는 경우 대비)이면 카운트
+        if (row.is_first_visit !== false) {
+          map[row.restaurant_id] = (map[row.restaurant_id] ?? 0) + 1;
+        }
       });
       return map;
     },
@@ -47,12 +52,15 @@ export const useAllVisitCounts = (enabled: boolean) => {
       const { data, error } = await supabase
         .from("device_visits")
         .select("restaurant_id, is_first_visit");
-      if (error) throw error;
+      if (error) {
+        console.warn("[useAllVisitCounts] error:", error.message);
+        return { firstVisitors: {} as Record<string, number>, totalVisits: {} as Record<string, number> };
+      }
       const firstVisitors: Record<string, number> = {};
       const totalVisits: Record<string, number> = {};
-      (data ?? []).forEach((row: { restaurant_id: string; is_first_visit: boolean }) => {
+      (data ?? []).forEach((row: { restaurant_id: string; is_first_visit: boolean | null }) => {
         totalVisits[row.restaurant_id] = (totalVisits[row.restaurant_id] ?? 0) + 1;
-        if (row.is_first_visit) {
+        if (row.is_first_visit !== false) {
           firstVisitors[row.restaurant_id] = (firstVisitors[row.restaurant_id] ?? 0) + 1;
         }
       });

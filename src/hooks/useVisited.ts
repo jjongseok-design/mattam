@@ -38,27 +38,40 @@ export const useVisited = () => {
   // 앱 시작 시 Supabase에서 병합 동기화
   useEffect(() => {
     const sync = async () => {
+      // 1. visited 동기화 (restaurant_id만 조회 → 안정적)
       try {
         const { data } = await supabase
           .from("device_visits")
-          .select("restaurant_id, is_first_visit")
+          .select("restaurant_id")
           .eq("device_id", deviceId);
-        if (!data) return;
+        if (data) {
+          setVisited((prev) => {
+            const merged = new Set(prev);
+            const seen = new Set<string>();
+            data.forEach((r: { restaurant_id: string }) => {
+              if (!seen.has(r.restaurant_id)) {
+                seen.add(r.restaurant_id);
+                merged.add(r.restaurant_id);
+              }
+            });
+            saveLocal(merged);
+            return merged;
+          });
+        }
+      } catch {}
 
-        // visited 동기화 (distinct restaurant_ids)
-        setVisited((prev) => {
-          const merged = new Set(prev);
-          data.forEach((r: { restaurant_id: string }) => merged.add(r.restaurant_id));
-          saveLocal(merged);
-          return merged;
-        });
-
-        // first-visited 동기화 (DB에서 첫방문 기록 가져와 localStorage 갱신)
-        const firstVisited = loadFirstVisited();
-        data
-          .filter((r: { is_first_visit: boolean }) => r.is_first_visit)
-          .forEach((r: { restaurant_id: string }) => firstVisited.add(r.restaurant_id));
-        saveFirstVisited(firstVisited);
+      // 2. first-visited 동기화 (is_first_visit 컬럼 필요 → 실패해도 OK)
+      try {
+        const { data: firstData } = await supabase
+          .from("device_visits")
+          .select("restaurant_id, is_first_visit")
+          .eq("device_id", deviceId)
+          .eq("is_first_visit", true);
+        if (firstData) {
+          const firstVisited = loadFirstVisited();
+          firstData.forEach((r: { restaurant_id: string }) => firstVisited.add(r.restaurant_id));
+          saveFirstVisited(firstVisited);
+        }
       } catch {}
     };
     sync();
@@ -69,7 +82,7 @@ export const useVisited = () => {
       setVisited((prev) => {
         const next = new Set(prev);
         if (next.has(id)) {
-          // 방문 취소: 해당 기기의 모든 방문 기록 삭제
+          // 방문 취소: DB에서 해당 기기의 모든 방문 기록 삭제 (낙관적 업데이트)
           next.delete(id);
           supabase
             .from("device_visits")
@@ -77,10 +90,10 @@ export const useVisited = () => {
             .eq("device_id", deviceId)
             .eq("restaurant_id", id)
             .then(({ error }) => {
-              if (error) setVisited((s) => { const r = new Set(s); r.add(id); saveLocal(r); return r; });
+              if (error) console.warn("[useVisited] delete error:", error.message);
             });
         } else {
-          // 방문 표시: 첫방문 여부 판별 후 insert
+          // 방문 표시: 첫방문 여부 판별 후 insert (낙관적 업데이트)
           next.add(id);
           const firstVisited = loadFirstVisited();
           const isFirstVisit = !firstVisited.has(id);
@@ -92,7 +105,7 @@ export const useVisited = () => {
             .from("device_visits")
             .insert({ device_id: deviceId, restaurant_id: id, is_first_visit: isFirstVisit })
             .then(({ error }) => {
-              if (error) setVisited((s) => { const r = new Set(s); r.delete(id); saveLocal(r); return r; });
+              if (error) console.warn("[useVisited] insert error:", error.message);
             });
         }
         saveLocal(next);
