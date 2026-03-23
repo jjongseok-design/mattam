@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "./useDeviceId";
+import { applyVisit, applyCancel } from "./visitCountStore";
 
 const STORAGE_KEY = "visited-restaurants";
 const FIRST_VISIT_KEY = "first-visited-restaurants";
@@ -86,12 +87,11 @@ export const useVisited = () => {
         saveFirstVisited(firstVisited);
 
         // 낙관적 업데이트: 클릭 즉시 카운트 반영
+        applyVisit(id);
         queryClient.setQueryData<Record<string, number>>(
           ["first-visitor-counts"],
           (old) => ({ ...(old ?? {}), [id]: ((old ?? {})[id] ?? 0) + 1 })
         );
-        queryClient.setQueryData<number>(["visit-count", id], (old) => (old ?? 0) + 1);
-        queryClient.setQueryData<number>(["my-visit-count", id, deviceId], (old) => (old ?? 0) + 1);
 
         supabase
           .from("device_visits")
@@ -103,8 +103,7 @@ export const useVisited = () => {
                 ["first-visitor-counts"],
                 (old) => ({ ...(old ?? {}), [id]: Math.max(0, ((old ?? {})[id] ?? 1) - 1) })
               );
-              queryClient.setQueryData<number>(["visit-count", id], (old) => Math.max(0, (old ?? 1) - 1));
-              queryClient.setQueryData<number>(["my-visit-count", id, deviceId], (old) => Math.max(0, (old ?? 1) - 1));
+              applyCancel(id);
             }
             queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
           });
@@ -118,12 +117,11 @@ export const useVisited = () => {
         });
 
         // 낙관적 업데이트: 클릭 즉시 카운트 감소
+        applyCancel(id);
         queryClient.setQueryData<Record<string, number>>(
           ["first-visitor-counts"],
           (old) => ({ ...(old ?? {}), [id]: Math.max(0, ((old ?? {})[id] ?? 1) - 1) })
         );
-        queryClient.setQueryData<number>(["visit-count", id], (old) => Math.max(0, (old ?? 1) - 1));
-        queryClient.setQueryData<number>(["my-visit-count", id, deviceId], (old) => Math.max(0, (old ?? 1) - 1));
 
         supabase
           .from("device_visits")
@@ -143,8 +141,7 @@ export const useVisited = () => {
                 ["first-visitor-counts"],
                 (old) => ({ ...(old ?? {}), [id]: ((old ?? {})[id] ?? 0) + 1 })
               );
-              queryClient.setQueryData<number>(["visit-count", id], (old) => (old ?? 0) + 1);
-              queryClient.setQueryData<number>(["my-visit-count", id, deviceId], (old) => (old ?? 0) + 1);
+              applyVisit(id);
             }
             queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
           });

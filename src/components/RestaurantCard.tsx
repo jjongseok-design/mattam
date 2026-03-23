@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/hooks/useDeviceId";
 import { useAllAvgRatings } from "@/hooks/useReviews";
 import { useFirstVisitorCounts } from "@/hooks/useVisitCount";
+import { applyRevisit, applyCancel } from "@/hooks/visitCountStore";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -109,16 +110,13 @@ const RestaurantCard = memo(({
   const handleRevisit = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowRevisitDialog(false);
-    // 낙관적 업데이트: 즉시 카운트 반영
-    queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => (old ?? 0) + 1);
-    queryClient.setQueryData<number>(["my-visit-count", restaurant.id, deviceId], (old) => (old ?? 0) + 1);
+    applyRevisit(restaurant.id);
     const { error } = await supabase
       .from("device_visits")
       .insert({ device_id: deviceId, restaurant_id: restaurant.id });
     if (error) {
       console.warn("[RestaurantCard] revisit error:", error.message);
-      queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => Math.max(0, (old ?? 1) - 1));
-      queryClient.setQueryData<number>(["my-visit-count", restaurant.id, deviceId], (old) => Math.max(0, (old ?? 1) - 1));
+      applyCancel(restaurant.id);
     }
     queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
   };
