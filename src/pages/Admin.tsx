@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image, MapPin, Users } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image, MapPin, Users, Star, MessageSquare } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
 import { useCities } from "@/hooks/useCities";
@@ -101,6 +101,9 @@ const Admin = () => {
   const [dragImageIdx, setDragImageIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [showVisitStats, setShowVisitStats] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
+  const [allReviews, setAllReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   const { data: visitCounts, isLoading: visitCountsLoading } = useAllVisitCounts(authenticated && showVisitStats);
 
@@ -160,6 +163,26 @@ const Admin = () => {
   useEffect(() => {
     if (authenticated) fetchAll();
   }, [authenticated, fetchAll, adminCityId]);
+
+  const fetchReviews = useCallback(async () => {
+    setReviewsLoading(true);
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("id, restaurant_id, device_id, rating, comment, created_at")
+      .order("created_at", { ascending: false });
+    if (!error) setAllReviews(data ?? []);
+    setReviewsLoading(false);
+  }, []);
+
+  const handleAdminDeleteReview = async (reviewId: string) => {
+    const { error } = await supabase.from("reviews").delete().eq("id", reviewId);
+    if (error) {
+      toast({ title: "삭제 실패", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAllReviews((prev) => prev.filter((r) => r.id !== reviewId));
+    queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
+  };
 
   // ?edit=ID 파라미터 처리: restaurants 로드 후 해당 식당 편집 폼 자동 열기
   useEffect(() => {
@@ -687,6 +710,14 @@ const Admin = () => {
             >
               <Users className="h-3.5 w-3.5 mr-1" /> 방문통계
             </Button>
+            <Button
+              variant={showReviews ? "default" : "outline"}
+              size="sm"
+              className="shrink-0 h-10 text-xs px-3"
+              onClick={() => { setShowReviews((v) => !v); if (!showReviews) fetchReviews(); }}
+            >
+              <MessageSquare className="h-3.5 w-3.5 mr-1" /> 리뷰관리
+            </Button>
             <Button onClick={openNew} size="sm" className="shrink-0 h-10 text-xs px-3">
               <Plus className="h-3.5 w-3.5 mr-1" /> 추가
             </Button>
@@ -715,6 +746,51 @@ const Admin = () => {
             <p className="text-[11px] text-muted-foreground mt-0.5">미처리 제보</p>
           </div>
         </div>
+
+        {/* 리뷰 관리 패널 */}
+        {showReviews && (
+          <div className="bg-card border border-border rounded-lg p-3 mb-3">
+            <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
+              <MessageSquare className="h-4 w-4 text-primary/60" />
+              리뷰 관리 ({allReviews.length}개)
+            </h2>
+            {reviewsLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : allReviews.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">리뷰가 없습니다.</p>
+            ) : (
+              <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                {allReviews.map((review) => {
+                  const restaurant = restaurants.find((r) => r.id === review.restaurant_id);
+                  return (
+                    <div key={review.id} className="flex items-start gap-2 text-[12px] py-1.5 border-b border-border/30 last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="font-medium text-foreground truncate">{restaurant?.name ?? review.restaurant_id.slice(0, 8)}</span>
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            {[1,2,3,4,5].map((s) => (
+                              <Star key={s} className={`h-2.5 w-2.5 ${s <= review.rating ? "text-rating fill-current" : "text-muted-foreground/20"}`} />
+                            ))}
+                          </div>
+                        </div>
+                        {review.comment && <p className="text-muted-foreground truncate">{review.comment}</p>}
+                        <p className="text-muted-foreground/50 text-[10px] mt-0.5">{review.device_id.slice(0, 8)}... · {new Date(review.created_at).toLocaleDateString("ko-KR")}</p>
+                      </div>
+                      <button
+                        onClick={() => handleAdminDeleteReview(review.id)}
+                        className="text-muted-foreground/40 hover:text-destructive transition-colors shrink-0 mt-0.5"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 방문 통계 패널 */}
         {showVisitStats && (

@@ -1,8 +1,11 @@
-import { Star } from "lucide-react";
+import { Star, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useReviews } from "@/hooks/useReviews";
 import { getDeviceId } from "@/hooks/useDeviceId";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReviewListProps {
   restaurantId: string;
@@ -11,6 +14,23 @@ interface ReviewListProps {
 const ReviewList = ({ restaurantId }: ReviewListProps) => {
   const deviceId = getDeviceId();
   const { data: reviews = [], isLoading } = useReviews(restaurantId);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleDelete = async (reviewId: string) => {
+    const { error } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("id", reviewId)
+      .eq("device_id", deviceId);
+    if (error) {
+      toast({ title: "삭제 실패", description: error.message, variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
+    queryClient.invalidateQueries({ queryKey: ["my-review", restaurantId] });
+    queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
+  };
 
   const avgRating = reviews.length > 0
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
@@ -29,7 +49,6 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
             <Star className="h-4 w-4 text-rating fill-current" />
             <span className="font-bold text-foreground">{avgRating}</span>
           </div>
-          <span className="text-muted-foreground">맛탐 리뷰 {reviews.length}개</span>
         </div>
       )}
 
@@ -70,9 +89,19 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] text-muted-foreground/50">
-                    {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: ko })}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-muted-foreground/50">
+                      {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: ko })}
+                    </span>
+                    {isMyReview && (
+                      <button
+                        onClick={() => handleDelete(review.id)}
+                        className="text-muted-foreground/40 hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {review.comment && (
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{review.comment}</p>

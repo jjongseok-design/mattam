@@ -300,7 +300,6 @@ const RestaurantDetail = () => {
                   <Star className="h-5 w-5 text-rating fill-current" />
                   <span className="text-2xl font-bold text-foreground">{matamAvg}</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground whitespace-nowrap">맛탐 리뷰 {reviews.length}개</span>
               </div>
             )}
             {visitCount !== undefined && visitCount > 0 && (

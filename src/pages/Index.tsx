@@ -19,6 +19,7 @@ import ShareCard from "@/components/ShareCard";
 import { useRestaurants, type Restaurant } from "@/hooks/useRestaurants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVisited } from "@/hooks/useVisited";
+import { useFirstVisitorCounts } from "@/hooks/useVisitCount";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useGeolocation, getDistanceKm } from "@/hooks/useGeolocation";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
@@ -78,6 +79,7 @@ const Index = () => {
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants();
   const { visited, isVisited, toggle: toggleVisited } = useVisited();
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
+  const { data: visitCounts } = useFirstVisitorCounts();
   const { position, loading: geoLoading, request: requestGeo } = useGeolocation();
   const { recentIds, addViewed } = useRecentlyViewed();
   const { toast } = useToast();
@@ -298,6 +300,7 @@ const Index = () => {
           isVisited={isVisited(restaurant.id)}
           isFavorite={isFavorite(restaurant.id)}
           distance={dist}
+          visitCount={visitCounts?.[restaurant.id]}
           onClick={() => handleSelect(restaurant.id)}
           onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
           onToggleFavorite={(e) => { e.stopPropagation(); toggleFavorite(restaurant.id); }}

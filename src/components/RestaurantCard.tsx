@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/hooks/useDeviceId";
 import { useAllAvgRatings } from "@/hooks/useReviews";
-import { useFirstVisitorCounts } from "@/hooks/useVisitCount";
 import { applyRevisit, applyCancel } from "@/hooks/visitCountStore";
 
 interface RestaurantCardProps {
@@ -94,8 +93,7 @@ const RestaurantCard = memo(({
   const deviceId = getDeviceId();
   const { data: allRatings } = useAllAvgRatings();
   const matamRating = allRatings?.[restaurant.id];
-  const { data: visitCounts } = useFirstVisitorCounts();
-  const cardVisitCount = visitCounts?.[restaurant.id];
+  const cardVisitCount = visitCount;
 
   const handleVisitClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -111,12 +109,16 @@ const RestaurantCard = memo(({
     e.stopPropagation();
     setShowRevisitDialog(false);
     applyRevisit(restaurant.id);
+    queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => (old ?? 0) + 1);
+    queryClient.setQueryData<number>(["my-visit-count", restaurant.id, deviceId], (old) => (old ?? 0) + 1);
     const { error } = await supabase
       .from("device_visits")
       .insert({ device_id: deviceId, restaurant_id: restaurant.id });
     if (error) {
       console.warn("[RestaurantCard] revisit error:", error.message);
       applyCancel(restaurant.id);
+      queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => Math.max(0, (old ?? 1) - 1));
+      queryClient.setQueryData<number>(["my-visit-count", restaurant.id, deviceId], (old) => Math.max(0, (old ?? 1) - 1));
     }
     queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
   };
@@ -156,10 +158,10 @@ const RestaurantCard = memo(({
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
           <Button onClick={handleRevisit} className="w-full">
-            재방문 기록
+            재방문 추가
           </Button>
           <Button variant="destructive" onClick={handleCancelVisit} className="w-full">
-            기존 방문 취소
+            방문 취소
           </Button>
           <Button variant="outline" onClick={(e) => { e.stopPropagation(); setShowRevisitDialog(false); }} className="w-full">
             닫기
@@ -369,7 +371,6 @@ const RestaurantCard = memo(({
               <div className="flex items-center gap-1 shrink-0">
                 <Star className="h-3.5 w-3.5 text-rating fill-current" />
                 <span className="text-[13px] font-bold text-foreground">{matamRating.avg}</span>
-                <span className="text-[10px] text-muted-foreground">맛탐 리뷰 {matamRating.count}개</span>
               </div>
             )}
           </div>
