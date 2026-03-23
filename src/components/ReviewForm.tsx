@@ -21,7 +21,7 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [content, setContent] = useState("");
+  const [comment, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -29,7 +29,7 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
   useEffect(() => {
     if (myReview) {
       setRating(myReview.rating);
-      setContent(myReview.content ?? "");
+      setContent(myReview.comment ?? "");
     }
   }, [myReview]);
 
@@ -43,7 +43,7 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
       restaurant_id: restaurantId,
       device_id: deviceId,
       rating,
-      content: content.trim() || null,
+      comment: comment.trim() || null,
     };
 
     const { error } = await supabase
@@ -77,8 +77,8 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
               />
             ))}
           </div>
-          {myReview.content && (
-            <span className="text-[12px] text-foreground truncate max-w-[160px]">{myReview.content}</span>
+          {myReview.comment && (
+            <span className="text-[12px] text-foreground truncate max-w-[160px]">{myReview.comment}</span>
           )}
           <span className="text-[10px] text-muted-foreground/60">내 리뷰</span>
         </div>
@@ -134,13 +134,13 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
         <input
           type="text"
           placeholder="한 줄 리뷰 (선택, 최대 15자)"
-          value={content}
+          value={comment}
           onChange={(e) => setContent(e.target.value.slice(0, 15))}
           maxLength={15}
           className="w-full text-sm px-3 py-2 pr-10 bg-background border border-border/50 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/40"
         />
-        <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] ${content.length >= 15 ? "text-destructive" : "text-muted-foreground/40"}`}>
-          {content.length}/15
+        <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] ${comment.length >= 15 ? "text-destructive" : "text-muted-foreground/40"}`}>
+          {comment.length}/15
         </span>
       </div>
 

@@ -7,7 +7,7 @@ export interface Review {
   restaurant_id: string;
   device_id: string;
   rating: number;
-  content: string | null;
+  comment: string | null;
   created_at: string;
 }
 
@@ -19,7 +19,7 @@ export const useReviews = (restaurantId: string | undefined) => {
       if (!restaurantId) return [];
       const { data, error } = await supabase
         .from("reviews")
-        .select("id, restaurant_id, device_id, rating, content, created_at")
+        .select("id, restaurant_id, device_id, rating, comment, created_at")
         .eq("restaurant_id", restaurantId)
         .order("created_at", { ascending: false });
       if (error) {
@@ -42,7 +42,7 @@ export const useMyReview = (restaurantId: string | undefined) => {
       if (!restaurantId) return null;
       const { data } = await supabase
         .from("reviews")
-        .select("id, restaurant_id, device_id, rating, content, created_at")
+        .select("id, restaurant_id, device_id, rating, comment, created_at")
         .eq("restaurant_id", restaurantId)
         .eq("device_id", deviceId)
         .maybeSingle();

@@ -74,8 +74,8 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
                     {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: ko })}
                   </span>
                 </div>
-                {review.content && (
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{review.content}</p>
+                {review.comment && (
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{review.comment}</p>
                 )}
               </div>
             );
