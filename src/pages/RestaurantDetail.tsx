@@ -11,6 +11,7 @@ import ErrorState from "@/components/ErrorState";
 import { useToast } from "@/hooks/use-toast";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { useVisitCount } from "@/hooks/useVisitCount";
+import { useReviews } from "@/hooks/useReviews";
 import { supabase } from "@/integrations/supabase/client";
 import { CityContext } from "@/contexts/CityContext";
 import { useCity } from "@/hooks/useCities";
@@ -74,6 +75,10 @@ const RestaurantDetail = () => {
   const restaurant = restaurants.find((r) => r.slug === slug || r.id === slug);
   const id = restaurant?.id;
   const { data: visitCount } = useVisitCount(id);
+  const { data: reviews = [] } = useReviews(id);
+  const matamAvg = reviews.length > 0
+    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
 
   useEffect(() => {
     if (id) addViewed(id);
@@ -288,13 +293,15 @@ const RestaurantDetail = () => {
             <span className="text-sm text-muted-foreground">{emoji} {restaurant.category}</span>
           </div>
           <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-            <div className="flex flex-col items-center gap-1 bg-muted/50 px-3 py-2 rounded-xl">
-              <div className="flex items-center gap-1">
-                <Star className="h-5 w-5 text-rating fill-current" />
-                <span className="text-2xl font-bold text-foreground">{restaurant.rating}</span>
+            {matamAvg && (
+              <div className="flex flex-col items-center gap-1 bg-muted/50 px-3 py-2 rounded-xl">
+                <div className="flex items-center gap-1">
+                  <Star className="h-5 w-5 text-rating fill-current" />
+                  <span className="text-2xl font-bold text-foreground">{matamAvg}</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">맛탐 리뷰 {reviews.length}개</span>
               </div>
-              <span className="text-[10px] text-muted-foreground whitespace-nowrap">네이버 리뷰 {restaurant.reviewCount}개</span>
-            </div>
+            )}
             {visitCount !== undefined && (
               <div className="flex items-center gap-1 bg-muted/40 px-2.5 py-1 rounded-lg">
                 <Users className="h-3 w-3 text-muted-foreground" />
@@ -444,7 +451,7 @@ const RestaurantDetail = () => {
 
         {/* Reviews Section */}
         <div className="space-y-4">
-          <h3 className="text-base font-bold text-foreground">💬 네이버 리뷰 ({restaurant.reviewCount}개)</h3>
+          <h3 className="text-base font-bold text-foreground">💬 맛탐 리뷰</h3>
           <ReviewForm restaurantId={restaurant.id} />
           <ReviewList restaurantId={restaurant.id} />
         </div>

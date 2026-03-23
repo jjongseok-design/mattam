@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "@/hooks/useDeviceId";
+import { useAllAvgRatings } from "@/hooks/useReviews";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -89,6 +90,8 @@ const RestaurantCard = memo(({
   const [showRevisitDialog, setShowRevisitDialog] = useState(false);
   const queryClient = useQueryClient();
   const deviceId = getDeviceId();
+  const { data: allRatings } = useAllAvgRatings();
+  const matamRating = allRatings?.[restaurant.id];
 
   const handleVisitClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -211,10 +214,12 @@ const RestaurantCard = memo(({
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <Star className="h-3 w-3 text-rating fill-current" />
-                  <span className="text-[12px] font-bold text-foreground">{restaurant.rating}</span>
-                </div>
+                {matamRating && (
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <Star className="h-3 w-3 text-rating fill-current" />
+                    <span className="text-[12px] font-bold text-foreground">{matamRating.avg}</span>
+                  </div>
+                )}
               </div>
 
               <p className="text-[13px] text-muted-foreground truncate mb-1">
@@ -358,11 +363,13 @@ const RestaurantCard = memo(({
               <p className="text-[11px] text-muted-foreground/60 mt-0.5">{restaurant.category}</p>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
-              <Star className="h-3.5 w-3.5 text-rating fill-current" />
-              <span className="text-[13px] font-bold text-foreground">{restaurant.rating}</span>
-              <span className="text-[10px] text-muted-foreground">네이버 리뷰 {restaurant.reviewCount}개</span>
-            </div>
+            {matamRating && (
+              <div className="flex items-center gap-1 shrink-0">
+                <Star className="h-3.5 w-3.5 text-rating fill-current" />
+                <span className="text-[13px] font-bold text-foreground">{matamRating.avg}</span>
+                <span className="text-[10px] text-muted-foreground">맛탐 리뷰 {matamRating.count}개</span>
+              </div>
+            )}
           </div>
 
           {/* Address */}

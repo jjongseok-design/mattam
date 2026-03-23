@@ -1,93 +1,16 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Star, ThumbsUp } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Star } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
-import { useState, useCallback } from "react";
+import { useReviews } from "@/hooks/useReviews";
 import { getDeviceId } from "@/hooks/useDeviceId";
 
 interface ReviewListProps {
   restaurantId: string;
 }
 
-interface ReviewImage {
-  url: string;
-  position: number;
-}
-
-interface Review {
-  id: string;
-  rating: number;
-  comment: string | null;
-  nickname: string;
-  created_at: string;
-  likes_count: number;
-  review_images: ReviewImage[];
-}
-
 const ReviewList = ({ restaurantId }: ReviewListProps) => {
   const deviceId = getDeviceId();
-  const queryClient = useQueryClient();
-
-  const PAGE_SIZE = 10;
-  const [page, setPage] = useState(1);
-
-  const { data: reviews = [], isLoading } = useQuery({
-    queryKey: ["reviews", restaurantId],
-    queryFn: async (): Promise<Review[]> => {
-      const { data, error } = await supabase
-        .from("reviews")
-        .select("*, review_images(url, position)")
-        .eq("restaurant_id", restaurantId)
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return (data ?? []) as unknown as Review[];
-    },
-  });
-
-  const visibleReviews = reviews.slice(0, page * PAGE_SIZE);
-  const hasMore = visibleReviews.length < reviews.length;
-
-  // 내가 좋아요한 리뷰 ID 목록
-  const { data: myLikes = new Set<string>() } = useQuery({
-    queryKey: ["review_likes", restaurantId, deviceId],
-    queryFn: async (): Promise<Set<string>> => {
-      const reviewIds = reviews.map((r) => r.id);
-      if (reviewIds.length === 0) return new Set();
-      const { data } = await supabase
-        .from("review_likes")
-        .select("review_id")
-        .eq("device_id", deviceId)
-        .in("review_id", reviewIds);
-      return new Set((data ?? []).map((d: { review_id: string }) => d.review_id));
-    },
-    enabled: reviews.length > 0,
-  });
-
-  const [pendingLikes, setPendingLikes] = useState<Record<string, number>>({});
-
-  const toggleLike = useCallback(
-    async (reviewId: string, currentLiked: boolean) => {
-      const delta = currentLiked ? -1 : 1;
-      setPendingLikes((prev) => ({ ...prev, [reviewId]: (prev[reviewId] ?? 0) + delta }));
-
-      if (currentLiked) {
-        await supabase
-          .from("review_likes")
-          .delete()
-          .eq("device_id", deviceId)
-          .eq("review_id", reviewId);
-      } else {
-        await supabase
-          .from("review_likes")
-          .upsert({ device_id: deviceId, review_id: reviewId });
-      }
-      queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
-      queryClient.invalidateQueries({ queryKey: ["review_likes", restaurantId, deviceId] });
-    },
-    [deviceId, restaurantId, queryClient]
-  );
+  const { data: reviews = [], isLoading } = useReviews(restaurantId);
 
   const avgRating = reviews.length > 0
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
@@ -99,85 +22,64 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
 
   return (
     <div className="space-y-3">
-      {/* Summary */}
+      {/* 요약 */}
       {reviews.length > 0 && (
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-2 text-sm">
           <div className="flex items-center gap-1">
             <Star className="h-4 w-4 text-rating fill-current" />
             <span className="font-bold text-foreground">{avgRating}</span>
           </div>
-          <span className="text-muted-foreground">사용자 리뷰 {reviews.length}개</span>
+          <span className="text-muted-foreground">맛탐 리뷰 {reviews.length}개</span>
         </div>
       )}
 
-      {/* Reviews */}
       {reviews.length === 0 ? (
         <p className="text-center py-6 text-sm text-muted-foreground/60">
           아직 리뷰가 없습니다. 첫 리뷰를 남겨주세요! 😊
         </p>
       ) : (
-        <div className="space-y-2.5 max-h-[400px] overflow-y-auto scrollbar-thin">
-          {visibleReviews.map((review) => {
-            const liked = myLikes.has(review.id);
-            const displayLikes = (review.likes_count ?? 0) + (pendingLikes[review.id] ?? 0);
+        <div className="space-y-2">
+          {reviews.map((review) => {
+            const isMyReview = review.device_id === deviceId;
             return (
-              <div key={review.id} className="p-3 bg-muted/40 rounded-xl border border-border/30">
-                <div className="flex items-center justify-between mb-1">
+              <div
+                key={review.id}
+                className={`p-3 rounded-xl border ${
+                  isMyReview
+                    ? "bg-primary/5 border-primary/20"
+                    : "bg-muted/40 border-border/30"
+                }`}
+              >
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-foreground">{review.nickname}</span>
                     <div className="flex items-center gap-0.5">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
                           key={star}
                           className={`h-3 w-3 ${
-                            star <= review.rating ? "text-rating fill-current" : "text-muted-foreground/20"
+                            star <= review.rating
+                              ? "text-rating fill-current"
+                              : "text-muted-foreground/20"
                           }`}
                         />
                       ))}
                     </div>
+                    {isMyReview && (
+                      <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">
+                        나
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[10px] text-muted-foreground/60">
+                  <span className="text-[10px] text-muted-foreground/50">
                     {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: ko })}
                   </span>
                 </div>
-                {review.comment && (
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-2">{review.comment}</p>
+                {review.content && (
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{review.content}</p>
                 )}
-                {review.review_images?.length > 0 && (
-                  <div className={`mb-2 gap-1 ${review.review_images.length > 1 ? "grid grid-cols-2" : ""}`}>
-                    {[...review.review_images]
-                      .sort((a, b) => a.position - b.position)
-                      .map((img, idx) => (
-                        <div key={idx} className="rounded-lg overflow-hidden border border-border/30">
-                          <img src={img.url} alt={`리뷰 사진 ${idx + 1}`} loading="lazy" className="w-full max-h-40 object-cover" />
-                        </div>
-                      ))}
-                  </div>
-                )}
-                {/* 좋아요 버튼 */}
-                <button
-                  onClick={() => toggleLike(review.id, liked)}
-                  className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg transition-colors ${
-                    liked
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground/50 hover:bg-muted"
-                  }`}
-                >
-                  <ThumbsUp className={`h-3 w-3 ${liked ? "fill-primary/30" : ""}`} />
-                  {displayLikes > 0 && <span>{displayLikes}</span>}
-                  <span>도움돼요</span>
-                </button>
               </div>
             );
           })}
-          {hasMore && (
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              리뷰 더 보기 ({reviews.length - visibleReviews.length}개 남음)
-            </button>
-          )}
         </div>
       )}
     </div>

@@ -1,219 +1,161 @@
-import { useState, memo, useRef } from "react";
-import { Star, Send, Loader2, ImagePlus, X } from "lucide-react";
+import { useState, useEffect, memo } from "react";
+import { Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { getDeviceId } from "@/hooks/useDeviceId";
+import { useMyReview } from "@/hooks/useReviews";
 
 interface ReviewFormProps {
   restaurantId: string;
 }
 
-const REVIEW_COOLDOWN_KEY = "last_review_time";
-const REVIEW_COOLDOWN_MS = 300_000; // 5분 쿨다운
-
-const NICKNAME_KEY = "review_nickname";
+const STAR_LABELS = ["", "별로예요", "그저그래요", "괜찮아요", "좋아요", "최고예요"];
 
 const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
+  const deviceId = getDeviceId();
+  const { data: myReview, isLoading: loadingMyReview } = useMyReview(restaurantId);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [comment, setComment] = useState("");
-  const [nickname, setNickname] = useState(() => {
-    try { return localStorage.getItem(NICKNAME_KEY) || ""; } catch { return ""; }
-  });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "5MB 이하 이미지만 업로드 가능합니다", variant: "destructive" });
-      return;
+  // 기존 리뷰 불러오기
+  useEffect(() => {
+    if (myReview) {
+      setRating(myReview.rating);
+      setContent(myReview.content ?? "");
     }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const clearImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+  }, [myReview]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
       toast({ title: "별점을 선택해주세요 ⭐", variant: "destructive" });
       return;
     }
-
-    // Client-side rate limiting (5분)
-    const lastReview = localStorage.getItem(REVIEW_COOLDOWN_KEY);
-    if (lastReview && Date.now() - parseInt(lastReview) < REVIEW_COOLDOWN_MS) {
-      const remaining = Math.ceil((REVIEW_COOLDOWN_MS - (Date.now() - parseInt(lastReview))) / 60000);
-      toast({ title: `${remaining}분 후에 다시 작성할 수 있습니다 ⏳`, variant: "destructive" });
-      return;
-    }
-
-    const trimmedComment = comment.trim();
-    const trimmedNickname = nickname.trim();
-
-    if (trimmedComment.length > 200) {
-      toast({ title: "리뷰는 200자 이내로 작성해주세요", variant: "destructive" });
-      return;
-    }
-    if (trimmedNickname.length > 20) {
-      toast({ title: "닉네임은 20자 이내로 작성해주세요", variant: "destructive" });
-      return;
-    }
-
     setSubmitting(true);
-
-    // 이미지 업로드
-    let imageUrl: string | null = null;
-    if (imageFile) {
-      try {
-        const ext = imageFile.name.split(".").pop() ?? "jpg";
-        const path = `reviews/${restaurantId}_${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from("restaurant-images")
-          .upload(path, imageFile, { upsert: false });
-        if (!uploadError) {
-          const { data } = supabase.storage.from("restaurant-images").getPublicUrl(path);
-          imageUrl = data.publicUrl;
-        }
-      } catch {}
-    }
-
-    const { data: reviewData, error } = await supabase.from("reviews").insert({
+    const payload = {
       restaurant_id: restaurantId,
+      device_id: deviceId,
       rating,
-      comment: trimmedComment || null,
-      nickname: trimmedNickname || "익명",
-      device_id: getDeviceId(),
-    }).select("id").single();
+      content: content.trim() || null,
+    };
+
+    const { error } = await supabase
+      .from("reviews")
+      .upsert(payload, { onConflict: "device_id,restaurant_id" });
 
     if (error) {
-      if (error.code === "42501" || error.message?.includes("rate") || error.message?.includes("policy")) {
-        toast({ title: "5분 후에 다시 작성할 수 있습니다 ⏳", variant: "destructive" });
-      } else {
-        toast({ title: "리뷰 등록 실패", description: error.message, variant: "destructive" });
-      }
+      toast({ title: "리뷰 등록 실패", description: error.message, variant: "destructive" });
     } else {
-      // 이미지가 있으면 review_images 테이블에 저장
-      if (imageUrl && reviewData?.id) {
-        await supabase.from("review_images").insert({
-          review_id: reviewData.id,
-          url: imageUrl,
-          position: 0,
-        });
-      }
-      localStorage.setItem(REVIEW_COOLDOWN_KEY, Date.now().toString());
-      if (trimmedNickname) localStorage.setItem(NICKNAME_KEY, trimmedNickname);
-      toast({ title: "리뷰가 등록되었습니다 ✅" });
-      setRating(0);
-      setComment("");
-      clearImage();
+      toast({ title: myReview ? "리뷰가 수정되었습니다 ✅" : "리뷰가 등록되었습니다 ✅" });
+      setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
+      queryClient.invalidateQueries({ queryKey: ["my-review", restaurantId, deviceId] });
+      queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
     }
     setSubmitting(false);
   };
 
-  return (
-    <div className="space-y-3 p-4 bg-muted/30 rounded-2xl border border-border/50">
-      <h4 className="text-sm font-semibold text-foreground">리뷰 남기기</h4>
+  if (loadingMyReview) return null;
 
-      {/* Star rating */}
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            onClick={() => setRating(star)}
-            onMouseEnter={() => setHoverRating(star)}
-            onMouseLeave={() => setHoverRating(0)}
-            className="p-0.5 transition-transform hover:scale-110"
-            aria-label={`${star}점`}
-          >
-            <Star
-              className={`h-6 w-6 transition-colors ${
-                star <= (hoverRating || rating)
-                  ? "text-rating fill-current"
-                  : "text-muted-foreground/20"
-              }`}
-            />
-          </button>
-        ))}
-        {rating > 0 && (
-          <span className="text-sm font-bold text-foreground ml-2">{rating}점</span>
-        )}
-      </div>
-
-      {/* Nickname */}
-      <Input
-        placeholder="닉네임 (선택, 기본: 익명)"
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-        maxLength={20}
-        className="text-sm"
-      />
-
-      {/* Comment */}
-      <Textarea
-        placeholder="한줄평을 남겨주세요 (선택, 최대 200자)"
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        maxLength={200}
-        rows={2}
-        className="text-sm resize-none"
-      />
-
-      {/* 사진 업로드 */}
-      <div>
-        {imagePreview ? (
-          <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border/50">
-            <img src={imagePreview} alt="리뷰 사진" className="w-full h-full object-cover" />
-            <button
-              onClick={clearImage}
-              className="absolute top-1.5 right-1.5 bg-black/60 text-white rounded-full p-1"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+  // 이미 리뷰가 있고 수정 모드가 아닌 경우 → 내 리뷰 요약 + 수정 버튼
+  if (myReview && !isEditing) {
+    return (
+      <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star
+                key={s}
+                className={`h-3.5 w-3.5 ${s <= myReview.rating ? "text-rating fill-current" : "text-muted-foreground/20"}`}
+              />
+            ))}
           </div>
-        ) : (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-border/60 text-muted-foreground/60 text-xs hover:bg-muted/40 transition-colors"
-          >
-            <ImagePlus className="h-4 w-4" />
-            사진 추가 (선택, 최대 5MB)
-          </button>
+          {myReview.content && (
+            <span className="text-[12px] text-foreground truncate max-w-[160px]">{myReview.content}</span>
+          )}
+          <span className="text-[10px] text-muted-foreground/60">내 리뷰</span>
+        </div>
+        <Button variant="ghost" size="sm" className="text-[11px] h-7 px-2" onClick={() => setIsEditing(true)}>
+          수정
+        </Button>
+      </div>
+    );
+  }
+
+  const displayRating = hoverRating || rating;
+
+  return (
+    <div className="space-y-2.5 p-4 bg-muted/30 rounded-2xl border border-border/50">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-foreground">
+          {myReview ? "내 리뷰 수정" : "리뷰 남기기"}
+        </h4>
+        {myReview && (
+          <Button variant="ghost" size="sm" className="text-[11px] h-6 px-2 text-muted-foreground" onClick={() => setIsEditing(false)}>
+            취소
+          </Button>
         )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleImageChange}
-        />
       </div>
 
-      <Button onClick={handleSubmit} disabled={submitting || rating === 0} size="sm" className="w-full">
-        {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1.5" />}
-        리뷰 등록
+      {/* 별점 */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              onClick={() => setRating(star)}
+              onMouseEnter={() => setHoverRating(star)}
+              onMouseLeave={() => setHoverRating(0)}
+              className="p-0.5 transition-transform hover:scale-110"
+              aria-label={`${star}점`}
+            >
+              <Star
+                className={`h-7 w-7 transition-colors ${
+                  star <= displayRating ? "text-rating fill-current" : "text-muted-foreground/20"
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+        {displayRating > 0 && (
+          <span className="text-sm font-semibold text-foreground">{STAR_LABELS[displayRating]}</span>
+        )}
+      </div>
+
+      {/* 한 줄 리뷰 (15자 이내) */}
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="한 줄 리뷰 (선택, 최대 15자)"
+          value={content}
+          onChange={(e) => setContent(e.target.value.slice(0, 15))}
+          maxLength={15}
+          className="w-full text-sm px-3 py-2 pr-10 bg-background border border-border/50 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/40"
+        />
+        <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] ${content.length >= 15 ? "text-destructive" : "text-muted-foreground/40"}`}>
+          {content.length}/15
+        </span>
+      </div>
+
+      <Button
+        onClick={handleSubmit}
+        disabled={submitting || rating === 0}
+        size="sm"
+        className="w-full"
+      >
+        {submitting && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+        {myReview ? "수정 완료" : "리뷰 등록"}
       </Button>
     </div>
   );
 });
 
 ReviewForm.displayName = "ReviewForm";
-
 export default ReviewForm;
