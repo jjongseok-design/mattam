@@ -361,7 +361,7 @@ const RestaurantCard = memo(({
             <div className="flex items-center gap-1 shrink-0">
               <Star className="h-3.5 w-3.5 text-rating fill-current" />
               <span className="text-[13px] font-bold text-foreground">{restaurant.rating}</span>
-              <span className="text-[10px] text-muted-foreground">({restaurant.reviewCount})</span>
+              <span className="text-[10px] text-muted-foreground">네이버 리뷰 {restaurant.reviewCount}개</span>
             </div>
           </div>
 

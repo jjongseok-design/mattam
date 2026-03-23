@@ -293,7 +293,7 @@ const RestaurantDetail = () => {
                 <Star className="h-5 w-5 text-rating fill-current" />
                 <span className="text-2xl font-bold text-foreground">{restaurant.rating}</span>
               </div>
-              <span className="text-[10px] text-muted-foreground">리뷰 {restaurant.reviewCount}개</span>
+              <span className="text-[10px] text-muted-foreground">네이버 리뷰 {restaurant.reviewCount}개</span>
             </div>
             {visitCount !== undefined && (
               <div className="flex items-center gap-1 bg-muted/40 px-2.5 py-1 rounded-lg">
@@ -444,7 +444,7 @@ const RestaurantDetail = () => {
 
         {/* Reviews Section */}
         <div className="space-y-4">
-          <h3 className="text-base font-bold text-foreground">💬 리뷰 ({restaurant.reviewCount})</h3>
+          <h3 className="text-base font-bold text-foreground">💬 네이버 리뷰 ({restaurant.reviewCount}개)</h3>
           <ReviewForm restaurantId={restaurant.id} />
           <ReviewList restaurantId={restaurant.id} />
         </div>
