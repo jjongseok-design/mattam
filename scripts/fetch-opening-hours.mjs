@@ -13,15 +13,17 @@
  *   node scripts/fetch-opening-hours.mjs
  *
  * 옵션 (환경변수로 전달):
- *   DRY_RUN=1           DB 변경 없이 결과 미리보기
- *   LIMIT=20            처리할 식당 수 제한
- *   DELAY_MS=1200       요청 간 딜레이 ms (기본 1200 — 분당 50건 이하)
- *   SKIP_EXISTING=0     이미 영업시간 있는 식당도 덮어쓰기 (기본: 건너뜀)
- *   CITY=chuncheon      특정 city_id만 처리
+ *   DRY_RUN=1              DB 변경 없이 결과 미리보기
+ *   LIMIT=20               처리할 식당 수 제한
+ *   DELAY_MS=1200          요청 간 딜레이 ms (기본 1200 — 분당 50건 이하)
+ *   SKIP_EXISTING=0        이미 영업시간 있는 식당도 덮어쓰기 (기본: 건너뜀)
+ *   CITY=chuncheon         특정 city_id만 처리
+ *   RETRY_BY_ADDRESS=1     이름 불일치 식당을 주소로 재검색 (기본: 건너뜀)
  *
  * 실행 예시:
  *   DRY_RUN=1 LIMIT=10 node scripts/fetch-opening-hours.mjs
- *   node scripts/fetch-opening-hours.mjs
+ *   RETRY_BY_ADDRESS=1 DRY_RUN=1 LIMIT=20 node scripts/fetch-opening-hours.mjs
+ *   RETRY_BY_ADDRESS=1 node scripts/fetch-opening-hours.mjs
  */
 
 import { readFileSync } from "fs";
@@ -63,6 +65,7 @@ const LIMIT = env.LIMIT ? parseInt(env.LIMIT) : null;
 const DELAY_MS = parseInt(env.DELAY_MS || "1200");
 const SKIP_EXISTING = env.SKIP_EXISTING !== "0"; // 기본값: 이미 있으면 건너뜀
 const CITY = env.CITY || null;
+const RETRY_BY_ADDRESS = env.RETRY_BY_ADDRESS === "1";
 
 if (!GOOGLE_KEY) {
   console.error("ERROR: GOOGLE_PLACES_API_KEY를 찾을 수 없습니다.");
@@ -239,6 +242,63 @@ async function fetchGooglePlaceHours(restaurant) {
   };
 }
 
+/**
+ * 주소 기반 재검색 (이름 불일치 시 폴백)
+ *
+ * 이름 검색에 실패한 경우 "식당명 + 전체주소"를 쿼리로 사용하고
+ * locationbias를 식당 좌표 반경 500m로 좁혀 정확도를 높임.
+ * 이름 일치 여부는 검사하지 않음 (주소가 일치하면 같은 장소로 간주).
+ */
+async function fetchGooglePlaceHoursByAddress(restaurant) {
+  if (!restaurant.address) return null;
+
+  // 식당명 + 전체 주소를 함께 쿼리 → 동명이식당 구별
+  const query = `${restaurant.name} ${restaurant.address}`;
+
+  // ── Step 1: 주소 기반 place_id 탐색 ────────────────────────────────────────
+  const findUrl = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
+  findUrl.searchParams.set("input", query);
+  findUrl.searchParams.set("inputtype", "textquery");
+  findUrl.searchParams.set("fields", "name,place_id,formatted_address");
+  // 좌표가 있으면 500m 반경으로 편향 (이름 검색의 30km보다 훨씬 좁음)
+  const bias =
+    restaurant.lat && restaurant.lng
+      ? `circle:500@${restaurant.lat},${restaurant.lng}`
+      : `circle:30000@37.8813,127.7298`;
+  findUrl.searchParams.set("locationbias", bias);
+  findUrl.searchParams.set("language", "ko");
+  findUrl.searchParams.set("key", GOOGLE_KEY);
+
+  const findRes = await fetch(findUrl.toString());
+  if (!findRes.ok) throw new Error(`Find Place (주소) HTTP ${findRes.status}`);
+  const findData = await findRes.json();
+  checkGoogleStatus(findData.status, findData.error_message);
+
+  const candidate = findData.candidates?.[0];
+  if (!candidate?.place_id) return null;
+
+  // ── Step 2: Place Details → opening_hours.periods ──────────────────────────
+  await sleep(300);
+
+  const detailUrl = new URL("https://maps.googleapis.com/maps/api/place/details/json");
+  detailUrl.searchParams.set("place_id", candidate.place_id);
+  detailUrl.searchParams.set("fields", "name,opening_hours");
+  detailUrl.searchParams.set("language", "ko");
+  detailUrl.searchParams.set("key", GOOGLE_KEY);
+
+  const detailRes = await fetch(detailUrl.toString());
+  if (!detailRes.ok) throw new Error(`Place Details (주소) HTTP ${detailRes.status}`);
+  const detailData = await detailRes.json();
+  checkGoogleStatus(detailData.status, detailData.error_message);
+
+  return {
+    ...parseGoogleHours(detailData.result?.opening_hours),
+    _candidateName: candidate.name,
+    _candidateAddress: candidate.formatted_address,
+    _byAddress: true,
+  };
+}
+
 // ── 메인 ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -261,9 +321,35 @@ async function main() {
 
   console.log(`대상: ${targets.length}개 (전체 조회 ${all.length}개)`);
   if (DRY_RUN) console.log("[DRY RUN 모드 - DB 변경 없음]");
+  if (RETRY_BY_ADDRESS) console.log("[RETRY_BY_ADDRESS 활성 - 이름 불일치 시 주소로 재검색]");
   console.log();
 
-  let cntUpdated = 0, cntSkipped = 0, cntNoData = 0, cntFailed = 0;
+  let cntUpdated = 0, cntRetryUpdated = 0, cntSkipped = 0, cntNoData = 0, cntFailed = 0;
+
+  /** 결과를 DB에 반영하는 공통 헬퍼 */
+  async function applyResult(r, result, prefix, label = "") {
+    if (!result.opening_hours && !result.closed_days) {
+      console.log(`${prefix} → 영업시간 정보 없음 (후보: ${result._candidateName ?? "-"})`);
+      cntNoData++;
+      return false;
+    }
+    const hoursStr = result.opening_hours ?? "-";
+    const closedStr = result.closed_days ?? "없음";
+    const tag = result._byAddress ? " [주소재검색]" : "";
+    console.log(
+      `${prefix}${label} → ${hoursStr} / 휴무: ${closedStr}` +
+      (result._candidateName ? ` (${result._candidateName})` : "") + tag
+    );
+    if (!DRY_RUN) {
+      const updates = {};
+      if (result.opening_hours) updates.opening_hours = result.opening_hours;
+      if (result.closed_days) updates.closed_days = result.closed_days;
+      if (Object.keys(updates).length > 0) {
+        await sbPatch("restaurants", { id: `eq.${r.id}` }, updates);
+      }
+    }
+    return true;
+  }
 
   for (let i = 0; i < targets.length; i++) {
     const r = targets[i];
@@ -276,28 +362,32 @@ async function main() {
         console.log(`${prefix} → 검색 결과 없음`);
         cntNoData++;
       } else if (result._skipped) {
-        console.log(`${prefix} → 건너뜀: ${result._reason}`);
-        cntSkipped++;
-      } else if (!result.opening_hours && !result.closed_days) {
-        console.log(`${prefix} → 영업시간 정보 없음 (후보: ${result._candidateName ?? "-"})`);
-        cntNoData++;
-      } else {
-        const hoursStr = result.opening_hours ?? "-";
-        const closedStr = result.closed_days ?? "없음";
-        console.log(
-          `${prefix} → ${hoursStr} / 휴무: ${closedStr}` +
-          (result._candidateName ? ` (${result._candidateName})` : "")
-        );
-
-        if (!DRY_RUN) {
-          const updates = {};
-          if (result.opening_hours) updates.opening_hours = result.opening_hours;
-          if (result.closed_days) updates.closed_days = result.closed_days;
-          if (Object.keys(updates).length > 0) {
-            await sbPatch("restaurants", { id: `eq.${r.id}` }, updates);
+        // 이름 불일치 → RETRY_BY_ADDRESS 활성이면 주소로 재검색
+        if (RETRY_BY_ADDRESS) {
+          console.log(`${prefix} → 이름 불일치 (${result._reason.match(/결과: (.+)\)/)?.[1] ?? "?"}), 주소로 재검색...`);
+          await sleep(DELAY_MS);
+          try {
+            const retryResult = await fetchGooglePlaceHoursByAddress(r);
+            if (!retryResult) {
+              console.log(`${prefix} [주소재검색] → 검색 결과 없음`);
+              cntSkipped++;
+            } else {
+              const ok = await applyResult(r, retryResult, prefix, " [주소재검색]");
+              if (ok) cntRetryUpdated++;
+              else cntSkipped++;
+            }
+          } catch (retryErr) {
+            if (retryErr.message === "OVER_QUERY_LIMIT") throw retryErr; // 상위로 전파
+            console.error(`${prefix} [주소재검색] → 오류: ${retryErr.message}`);
+            cntFailed++;
           }
+        } else {
+          console.log(`${prefix} → 건너뜀: ${result._reason}`);
+          cntSkipped++;
         }
-        cntUpdated++;
+      } else {
+        const ok = await applyResult(r, result, prefix);
+        if (ok) cntUpdated++;
       }
     } catch (err) {
       if (err.message === "OVER_QUERY_LIMIT") {
@@ -315,7 +405,8 @@ async function main() {
 
   console.log();
   console.log("═".repeat(50));
-  console.log(`완료: 업데이트 ${cntUpdated}개 / 이름불일치 ${cntSkipped}개 / 정보없음 ${cntNoData}개 / 오류 ${cntFailed}개`);
+  const retryStr = RETRY_BY_ADDRESS ? ` / 주소재검색 성공 ${cntRetryUpdated}개` : "";
+  console.log(`완료: 이름검색 ${cntUpdated}개${retryStr} / 건너뜀 ${cntSkipped}개 / 정보없음 ${cntNoData}개 / 오류 ${cntFailed}개`);
   if (DRY_RUN) console.log("※ DRY RUN 모드였으므로 실제 DB 변경 없음");
 }
 
