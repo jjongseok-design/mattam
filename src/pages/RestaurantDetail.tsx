@@ -340,26 +340,14 @@ const RestaurantDetail = () => {
           </div>
 
           {/* Phone */}
-          <div className="flex items-center gap-3 p-3.5">
-            <Phone className="h-4 w-4 text-primary/60 flex-shrink-0" />
-            {restaurant.phone ? (
+          {restaurant.phone && (
+            <div className="flex items-center gap-3 p-3.5">
+              <Phone className="h-4 w-4 text-primary/60 flex-shrink-0" />
               <a href={`tel:${restaurant.phone}`} className="text-[13px] font-medium text-foreground hover:text-primary transition-colors flex-1">
                 {restaurant.phone}
               </a>
-            ) : (
-              <>
-                <span className="text-[13px] text-muted-foreground/50 flex-1">전화번호 정보 없음</span>
-                <a
-                  href={`https://search.naver.com/search.naver?query=${encodeURIComponent(restaurant.name + (cityLabel ? ` ${cityLabel}` : ""))}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-primary/70 font-medium flex items-center gap-0.5 flex-shrink-0"
-                >
-                  <ExternalLink className="h-3 w-3" /> 네이버에서 확인
-                </a>
-              </>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Opening Hours */}
           {restaurant.openingHours && (

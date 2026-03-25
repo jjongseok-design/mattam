@@ -108,6 +108,8 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
   const handleRevisit = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowRevisitDialog(false);
+    const { dismiss } = toast({ title: "✅ 재방문이 기록됐어요!" });
+    setTimeout(dismiss, 2000);
     applyRevisit(restaurant.id);
     queryClient.setQueryData<number>(["visit-count", restaurant.id], (old) => (old ?? 0) + 1);
     queryClient.setQueryData<number>(["my-visit-count", restaurant.id, deviceId], (old) => (old ?? 0) + 1);

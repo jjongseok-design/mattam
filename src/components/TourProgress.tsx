@@ -66,12 +66,13 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false, cityName
           <span className="text-xl">{stats.rankEmoji}</span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-foreground whitespace-nowrap">{stats.rank}</span>
-              <span className="text-[10px] text-primary font-bold">{stats.overallPercent}%</span>
+              <span className="text-xs font-bold text-foreground whitespace-nowrap">
+                🍽️ {cityName ? `${cityName} 맛집 탐험 중!` : stats.rank}
+              </span>
               {expanded ? (
-                <ChevronUp className="h-3 w-3 text-muted-foreground" />
+                <ChevronUp className="h-3 w-3 text-muted-foreground ml-auto" />
               ) : (
-                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
               )}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5">
@@ -83,7 +84,9 @@ const TourProgress = ({ restaurants, visited, onShare, compact = false, cityName
                   transition={{ duration: 0.8, ease: "easeOut" }}
                 />
               </div>
-              <span className="text-[10px] text-muted-foreground">{stats.totalVisited}/{stats.totalRestaurants}</span>
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                {stats.totalVisited}/{stats.totalRestaurants}곳 완료 ({stats.overallPercent}%)
+              </span>
             </div>
           </div>
           <button

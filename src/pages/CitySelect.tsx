@@ -5,6 +5,12 @@ import { useCities } from "@/hooks/useCities";
 import ThemeToggle from "@/components/ThemeToggle";
 import type { City } from "@/types/city";
 
+const CITY_IMAGES: Record<string, string> = {
+  chuncheon: "https://tong.visitkorea.or.kr/cms/resource/40/3576840_image2_1.jpg",
+  gangneung: "https://tong.visitkorea.or.kr/cms/resource/23/2671423_image2_1.jpg",
+  sokcho: "https://tong.visitkorea.or.kr/cms/resource/64/2733164_image2_1.jpg",
+};
+
 const CityCard = ({ city, index }: { city: City; index: number }) => {
   if (city.comingSoon) {
     return (
@@ -43,10 +49,10 @@ const CityCard = ({ city, index }: { city: City; index: number }) => {
       <Link to={`/${city.id}`} className="block">
         <div className="relative rounded-2xl border border-border/50 bg-card overflow-hidden hover:border-primary/30 hover:shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.15)] transition-all duration-200">
           {/* City image */}
-          {city.imageUrl ? (
-            <div className="h-36 overflow-hidden">
+          {(city.imageUrl ?? CITY_IMAGES[city.id]) ? (
+            <div className="h-36 overflow-hidden relative">
               <img
-                src={city.imageUrl}
+                src={city.imageUrl ?? CITY_IMAGES[city.id]}
                 alt={city.name}
                 className="w-full h-full object-cover"
               />
@@ -153,10 +159,15 @@ const CitySelect = () => {
                 transition={{ delay: (activeCities.length + comingSoonCities.length + i) * 0.08 }}
                 className="relative rounded-2xl border border-border/40 bg-muted/20 overflow-hidden"
               >
-                <div className="p-5 flex items-center gap-4 opacity-40">
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl flex-shrink-0">
-                    🏙️
-                  </div>
+                <div className="h-28 overflow-hidden relative">
+                  <img
+                    src={CITY_IMAGES[c.id]}
+                    alt={c.name}
+                    className="w-full h-full object-cover opacity-50"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                </div>
+                <div className="p-4 flex items-center gap-3 opacity-60">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-foreground text-lg">{c.name}</h3>
                     <p className="text-sm text-muted-foreground">{c.description}</p>
@@ -164,7 +175,7 @@ const CitySelect = () => {
                 </div>
                 <div className="absolute top-3 right-3">
                   <span className="text-[10px] font-semibold bg-muted text-muted-foreground px-2 py-1 rounded-full">
-                    준비 중
+                    🔜 곧 오픈
                   </span>
                 </div>
               </motion.div>
