@@ -156,59 +156,84 @@ function parseGoogleHours(openingHours) {
   return { opening_hours, closed_days };
 }
 
+/** Google API 상태 코드 처리 */
+function checkGoogleStatus(status, errorMessage) {
+  if (status === "REQUEST_DENIED") throw new Error(`Google API 거부: ${errorMessage || status}`);
+  if (status === "OVER_QUERY_LIMIT") throw new Error("OVER_QUERY_LIMIT");
+  if (status === "INVALID_REQUEST") throw new Error(`잘못된 요청: ${errorMessage || ""}`);
+  // OK / ZERO_RESULTS / NOT_FOUND 는 정상 처리
+}
+
 /**
- * Google Places Find Place from Text API 호출
- * 식당명 + 도시명으로 검색 → 영업시간 반환
+ * Google Places 2단계 호출로 영업시간 취득
+ *
+ * 왜 2단계인가?
+ *   Find Place from Text의 opening_hours 필드는 open_now(현재 영업중 여부)만 반환.
+ *   periods(요일별 시간표)는 Place Details API에서만 제공됨.
+ *
+ * Step 1: findplacefromtext → place_id + 이름 확인
+ * Step 2: place/details    → opening_hours.periods (요일별 영업 시간)
  */
 async function fetchGooglePlaceHours(restaurant) {
-  // 검색 쿼리: "식당명 춘천" (또는 주소의 시 이름)
   const cityHint = restaurant.address
     ? restaurant.address.match(/([가-힣]+시)/)?.[1] ?? "춘천"
     : "춘천";
   const query = `${restaurant.name} ${cityHint}`;
 
-  const url = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
-  url.searchParams.set("input", query);
-  url.searchParams.set("inputtype", "textquery");
-  url.searchParams.set("fields", "name,place_id,opening_hours,formatted_address");
-  // 춘천 중심 30km 반경으로 편향
-  url.searchParams.set("locationbias", `circle:30000@${restaurant.lat ?? 37.8813},${restaurant.lng ?? 127.7298}`);
-  url.searchParams.set("language", "ko");
-  url.searchParams.set("key", GOOGLE_KEY);
+  // ── Step 1: place_id 찾기 ──────────────────────────────────────────────────
+  const findUrl = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
+  findUrl.searchParams.set("input", query);
+  findUrl.searchParams.set("inputtype", "textquery");
+  findUrl.searchParams.set("fields", "name,place_id,formatted_address");
+  findUrl.searchParams.set(
+    "locationbias",
+    `circle:30000@${restaurant.lat ?? 37.8813},${restaurant.lng ?? 127.7298}`
+  );
+  findUrl.searchParams.set("language", "ko");
+  findUrl.searchParams.set("key", GOOGLE_KEY);
 
-  const res = await fetch(url.toString());
-  if (!res.ok) throw new Error(`Google API HTTP ${res.status}`);
+  const findRes = await fetch(findUrl.toString());
+  if (!findRes.ok) throw new Error(`Find Place HTTP ${findRes.status}`);
+  const findData = await findRes.json();
+  checkGoogleStatus(findData.status, findData.error_message);
 
-  const data = await res.json();
+  const candidate = findData.candidates?.[0];
+  if (!candidate?.place_id) return null;
 
-  if (data.status === "REQUEST_DENIED") {
-    throw new Error(`Google API 거부: ${data.error_message || data.status}`);
-  }
-  if (data.status === "OVER_QUERY_LIMIT") {
-    throw new Error("OVER_QUERY_LIMIT");
-  }
-  if (data.status === "INVALID_REQUEST") {
-    throw new Error(`잘못된 요청: ${data.error_message || ""}`);
-  }
-
-  const candidate = data.candidates?.[0];
-  if (!candidate) return null;
-
-  // 이름 유사도 간단 체크 (완전히 다른 식당 방지)
+  // 이름 유사도 체크 (전혀 다른 식당 방지)
   const candidateName = (candidate.name ?? "").toLowerCase().replace(/\s/g, "");
   const searchName = restaurant.name.toLowerCase().replace(/\s/g, "");
-  // 검색명이 후보명에 포함되거나, 후보명이 검색명에 포함되면 OK
   const nameMatch =
     candidateName.includes(searchName) ||
     searchName.includes(candidateName) ||
-    candidateName.slice(0, 3) === searchName.slice(0, 3); // 앞 3글자 일치
+    candidateName.slice(0, 3) === searchName.slice(0, 3);
 
   if (!nameMatch) {
-    return { _skipped: true, _reason: `이름 불일치 (검색: ${restaurant.name}, 결과: ${candidate.name})` };
+    return {
+      _skipped: true,
+      _reason: `이름 불일치 (검색: ${restaurant.name}, 결과: ${candidate.name})`,
+    };
   }
 
+  // ── Step 2: Place Details로 opening_hours.periods 취득 ────────────────────
+  // Find Place의 opening_hours는 open_now만 반환 → periods는 Details API 필요
+  await sleep(300); // Step 1/2 사이 짧은 딜레이
+
+  const detailUrl = new URL("https://maps.googleapis.com/maps/api/place/details/json");
+  detailUrl.searchParams.set("place_id", candidate.place_id);
+  detailUrl.searchParams.set("fields", "name,opening_hours");
+  detailUrl.searchParams.set("language", "ko");
+  detailUrl.searchParams.set("key", GOOGLE_KEY);
+
+  const detailRes = await fetch(detailUrl.toString());
+  if (!detailRes.ok) throw new Error(`Place Details HTTP ${detailRes.status}`);
+  const detailData = await detailRes.json();
+  checkGoogleStatus(detailData.status, detailData.error_message);
+
+  const detail = detailData.result;
+
   return {
-    ...parseGoogleHours(candidate.opening_hours),
+    ...parseGoogleHours(detail?.opening_hours),
     _candidateName: candidate.name,
     _candidateAddress: candidate.formatted_address,
   };
