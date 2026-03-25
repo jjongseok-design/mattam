@@ -70,6 +70,15 @@ const CityMap = () => {
   const [categories, setCategories] = useState<string[]>(
     initialCats.length > 0 ? initialCats : (saved.current?.categories ?? [])
   );
+
+  // 첫 방문(세션 저장값 없음)이고 URL 파라미터도 없을 때 첫 번째 카테고리 자동 선택
+  const isFirstVisit = saved.current === null;
+  useEffect(() => {
+    if (isFirstVisit && !initialCatParam && categories.length === 0 && dbCategories.length > 0) {
+      setCategories([dbCategories[0].id]);
+    }
+  }, [dbCategories.length]);
+
   const [showList, setShowList] = useState(saved.current?.showList || false);
   const [sort, setSort] = useState<SortOption>(saved.current?.sort || "rating");
   const [filter, setFilter] = useState<FilterOption>(saved.current?.filter || "all");
