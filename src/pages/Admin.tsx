@@ -850,7 +850,7 @@ const Admin = () => {
               </Button>
             )}
           </div>
-          <div className="grid grid-cols-8 gap-1.5">
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1.5">
             {categories.map((cat) => {
               const isActive = adminCategory === cat.id;
               const count = categoryCount(cat.id);
@@ -910,7 +910,7 @@ const Admin = () => {
                     </button>
                   )}
                   <span className="relative z-10 text-xl">{cat.emoji}</span>
-                  <span className={`relative z-10 text-[11px] font-medium leading-tight w-full text-center break-keep ${
+                  <span className={`relative z-10 text-[11px] font-medium leading-tight w-full text-center truncate ${
                     isActive && !editMode ? "text-primary" : "text-muted-foreground"
                   }`}>
                     {cat.label}
