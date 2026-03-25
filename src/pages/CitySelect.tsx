@@ -104,12 +104,10 @@ const CitySelect = () => {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border/30">
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Utensils className="h-4 w-4 text-white" />
-            </div>
+          <div className="flex items-center gap-2">
+            <img src="/pwa-icon-192.png" alt="맛탐 로고" className="w-8 h-8 rounded-lg" />
             <div>
-              <h1 className="text-[15px] font-black text-foreground tracking-tight">맛탐</h1>
+              <h1 className="text-[15px] font-black text-primary tracking-tight">맛탐</h1>
               <p className="text-[10px] text-muted-foreground">도시별 현지인 맛집지도</p>
             </div>
           </div>

@@ -333,10 +333,8 @@ const Index = () => {
             {/* Row 1: 로고 + 액션 버튼 */}
             <div className="safe-area-x pt-2 pb-1.5 flex items-center gap-2">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
-                  <Utensils className="h-3.5 w-3.5 text-white" />
-                </div>
-                <h1 className="text-[14px] font-bold text-foreground">춘천 맛집</h1>
+                <img src="/pwa-icon-192.png" alt="맛탐" className="w-6 h-6 rounded-md flex-shrink-0" />
+                <h1 className="text-[14px] font-bold text-primary">맛탐</h1>
                 {categories.length > 0 && (
                   <span className="text-[11px] text-muted-foreground font-medium">
                     {categoryEmoji} {categoryRestaurants.length}개
@@ -436,11 +434,9 @@ const Index = () => {
         {/* Header */}
         <div className="border-b border-border/40">
           <div className="px-5 pt-4 pb-3 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-              <Utensils className="h-4 w-4 text-white" />
-            </div>
+            <img src="/pwa-icon-192.png" alt="맛탐" className="w-8 h-8 rounded-lg flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <h1 className="text-[15px] font-bold text-foreground tracking-tight">춘천 맛집</h1>
+              <h1 className="text-[15px] font-bold text-primary tracking-tight">맛탐</h1>
               <p className="text-[11px] text-muted-foreground">강원도 춘천시 · {restaurants.length}곳</p>
             </div>
             <div className="flex items-center gap-0.5">

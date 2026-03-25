@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" width="120" height="40">
+  <!-- Location pin -->
+  <path d="M16 6C11.6 6 8 9.6 8 14C8 20 16 30 16 30C16 30 24 20 24 14C24 9.6 20.4 6 16 6ZM16 18C13.8 18 12 16.2 12 14C12 11.8 13.8 10 16 10C18.2 10 20 11.8 20 14C20 16.2 18.2 18 16 18Z" fill="#F97316"/>
+  <!-- 맛탐 text -->
+  <text x="32" y="22" font-family="'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif" font-size="18" font-weight="800" fill="#F97316" letter-spacing="-0.5">맛탐</text>
+</svg>
