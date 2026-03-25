@@ -1,4 +1,4 @@
-import { ArrowUpDown, SlidersHorizontal, Heart, CheckCircle2, Navigation, X } from "lucide-react";
+import { ArrowUpDown, SlidersHorizontal, Heart, CheckCircle2, Navigation, X, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -11,6 +11,7 @@ interface SortFilterBarProps {
   filter: FilterOption;
   onFilterChange: (f: FilterOption) => void;
   hasLocation: boolean;
+  locationLoading?: boolean;
   ratingMin: number;
   onRatingMinChange: (n: number) => void;
 }
@@ -21,16 +22,21 @@ const SortFilterBar = ({
   filter,
   onFilterChange,
   hasLocation,
+  locationLoading,
   ratingMin,
   onRatingMinChange,
 }: SortFilterBarProps) => {
   const [showFilters, setShowFilters] = useState(false);
 
+  const distanceIcon = locationLoading && sort === "distance"
+    ? <Loader2 className="h-3 w-3 animate-spin" />
+    : <Navigation className="h-3 w-3" />;
+
   const sortOptions: { value: SortOption; label: string; icon?: React.ReactNode }[] = [
     { value: "rating", label: "평점순" },
     { value: "reviews", label: "리뷰순" },
     { value: "newest", label: "최신순" },
-    ...(hasLocation ? [{ value: "distance" as SortOption, label: "거리순", icon: <Navigation className="h-3 w-3" /> }] : []),
+    { value: "distance", label: "거리순", icon: distanceIcon },
   ];
 
   const filterOptions: { value: FilterOption; label: string; icon: React.ReactNode }[] = [

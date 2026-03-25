@@ -30,6 +30,7 @@ interface MobileBottomSheetProps {
   filter: FilterOption;
   onFilterChange: (f: FilterOption) => void;
   hasLocation: boolean;
+  locationLoading?: boolean;
   ratingMin: number;
   onRatingMinChange: (n: number) => void;
   getDistance: (lat: number, lng: number) => number | null;
@@ -65,6 +66,7 @@ const MobileBottomSheet = memo(({
   filter,
   onFilterChange,
   hasLocation,
+  locationLoading,
   ratingMin,
   onRatingMinChange,
   getDistance,
@@ -203,6 +205,7 @@ const MobileBottomSheet = memo(({
                 filter={filter}
                 onFilterChange={onFilterChange}
                 hasLocation={hasLocation}
+                locationLoading={locationLoading}
                 ratingMin={ratingMin}
                 onRatingMinChange={onRatingMinChange}
               />

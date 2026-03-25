@@ -80,7 +80,7 @@ const Index = () => {
   const { visited, isVisited, toggle: toggleVisited } = useVisited();
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
   const { data: visitCounts } = useFirstVisitorCounts();
-  const { position, loading: geoLoading, request: requestGeo } = useGeolocation();
+  const { position, error: geoError, loading: geoLoading, request: requestGeo } = useGeolocation();
   const { recentIds, addViewed } = useRecentlyViewed();
   const { toast } = useToast();
   const listRef = useRef<HTMLDivElement>(null);
@@ -158,6 +158,14 @@ const Index = () => {
       requestGeo();
     }
   }, [sort, position, requestGeo]);
+
+  // 위치 권한 거부 시 안내
+  useEffect(() => {
+    if (sort === "distance" && geoError) {
+      toast({ title: "📍 위치 권한이 필요해요", description: "브라우저 설정에서 위치 접근을 허용해주세요", variant: "destructive" });
+      setSort("rating");
+    }
+  }, [geoError]);
 
   const handleLocationRequest = useCallback(() => {
     requestGeo();
@@ -400,6 +408,7 @@ const Index = () => {
             filter={filter}
             onFilterChange={setFilter}
             hasLocation={!!position}
+            locationLoading={geoLoading}
             ratingMin={ratingMin}
             onRatingMinChange={setRatingMin}
             getDistance={getDistance}
