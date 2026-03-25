@@ -302,14 +302,16 @@ const RestaurantDetail = () => {
                 </div>
               </div>
             )}
-            {visitCount !== undefined && visitCount > 0 && (
+            {visitCount !== undefined && (
               <div className="flex items-center gap-1 bg-muted/40 px-2.5 py-1 rounded-lg">
                 <Users className="h-3 w-3 text-muted-foreground" />
                 <span className="text-[11px] text-muted-foreground">
-                  총 방문 {visitCount}회
-                  {myVisitCount !== undefined && myVisitCount > 0 && (
-                    <span className="text-primary/70 font-medium"> · 내가 방문 {myVisitCount}회</span>
-                  )}
+                  {visitCount === 0
+                    ? "아직 방문 기록이 없어요"
+                    : <>총 방문 {visitCount}회{myVisitCount !== undefined && myVisitCount > 0 && (
+                        <span className="text-primary/70 font-medium"> · 내가 방문 {myVisitCount}회</span>
+                      )}</>
+                  }
                 </span>
               </div>
             )}
