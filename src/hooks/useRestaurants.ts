@@ -38,6 +38,30 @@ const saveCache = (data: Restaurant[], cityId?: string) => {
   try { localStorage.setItem(getCacheKey(cityId), JSON.stringify(data)); } catch {}
 };
 
+/** DB row → Restaurant 매핑 */
+const mapRow = (r: any, cityId?: string): Restaurant => ({
+  id: r.id,
+  slug: r.slug ?? r.id,
+  name: r.name,
+  category: r.category,
+  address: r.address,
+  phone: r.phone ?? "",
+  rating: Number(r.rating),
+  reviewCount: r.review_count,
+  lat: r.lat,
+  lng: r.lng,
+  priceRange: r.price_range ?? "",
+  tags: r.tags ?? [],
+  description: r.description ?? undefined,
+  imageUrl: r.image_url ?? undefined,
+  extraImages: r.extra_images ?? [],
+  openingHours: r.opening_hours ?? undefined,
+  closedDays: r.closed_days ?? undefined,
+  createdAt: r.created_at ?? undefined,
+  cityId: r.city_id ?? cityId,
+  isRecommended: r.is_recommended ?? false,
+});
+
 export const useRestaurants = (cityId?: string) => {
   const queryClient = useQueryClient();
   const queryKey = cityId ? ["restaurants", cityId] : ["restaurants"];
@@ -60,28 +84,7 @@ export const useRestaurants = (cityId?: string) => {
       const { data, error } = await q;
       if (error) throw error;
 
-      const mapped = (data ?? []).map((r: any) => ({
-        id: r.id,
-        slug: r.slug ?? r.id,
-        name: r.name,
-        category: r.category,
-        address: r.address,
-        phone: r.phone ?? "",
-        rating: Number(r.rating),
-        reviewCount: r.review_count,
-        lat: r.lat,
-        lng: r.lng,
-        priceRange: r.price_range ?? "",
-        tags: r.tags ?? [],
-        description: r.description ?? undefined,
-        imageUrl: r.image_url ?? undefined,
-        extraImages: r.extra_images ?? [],
-        openingHours: r.opening_hours ?? undefined,
-        closedDays: r.closed_days ?? undefined,
-        createdAt: r.created_at ?? undefined,
-        cityId: r.city_id ?? cityId,
-        isRecommended: r.is_recommended ?? false,
-      }));
+      const mapped = (data ?? []).map((r: any) => mapRow(r, cityId));
       saveCache(mapped, cityId);
       return mapped;
     },
@@ -95,11 +98,33 @@ export const useRestaurants = (cityId?: string) => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "restaurants" },
-        () => {
+        (payload) => {
+          // payload로 즉시 캐시 업데이트 (네트워크 재조회 없이 바로 반영)
+          if (payload.eventType === "INSERT") {
+            const r = payload.new as any;
+            if (cityId && r.city_id !== cityId) return;
+            queryClient.setQueryData<Restaurant[]>(queryKey, (old) => {
+              if (!old) return [mapRow(r, cityId)];
+              if (old.some((item) => item.id === r.id)) return old;
+              return [...old, mapRow(r, cityId)];
+            });
+          } else if (payload.eventType === "UPDATE") {
+            const r = payload.new as any;
+            queryClient.setQueryData<Restaurant[]>(queryKey, (old) =>
+              old ? old.map((item) => item.id === r.id ? mapRow(r, cityId) : item) : old
+            );
+          } else if (payload.eventType === "DELETE") {
+            const oldId = (payload.old as any).id;
+            queryClient.setQueryData<Restaurant[]>(queryKey, (old) =>
+              old ? old.filter((item) => item.id !== oldId) : old
+            );
+          }
+
+          // 캐시 동기화 보장용 백그라운드 재조회 (2초 디바운스)
           if (debounceRef.current) clearTimeout(debounceRef.current);
           debounceRef.current = setTimeout(() => {
             queryClient.invalidateQueries({ queryKey });
-          }, 500);
+          }, 2000);
         }
       )
       .subscribe();
