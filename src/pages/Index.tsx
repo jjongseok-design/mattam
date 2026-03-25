@@ -530,18 +530,24 @@ const Index = () => {
 
           {/* 정렬 · 필터 */}
           <div className="px-4 pt-2.5 pb-1.5 flex items-center gap-1.5 flex-wrap">
-            {(["rating", "reviews", "newest", ...(position ? ["distance"] : [])] as SortOption[]).map((val) => {
+            {(["rating", "reviews", "newest", "distance"] as SortOption[]).map((val) => {
               const label = val === "rating" ? "평점순" : val === "reviews" ? "리뷰순" : val === "newest" ? "최신순" : "거리순";
+              const isDistance = val === "distance";
               return (
                 <button
                   key={val}
                   onClick={() => setSort(val)}
-                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all duration-200 ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all duration-200 ${
                     sort === val
                       ? "bg-primary/10 text-primary border border-primary/20"
                       : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
                   }`}
                 >
+                  {isDistance && sort === "distance" && geoLoading
+                    ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                    : isDistance
+                    ? <Navigation className="h-2.5 w-2.5" />
+                    : null}
                   {label}
                 </button>
               );
