@@ -40,7 +40,8 @@ export function useCategories(cityId?: string) {
         tag_placeholder: d.tag_placeholder ?? "",
       }));
     },
-    staleTime: 1000 * 60,
+    staleTime: 30 * 60 * 1000,  // 30분 (정적 데이터, realtime으로 변경 감지됨)
+    gcTime: 60 * 60 * 1000,
   });
 
   useEffect(() => {

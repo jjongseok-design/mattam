@@ -70,4 +70,20 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React 핵심 라이브러리 분리
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          // 지도 라이브러리 분리 (용량 큰 라이브러리)
+          "vendor-map": ["leaflet"],
+          // Supabase 분리
+          "vendor-supabase": ["@supabase/supabase-js"],
+          // UI/애니메이션 라이브러리 분리
+          "vendor-ui": ["framer-motion", "lucide-react"],
+        },
+      },
+    },
+  },
 }));

@@ -61,7 +61,8 @@ export const useFirstVisitorCounts = () => {
       });
       return map;
     },
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,  // 5분 캐시 (탭 전환마다 재조회 방지)
+    gcTime: 30 * 60 * 1000,
   });
 };
 
