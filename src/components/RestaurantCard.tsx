@@ -233,10 +233,17 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
                 )}
               </div>
 
-              <p className="text-[13px] text-muted-foreground truncate mb-1">
-                {restaurant.address}
-                {distText && <span className="text-primary/70 font-medium"> · {distText}</span>}
-              </p>
+              <div className="flex items-center gap-1 mb-1">
+                <p className="text-[13px] text-muted-foreground truncate flex-1">
+                  {restaurant.address}
+                </p>
+                {distText && (
+                  <span className="text-[11px] font-semibold text-primary/80 flex-shrink-0 flex items-center gap-0.5">
+                    <Navigation className="h-2.5 w-2.5" />
+                    {distText}
+                  </span>
+                )}
+              </div>
 
               <div className="flex items-center gap-1 flex-wrap">
                 {restaurant.tags.slice(0, 2).map((tag) => (
