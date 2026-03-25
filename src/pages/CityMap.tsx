@@ -191,6 +191,9 @@ const CityMap = () => {
     else if (filter === "visited") list = list.filter((r) => isVisited(r.id));
     if (ratingMin > 0) list = list.filter((r) => r.rating >= ratingMin);
     return [...list].sort((a, b) => {
+      // 추천 식당 우선 (다른 정렬 기준 앞에 적용)
+      if (a.isRecommended && !b.isRecommended) return -1;
+      if (!a.isRecommended && b.isRecommended) return 1;
       if (sort === "distance" && position) {
         return getDistanceKm(position.lat, position.lng, a.lat, a.lng) - getDistanceKm(position.lat, position.lng, b.lat, b.lng);
       }

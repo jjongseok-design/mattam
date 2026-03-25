@@ -22,6 +22,7 @@ export interface Restaurant {
   closedDays?: string;
   createdAt?: string;
   cityId?: string;
+  isRecommended?: boolean;
 }
 
 const getCacheKey = (cityId?: string) => cityId ? `restaurants_cache_${cityId}` : "restaurants_cache";
@@ -79,6 +80,7 @@ export const useRestaurants = (cityId?: string) => {
         closedDays: r.closed_days ?? undefined,
         createdAt: r.created_at ?? undefined,
         cityId: r.city_id ?? cityId,
+        isRecommended: r.is_recommended ?? false,
       }));
       saveCache(mapped, cityId);
       return mapped;

@@ -215,6 +215,11 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
               <div className="flex items-start justify-between gap-1 mb-0.5">
                 <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
                   <h3 className="font-semibold text-[17px] text-foreground truncate">{restaurant.name}</h3>
+                  {restaurant.isRecommended && (
+                    <span className="text-[9px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
+                      ⭐ 추천
+                    </span>
+                  )}
                   {isVisited && (
                     <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                       방문
@@ -350,6 +355,11 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
                 <h3 className="font-semibold text-[18px] text-foreground leading-snug">
                   {restaurant.name}
                 </h3>
+                {restaurant.isRecommended && (
+                  <span className="text-[9px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
+                    ⭐ 추천
+                  </span>
+                )}
                 {isVisited && (
                   <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                     방문

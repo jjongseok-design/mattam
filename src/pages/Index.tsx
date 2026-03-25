@@ -235,6 +235,9 @@ const Index = () => {
     }
 
     return [...list].sort((a, b) => {
+      // 추천 식당 우선
+      if (a.isRecommended && !b.isRecommended) return -1;
+      if (!a.isRecommended && b.isRecommended) return 1;
       if (sort === "distance" && position) {
         const dA = getDistanceKm(position.lat, position.lng, a.lat, a.lng);
         const dB = getDistanceKm(position.lat, position.lng, b.lat, b.lng);

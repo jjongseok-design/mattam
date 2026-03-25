@@ -28,6 +28,7 @@ interface RestaurantRow {
   description: string | null;
   image_url: string | null;
   extra_images: string[] | null;
+  is_recommended: boolean | null;
 }
 
 const getEmptyForm = (category: string) => ({
@@ -43,6 +44,7 @@ const getEmptyForm = (category: string) => ({
   price_range: "",
   tags: [] as string[],
   description: "",
+  is_recommended: false,
 });
 
 const adminApi = async (action: string, data?: any) => {
@@ -275,6 +277,7 @@ const Admin = () => {
       price_range: r.price_range ?? "",
       tags: r.tags ?? [],
       description: r.description ?? "",
+      is_recommended: r.is_recommended ?? false,
     });
     setEditing(r);
     setShowForm(true);
@@ -306,6 +309,7 @@ const Admin = () => {
           : form.tags,
       description: form.description || null,
       city_id: adminCityId,
+      is_recommended: form.is_recommended ?? false,
     };
 
     try {
@@ -1143,6 +1147,16 @@ const Admin = () => {
                   <label className="text-sm font-medium">설명</label>
                   <Textarea value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
                 </div>
+                <div className="col-span-2 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_recommended"
+                    checked={!!(form as any).is_recommended}
+                    onChange={(e) => setForm({ ...form, is_recommended: e.target.checked } as any)}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <label htmlFor="is_recommended" className="text-sm font-medium cursor-pointer">⭐ 추천 식당으로 표시</label>
+                </div>
                 {/* Image Upload */}
                 {editing && (
                   <div className="col-span-2">
@@ -1396,6 +1410,21 @@ const Admin = () => {
                               : <Search className="h-3 w-3" />
                             }
                             <span>이미지</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title="추천 토글"
+                            className={`h-7 px-2 text-[11px] gap-1 ${r.is_recommended ? "text-yellow-500 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"}`}
+                            onClick={async () => {
+                              const newVal = !r.is_recommended;
+                              setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_recommended: newVal } : x));
+                              await adminApi("update", { id: r.id, is_recommended: newVal });
+                              queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
+                            }}
+                          >
+                            <span>{r.is_recommended ? "⭐" : "☆"}</span>
+                            <span>추천</span>
                           </Button>
                           <Button
                             variant="outline"
