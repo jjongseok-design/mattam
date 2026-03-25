@@ -180,11 +180,10 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
         {revisitDialog}
       <motion.div
         ref={ref}
-        layout
         data-restaurant-id={restaurant.id}
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97 }}
+        exit={{ opacity: 0 }}
         className={`rounded-xl border overflow-hidden transition-all duration-200 bg-card ${
           isSelected
             ? "border-primary/30 shadow-[0_0_0_2px_hsl(var(--primary)/0.12)]"

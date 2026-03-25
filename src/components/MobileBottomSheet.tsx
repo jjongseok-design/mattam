@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, memo } from "react";
+import { useRef, useState, useCallback, useEffect, memo } from "react";
 import { motion, PanInfo } from "framer-motion";
 import { ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -78,8 +78,15 @@ const MobileBottomSheet = memo(({
   const cityName = city?.name;
   const [state, setState] = useState<SheetState>("half");
   const [isDraggable, setIsDraggable] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(15);
   const listRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
+
+  // 카테고리/필터 변경 시 visible count 초기화
+  useEffect(() => {
+    setVisibleCount(15);
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [restaurants]);
 
   const handleDragStart = useCallback((_: unknown, info: PanInfo) => {
     dragStartY.current = info.point.y;
@@ -120,6 +127,10 @@ const MobileBottomSheet = memo(({
     if (!el) return;
     // Only allow sheet drag when list is scrolled to top
     setIsDraggable(el.scrollTop <= 1);
+    // 스크롤 하단 근처 시 추가 로드
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
+      setVisibleCount(prev => prev + 15);
+    }
   }, []);
 
   const handleListTouchStart = useCallback(() => {
@@ -232,7 +243,7 @@ const MobileBottomSheet = memo(({
                 </div>
               )}
 
-              {restaurants.map((restaurant) => {
+              {restaurants.slice(0, visibleCount).map((restaurant) => {
                 const dist = getDistance(restaurant.lat, restaurant.lng);
                 return (
                   <RestaurantCard
@@ -259,6 +270,11 @@ const MobileBottomSheet = memo(({
                   />
                 );
               })}
+              {visibleCount < restaurants.length && (
+                <div className="text-center py-3 text-[11px] text-muted-foreground/50">
+                  스크롤하면 더 보입니다 ({visibleCount}/{restaurants.length})
+                </div>
+              )}
               {restaurants.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <span className="text-3xl block mb-2">🔍</span>

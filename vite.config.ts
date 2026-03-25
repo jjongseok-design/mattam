@@ -37,6 +37,26 @@ export default defineConfig(({ mode }) => ({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          {
+            // 식당 이미지 (Supabase Storage) — CacheFirst로 재방문 시 즉시 표시
+            urlPattern: ({ url }) => url.hostname.includes("supabase.co") && url.pathname.includes("/storage/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "restaurant-images",
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 }, // 30일
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // 카카오맵 정적 리소스 캐시
+            urlPattern: ({ url }) => url.hostname.includes("dapi.kakao.com") || url.hostname.includes("map.kakao.com"),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "kakao-map-assets",
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 7 }, // 7일
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
         ],
       },
       manifest: {
