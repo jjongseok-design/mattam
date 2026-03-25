@@ -88,7 +88,7 @@ const Admin = () => {
   const [showPwChange, setShowPwChange] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
-  const [adminCategory, setAdminCategory] = useState<string>("닭갈비");
+  const [adminCategory, setAdminCategory] = useState<string>("");
   const [tips, setTips] = useState<any[]>([]);
   const [showTips, setShowTips] = useState(false);
   const [tipsLoading, setTipsLoading] = useState(false);
@@ -130,12 +130,12 @@ const Admin = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Set initial category when categories load
+  // 카테고리 로드 후 초기 선택 (adminCategory가 비어있거나 유효하지 않으면 첫 번째 카테고리 선택)
   useEffect(() => {
     if (categories.length > 0 && !categories.find(c => c.id === adminCategory)) {
       setAdminCategory(categories[0].id);
     }
-  }, [categories, adminCategory]);
+  }, [categories]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -237,8 +237,10 @@ const Admin = () => {
   };
 
   // Filter by admin category tab + search (이미지 없음 모드는 전체 카테고리 대상)
+  // adminCategory가 아직 로드 안 됐거나 유효하지 않으면 전체 표시
+  const validCategory = categories.length > 0 && !!categories.find(c => c.id === adminCategory);
   const filtered = restaurants.filter((r) => {
-    const matchCategory = showNoImage ? !r.image_url : r.category === adminCategory;
+    const matchCategory = showNoImage ? !r.image_url : (!validCategory || r.category === adminCategory);
     const matchSearch =
       !search ||
       r.name.includes(search) ||
