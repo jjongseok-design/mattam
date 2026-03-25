@@ -636,7 +636,7 @@ const Admin = () => {
       >
         <div className="max-w-5xl mx-auto px-4 pb-2 space-y-2">
           <div className="flex items-center gap-2 pt-2">
-            <Link to="/">
+            <Link to={`/${adminCityId}`}>
               <Button variant="ghost" size="icon" className="tap-safe shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
