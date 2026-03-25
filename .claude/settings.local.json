@@ -36,7 +36,14 @@
       "WebFetch(domain:commons.wikimedia.org)",
       "WebFetch(domain:en.wikipedia.org)",
       "WebFetch(domain:english.visitkorea.or.kr)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(node -e \"require\\(''''sharp''''\\)\")",
+      "Bash(node -e \"require\\(''''canvas''''\\)\")",
+      "Bash(node -e \"const {createCanvas} = require\\(''''canvas''''\\); console.log\\(''''ok''''\\)\")",
+      "Bash(python:*)",
+      "Bash(where inkscape:*)",
+      "Bash(where convert:*)",
+      "Bash(pip install:*)"
     ]
   }
 }
