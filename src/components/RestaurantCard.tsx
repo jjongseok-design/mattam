@@ -319,7 +319,8 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
       data-restaurant-id={restaurant.id}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.97 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.12 }}
       onClick={onClick}
       className={`group cursor-pointer rounded-xl border overflow-hidden transition-all duration-200 bg-card ${
         isSelected

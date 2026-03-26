@@ -441,7 +441,7 @@ const CityMap = () => {
               </div>
 
               <div className="px-3 pb-4 space-y-2">
-                <AnimatePresence mode="popLayout">{renderRestaurantList()}</AnimatePresence>
+                <AnimatePresence mode="sync">{renderRestaurantList()}</AnimatePresence>
                 {filtered.length === 0 && (
                   <div className="text-center py-16 text-muted-foreground">
                     <Utensils className="h-8 w-8 mx-auto mb-3 opacity-20" />
