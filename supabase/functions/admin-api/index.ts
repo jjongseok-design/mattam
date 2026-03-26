@@ -433,10 +433,14 @@ Deno.serve(async (req) => {
           };
         });
 
-        // 도시 중심 30km 이내만 필터링 (cityLat/Lng 제공 시)
-        const filtered = mapped.filter((item: any) =>
-          !cityLat || item.dist === null || item.dist <= 30
-        );
+        // 도시명이 주소에 포함된 결과만 (cityName 있을 때)
+        // 없으면 30km 이내 거리 필터로 폴백
+        const filtered = mapped.filter((item: any) => {
+          if (cityName && item.address) {
+            return item.address.includes(cityName);
+          }
+          return !cityLat || item.dist === null || item.dist <= 30;
+        });
 
         // 거리 가까운 순 정렬
         filtered.sort((a: any, b: any) => {
