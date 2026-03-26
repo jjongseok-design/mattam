@@ -63,9 +63,28 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "insert": {
-        const { error } = await supabase.from("restaurants").insert(data);
+        // ID는 클라이언트가 보낸 값을 기준으로 하되,
+        // 전체 DB에서 같은 prefix를 가진 최대 번호를 확인해 충돌을 방지
+        const clientId: string = data.id ?? "";
+        const prefixMatch = clientId.match(/^([a-z]+)/);
+        const prefix = prefixMatch ? prefixMatch[1] : "";
+
+        let safeId = clientId;
+        if (prefix) {
+          const { data: existing } = await supabase
+            .from("restaurants")
+            .select("id")
+            .like("id", `${prefix}%`);
+          const maxNum = (existing ?? []).reduce((max: number, r: any) => {
+            const m = r.id.match(new RegExp(`^${prefix}(\\d+)$`));
+            return m ? Math.max(max, parseInt(m[1])) : max;
+          }, 0);
+          safeId = `${prefix}${String(maxNum + 1).padStart(2, "0")}`;
+        }
+
+        const { error } = await supabase.from("restaurants").insert({ ...data, id: safeId });
         if (error) throw error;
-        result = { success: true };
+        result = { success: true, id: safeId };
         break;
       }
 
@@ -653,7 +672,14 @@ Deno.serve(async (req) => {
     });
   } catch (err: unknown) {
     console.error("admin-api error:", err);
-    const message = err instanceof Error ? err.message : "서버 오류";
+    let message = "서버 오류";
+    if (err instanceof Error) {
+      message = err.message;
+    } else if (err && typeof err === "object") {
+      // PostgrestError 등 message 속성을 가진 객체 처리
+      const e = err as any;
+      message = e.message ?? e.error ?? e.details ?? JSON.stringify(err);
+    }
     return new Response(
       JSON.stringify({ success: false, error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
