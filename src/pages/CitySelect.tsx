@@ -120,7 +120,7 @@ const CitySelect = () => {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-6"
         >
           <h2 className="text-2xl font-black text-foreground mb-2">
             어느 도시 맛집이 궁금하세요?
@@ -128,6 +128,25 @@ const CitySelect = () => {
           <p className="text-sm text-muted-foreground">
             현지인이 직접 추천하는 도시별 맛집 지도
           </p>
+        </motion.div>
+
+        {/* 컨셉 문구 */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8 grid grid-cols-3 gap-2 text-center"
+        >
+          {[
+            { icon: "📍", text: "가본 식당 제보하면\n바로 반영돼요" },
+            { icon: "👥", text: "방문 기록으로\n함께 검증하는 맛집" },
+            { icon: "⭐", text: "광고 없이\n진짜 후기만" },
+          ].map(({ icon, text }) => (
+            <div key={text} className="bg-muted/40 rounded-xl px-2 py-3 flex flex-col items-center gap-1.5">
+              <span className="text-xl">{icon}</span>
+              <p className="text-[11px] text-muted-foreground leading-snug whitespace-pre-line">{text}</p>
+            </div>
+          ))}
         </motion.div>
 
         {/* City list */}
