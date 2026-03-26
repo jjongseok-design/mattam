@@ -259,7 +259,7 @@ const CityMap = () => {
           isVisited={isVisited(restaurant.id)}
           isFavorite={isFavorite(restaurant.id)}
           distance={dist}
-          visitCount={visitCounts?.[restaurant.id]}
+          visitCount={visitCounts ? (visitCounts[restaurant.id] ?? 0) : undefined}
           onClick={() => handleSelect(restaurant.id)}
           onToggleVisited={(e) => { e.stopPropagation(); toggleVisited(restaurant.id); }}
           onToggleFavorite={(e) => { e.stopPropagation(); toggleFavorite(restaurant.id); }}
@@ -335,7 +335,7 @@ const CityMap = () => {
         </>
       ) : (
         <div className="flex h-screen w-screen overflow-hidden bg-background">
-          <div className="w-[400px] flex-shrink-0 h-full flex flex-col bg-card z-10" style={{ boxShadow: "var(--panel-shadow)" }}>
+          <div className="w-[40%] flex-shrink-0 h-full flex flex-col bg-card z-10" style={{ boxShadow: "var(--panel-shadow)" }}>
             <div className="border-b border-border/40">
               <div className="px-5 pt-4 pb-3 flex items-center gap-2.5">
                 <Link to="/" className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors flex-shrink-0">
@@ -376,15 +376,15 @@ const CityMap = () => {
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.id)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
+                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[14px] font-semibold whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
                       categories.includes(cat.id)
                         ? "bg-foreground text-background shadow-sm scale-[1.03]"
                         : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
                   >
-                    <span className="text-sm leading-none">{cat.emoji}</span>
+                    <span className="text-base leading-none">{cat.emoji}</span>
                     <span>{cat.label}</span>
-                    {categoryCounts[cat.id] != null && <span className="text-[10px] opacity-50">{categoryCounts[cat.id]}</span>}
+                    {categoryCounts[cat.id] != null && <span className="text-[12px] opacity-50">{categoryCounts[cat.id]}</span>}
                   </button>
                 ))}
               </div>
@@ -463,7 +463,7 @@ const CityMap = () => {
             </div>
           </div>
 
-          <div className="flex-1 h-full relative">
+          <div className="w-[60%] h-full relative">
             <div className="absolute top-4 right-4 z-[1000] w-72">
               <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} cityName={city?.name} />
             </div>

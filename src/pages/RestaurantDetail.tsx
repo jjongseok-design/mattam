@@ -288,11 +288,13 @@ const RestaurantDetail = () => {
                 lightboxTouchStartX.current = null;
               }}
             >
-              <img
-                src={allImages[lightboxIndex]}
-                alt={`${restaurant.name} ${lightboxIndex + 1}`}
-                className="w-full max-h-[70vh] object-contain rounded-lg"
-              />
+              <div className="w-full h-[60vh] flex items-center justify-center">
+                <img
+                  src={allImages[lightboxIndex]}
+                  alt={`${restaurant.name} ${lightboxIndex + 1}`}
+                  className="w-full h-full object-contain rounded-lg"
+                />
+              </div>
               {allImages.length > 1 && (
                 <div className="flex justify-center gap-2 mt-3">
                   {allImages.map((_, i) => (

@@ -246,7 +246,7 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
               </div>
 
               <div className="flex items-center gap-1 flex-wrap">
-                {cardVisitCount !== undefined && cardVisitCount > 0 && (
+                {cardVisitCount !== undefined && (
                   <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
                     👥 방문 {cardVisitCount}명
                   </span>
@@ -328,9 +328,9 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
           : "border-border/50 hover:border-border hover:shadow-[0_2px_14px_-2px_hsl(0_0%_0%/0.07)]"
       }`}
     >
-      <div className="flex min-h-[108px]">
+      <div className="flex h-[200px]">
         {/* Image / emoji */}
-        <div className={`w-[92px] flex-shrink-0 overflow-hidden self-stretch relative flex items-center justify-center ${!imgLoaded && !imgError && restaurant.imageUrl ? "bg-muted/60 animate-pulse" : "bg-gradient-to-br from-secondary to-secondary/40"}`}>
+        <div className={`w-[30%] flex-shrink-0 overflow-hidden self-stretch relative flex items-center justify-center ${!imgLoaded && !imgError && restaurant.imageUrl ? "bg-muted/60 animate-pulse" : "bg-gradient-to-br from-secondary to-secondary/40"}`}>
           {restaurant.imageUrl && !imgError ? (
             <img
               src={restaurant.imageUrl}
@@ -354,59 +354,59 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
           <div className="flex items-start justify-between gap-2 mb-1.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h3 className="font-semibold text-[18px] text-foreground leading-snug">
+                <h3 className="font-semibold text-[22px] text-foreground leading-snug">
                   {restaurant.name}
                 </h3>
                 {restaurant.isRecommended && (
-                  <span className="text-[9px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
+                  <span className="text-[13px] bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                     ⭐ 추천
                   </span>
                 )}
                 {isVisited && (
-                  <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
+                  <span className="text-[13px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">
                     방문
                   </span>
                 )}
                 {openStatus === 'open' && (
-                  <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">영업중</span>
+                  <span className="text-[13px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">영업중</span>
                 )}
                 {openStatus === 'lastorder' && (
-                  <span className="text-[9px] bg-orange-50 dark:bg-orange-950/50 text-orange-500 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">라스트오더 {closeTime}</span>
+                  <span className="text-[13px] bg-orange-50 dark:bg-orange-950/50 text-orange-500 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">라스트오더 {closeTime}</span>
                 )}
                 {openStatus === 'closed' && (
-                  <span className="text-[9px] text-muted-foreground/40 flex-shrink-0">영업종료</span>
+                  <span className="text-[13px] text-muted-foreground/40 flex-shrink-0">영업종료</span>
                 )}
                 {openStatus === 'holiday' && (
-                  <span className="text-[9px] bg-rose-50 dark:bg-rose-950/50 text-rose-500 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">휴무</span>
+                  <span className="text-[13px] bg-rose-50 dark:bg-rose-950/50 text-rose-500 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">휴무</span>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground/60 mt-0.5">{restaurant.category}</p>
+              <p className="text-[15px] text-muted-foreground/60 mt-0.5">{restaurant.category}</p>
             </div>
 
             {matamRating && (
               <div className="flex items-center gap-1 shrink-0">
-                <Star className="h-3.5 w-3.5 text-rating fill-current" />
-                <span className="text-[13px] font-bold text-foreground">{matamRating.avg}</span>
+                <Star className="h-4 w-4 text-rating fill-current" />
+                <span className="text-[17px] font-bold text-foreground">{matamRating.avg}</span>
               </div>
             )}
           </div>
 
           {/* Address */}
           <div className="flex items-center gap-1.5 mb-1">
-            <MapPin className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
-            <span className="text-[13px] text-muted-foreground truncate flex-1">{restaurant.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</span>
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground/40 flex-shrink-0" />
+            <span className="text-[15px] text-muted-foreground truncate flex-1">{restaurant.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</span>
             {distText && (
-              <span className="text-[11px] font-semibold text-primary/70 flex-shrink-0 flex items-center gap-0.5">
-                <Navigation className="h-2.5 w-2.5" />
+              <span className="text-[15px] font-semibold text-primary/70 flex-shrink-0 flex items-center gap-0.5">
+                <Navigation className="h-3 w-3" />
                 {distText}
               </span>
             )}
           </div>
 
           {/* Visit count */}
-          {cardVisitCount !== undefined && cardVisitCount > 0 && (
+          {cardVisitCount !== undefined && (
             <div className="flex gap-1 flex-wrap mb-auto pt-1">
-              <span className="text-[10px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
+              <span className="text-[14px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
                 👥 방문 {cardVisitCount}명
               </span>
             </div>
@@ -414,37 +414,39 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
 
           {/* Action bar */}
           <div className="flex items-center justify-between pt-2 mt-2 border-t border-border/30">
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-1.5">
               {onToggleFavorite && (
                 <button
                   onClick={onToggleFavorite}
-                  className={`p-1.5 rounded-lg transition-colors ${
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all duration-200 ${
                     isFavorite
-                      ? "text-rose-500"
-                      : "text-muted-foreground/25 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                      ? "bg-rose-500 text-white shadow-sm"
+                      : "bg-rose-50 dark:bg-rose-950/40 text-rose-400 border border-rose-200 dark:border-rose-800/50"
                   }`}
                   aria-label={isFavorite ? "찜 취소" : "찜하기"}
                 >
-                  <Heart className={`h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`} />
+                  <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
+                  <span className="text-[13px] font-semibold">찜</span>
                 </button>
               )}
               <button
                 onClick={handleVisitClick}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all duration-200 ${
                   isVisited
-                    ? "text-primary bg-primary/8"
-                    : "text-muted-foreground/25 hover:text-primary/60 hover:bg-primary/5"
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-primary/8 dark:bg-primary/15 text-primary/70 border border-primary/20"
                 }`}
                 aria-label={isVisited ? "재방문 기록" : "방문 표시"}
               >
-                <CheckCircle2 className={`h-3.5 w-3.5 ${isVisited ? "fill-primary/15" : ""}`} />
+                <CheckCircle2 className={`h-4 w-4 ${isVisited ? "fill-white/30" : ""}`} />
+                <span className="text-[13px] font-semibold">{isVisited ? "재방문" : "방문"}</span>
               </button>
               <button
                 onClick={handleShare}
-                className="p-1.5 rounded-lg text-muted-foreground/25 hover:text-muted-foreground/60 hover:bg-muted/50 transition-colors"
+                className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-muted/50 transition-colors"
                 aria-label="공유"
               >
-                <Share2 className="h-3.5 w-3.5" />
+                <Share2 className="h-4 w-4" />
               </button>
             </div>
 
@@ -453,17 +455,17 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
                 <a
                   href={`tel:${restaurant.phone}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-0.5 text-[15px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <Phone className="h-3 w-3" /> 전화
+                  <Phone className="h-3.5 w-3.5" /> 전화
                 </a>
               )}
               <Link
                 to={`/${cityId}/restaurant/${restaurant.slug}`}
                 onClick={(e) => { e.stopPropagation(); onClick?.(); }}
-                className="flex items-center gap-0.5 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                className="flex items-center gap-0.5 text-[15px] font-semibold text-primary hover:text-primary/80 transition-colors"
               >
-                상세보기 <ChevronRight className="h-3 w-3" />
+                상세보기 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           </div>
