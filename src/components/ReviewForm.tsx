@@ -1,5 +1,5 @@
-import { useState, useEffect, memo } from "react";
-import { Star, Loader2, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef, memo } from "react";
+import { Star, Loader2, Trash2, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,14 +25,46 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
   const [submitting, setSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 기존 리뷰 불러오기
   useEffect(() => {
     if (myReview) {
       setRating(myReview.rating);
       setContent(myReview.comment ?? "");
+      setPhotoPreview(myReview.photo_url ?? null);
     }
   }, [myReview]);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "사진은 5MB 이하만 가능합니다", variant: "destructive" });
+      return;
+    }
+    setPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleRemovePhoto = () => {
+    setPhoto(null);
+    setPhotoPreview(myReview?.photo_url ?? null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadPhoto = async (file: File): Promise<string | null> => {
+    const ext = file.type.includes("png") ? "png" : "jpg";
+    const path = `${restaurantId}/${deviceId}_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("review-images")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw new Error(`사진 업로드 실패: ${error.message}`);
+    const { data } = supabase.storage.from("review-images").getPublicUrl(path);
+    return data.publicUrl;
+  };
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -40,39 +72,47 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
       return;
     }
     setSubmitting(true);
-    const payload = {
-      restaurant_id: restaurantId,
-      device_id: deviceId,
-      rating,
-      comment: comment.trim() || null,
-    };
 
-    let error;
-    if (myReview) {
-      const res = await supabase
-        .from("reviews")
-        .update({ rating, comment: comment.trim() || null })
-        .eq("id", myReview.id);
-      error = res.error;
-      console.log("[ReviewForm] UPDATE result:", res);
-    } else {
-      const res = await supabase
-        .from("reviews")
-        .insert(payload);
-      error = res.error;
-      console.log("[ReviewForm] INSERT result:", res);
+    try {
+      let photoUrl: string | null = myReview?.photo_url ?? null;
+      if (photo) {
+        photoUrl = await uploadPhoto(photo);
+      }
+
+      const payload = {
+        restaurant_id: restaurantId,
+        device_id: deviceId,
+        rating,
+        comment: comment.trim() || null,
+        photo_url: photoUrl,
+      };
+
+      let error;
+      if (myReview) {
+        const res = await supabase
+          .from("reviews")
+          .update({ rating, comment: comment.trim() || null, photo_url: photoUrl })
+          .eq("id", myReview.id);
+        error = res.error;
+      } else {
+        const res = await supabase.from("reviews").insert(payload);
+        error = res.error;
+      }
+
+      if (error) {
+        toast({ title: "리뷰 등록 실패", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: myReview ? "리뷰가 수정되었습니다 ✅" : "리뷰가 등록되었습니다 ✅" });
+        setIsEditing(false);
+        setPhoto(null);
+        queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
+        queryClient.invalidateQueries({ queryKey: ["my-review", restaurantId, deviceId] });
+        queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
+      }
+    } catch (err: any) {
+      toast({ title: "오류 발생", description: err.message, variant: "destructive" });
     }
 
-    if (error) {
-      console.error("[ReviewForm] error:", error);
-      toast({ title: "리뷰 등록 실패", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: myReview ? "리뷰가 수정되었습니다 ✅" : "리뷰가 등록되었습니다 ✅" });
-      setIsEditing(false);
-      queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
-      queryClient.invalidateQueries({ queryKey: ["my-review", restaurantId, deviceId] });
-      queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
-    }
     setSubmitting(false);
   };
 
@@ -85,6 +125,8 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
     } else {
       setRating(0);
       setContent("");
+      setPhoto(null);
+      setPhotoPreview(null);
       queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", restaurantId, deviceId] });
       queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
@@ -99,6 +141,13 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
     return (
       <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
+          {myReview.photo_url && (
+            <img
+              src={myReview.photo_url}
+              alt="내 리뷰 사진"
+              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+            />
+          )}
           <div className="flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map((s) => (
               <Star
@@ -177,6 +226,40 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
         <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] ${comment.length >= 15 ? "text-destructive" : "text-muted-foreground/40"}`}>
           {comment.length}/15
         </span>
+      </div>
+
+      {/* 사진 업로드 */}
+      <div className="flex items-center gap-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handlePhotoSelect}
+        />
+        {photoPreview ? (
+          <div className="relative">
+            <img
+              src={photoPreview}
+              alt="리뷰 사진"
+              className="w-16 h-16 rounded-lg object-cover border border-border/50"
+            />
+            <button
+              onClick={handleRemovePhoto}
+              className="absolute -top-1.5 -right-1.5 bg-background border border-border rounded-full p-0.5 shadow-sm"
+            >
+              <X className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-border/60 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors text-xs"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            사진 추가
+          </button>
+        )}
       </div>
 
       <Button
