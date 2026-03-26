@@ -108,6 +108,8 @@ const Admin = () => {
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [showVisitStats, setShowVisitStats] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
+  const [imgMgr, setImgMgr] = useState<RestaurantRow | null>(null);
+  const [imgPreviewIdx, setImgPreviewIdx] = useState<number | null>(null);
   const [allReviews, setAllReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
 
@@ -1429,6 +1431,16 @@ const Admin = () => {
                             variant="outline"
                             size="sm"
                             className="h-8 px-2 text-[13px] gap-1 text-muted-foreground hover:text-foreground"
+                            title="사진 관리"
+                            onClick={() => setImgMgr(r)}
+                          >
+                            <span>🖼️</span>
+                            <span>사진</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 text-[13px] gap-1 text-muted-foreground hover:text-foreground"
                             title="네이버 정보 업데이트 (전화번호·주소·좌표)"
                             disabled={fetchingNaverInfoId === r.id}
                             onClick={() => handleFetchNaverInfo(r.id)}
@@ -1496,6 +1508,91 @@ const Admin = () => {
             {filtered.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">검색 결과가 없습니다</div>
             )}
+          </div>
+        )}
+
+        {/* 이미지 관리 팝업 */}
+        {imgMgr && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60" onClick={() => { setImgMgr(null); setImgPreviewIdx(null); }}>
+            <div className="bg-card rounded-2xl shadow-xl p-5 w-[90vw] max-w-lg" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold">🖼️ {imgMgr.name} 사진 관리</h2>
+                <button onClick={() => { setImgMgr(null); setImgPreviewIdx(null); }} className="text-muted-foreground hover:text-foreground text-xl leading-none">✕</button>
+              </div>
+              {(() => {
+                const allImgs = [imgMgr.image_url, ...(imgMgr.extra_images ?? [])].filter(Boolean) as string[];
+                if (allImgs.length === 0) return <p className="text-sm text-muted-foreground text-center py-6">사진이 없습니다.</p>;
+                return (
+                  <>
+                    {/* 확대 미리보기 */}
+                    {imgPreviewIdx !== null && (
+                      <div className="mb-4 relative">
+                        <img
+                          src={allImgs[imgPreviewIdx]}
+                          alt=""
+                          className="w-full max-h-72 object-contain rounded-xl border border-border bg-muted"
+                        />
+                        {/* 좌우 이동 */}
+                        {imgPreviewIdx > 0 && (
+                          <button onClick={() => setImgPreviewIdx(imgPreviewIdx - 1)} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70">‹</button>
+                        )}
+                        {imgPreviewIdx < allImgs.length - 1 && (
+                          <button onClick={() => setImgPreviewIdx(imgPreviewIdx + 1)} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70">›</button>
+                        )}
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white bg-black/50 px-2 py-0.5 rounded-full">
+                          {imgPreviewIdx + 1} / {allImgs.length}
+                        </div>
+                      </div>
+                    )}
+                    {/* 썸네일 목록 */}
+                    <div className="flex flex-wrap gap-3">
+                      {allImgs.map((url, idx) => (
+                        <div key={url + idx} className={`relative group cursor-pointer ${imgPreviewIdx === idx ? "ring-2 ring-primary rounded-xl" : ""}`}>
+                          <img
+                            src={url}
+                            alt=""
+                            className="w-24 h-24 rounded-xl object-cover border border-border hover:opacity-80 transition-opacity"
+                            onClick={() => setImgPreviewIdx(imgPreviewIdx === idx ? null : idx)}
+                          />
+                          {idx === 0 && (
+                            <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-tl-xl rounded-br-xl">대표</div>
+                          )}
+                          <button
+                            type="button"
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center text-sm hover:scale-110 transition-all shadow"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                let newImgUrl = imgMgr.image_url;
+                                let newExtras = [...(imgMgr.extra_images ?? [])];
+                                if (idx === 0) {
+                                  newImgUrl = newExtras[0] ?? null;
+                                  newExtras = newExtras.slice(1);
+                                } else {
+                                  newExtras = newExtras.filter((_, i) => i !== idx - 1);
+                                }
+                                await adminApi("update", { id: imgMgr.id, image_url: newImgUrl, extra_images: newExtras.length > 0 ? newExtras : null });
+                                const updated = { ...imgMgr, image_url: newImgUrl, extra_images: newExtras };
+                                setImgMgr(updated);
+                                setImgPreviewIdx(null);
+                                setRestaurants(prev => prev.map(r => r.id === imgMgr.id ? { ...r, image_url: newImgUrl, extra_images: newExtras } : r));
+                                toast({ title: "사진 삭제 완료 ✅" });
+                                silentRefresh();
+                              } catch (err: any) {
+                                toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
+                              }
+                            }}
+                          >✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+              <div className="mt-4 text-right">
+                <Button size="sm" variant="outline" onClick={() => { setImgMgr(null); setImgPreviewIdx(null); }}>닫기</Button>
+              </div>
+            </div>
           </div>
         )}
 
