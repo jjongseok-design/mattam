@@ -371,25 +371,62 @@ Deno.serve(async (req) => {
         if (!naverClientId || !naverClientSecret) throw new Error("NAVER 키 미설정");
 
         const stripHtml = (s: string) => s?.replace(/<[^>]+>/g, "") ?? "";
-        const { name: searchName } = data;
-        const searchRes = await fetch(
-          `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(searchName)}&display=5`,
-          { headers: { "X-Naver-Client-Id": naverClientId, "X-Naver-Client-Secret": naverClientSecret } }
-        );
-        if (!searchRes.ok) throw new Error(`네이버 검색 오류 (${searchRes.status})`);
-        const searchData = await searchRes.json();
-        const items: any[] = (searchData.items ?? []).map((item: any) => {
+        const { name: searchName, cityName, cityLat, cityLng } = data;
+
+        // 도시명을 포함한 검색어로 해당 도시 결과 우선 (없으면 식당명만)
+        const query = cityName ? `${cityName} ${searchName}` : searchName;
+
+        // Haversine 거리 계산 (km)
+        const haversine = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+          const R = 6371;
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLng = (lng2 - lng1) * Math.PI / 180;
+          const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        };
+
+        // 2페이지 병렬 요청으로 최대 10개 결과 수집
+        const fetchPage = async (start: number): Promise<any[]> => {
+          const res = await fetch(
+            `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&start=${start}`,
+            { headers: { "X-Naver-Client-Id": naverClientId!, "X-Naver-Client-Secret": naverClientSecret! } }
+          );
+          if (!res.ok) return [];
+          const d = await res.json();
+          return d.items ?? [];
+        };
+
+        const [page1, page2] = await Promise.all([fetchPage(1), fetchPage(6)]);
+        const allRaw = [...page1, ...page2];
+
+        const mapped = allRaw.map((item: any) => {
           const lat = parseInt(item.mapy) / 10000000;
           const lng = parseInt(item.mapx) / 10000000;
+          const valid = lat > 33 && lat < 39 && lng > 124 && lng < 132;
+          const dist = (cityLat && cityLng && valid) ? haversine(cityLat, cityLng, lat, lng) : null;
           return {
             name: stripHtml(item.title ?? ""),
             address: stripHtml(item.roadAddress || item.address || ""),
             phone: stripHtml(item.telephone ?? ""),
-            lat: (lat > 33 && lat < 39) ? lat : null,
-            lng: (lng > 124 && lng < 132) ? lng : null,
+            lat: valid ? lat : null,
+            lng: valid ? lng : null,
+            dist,
           };
         });
-        result = { success: true, items };
+
+        // 도시 중심 30km 이내만 필터링 (cityLat/Lng 제공 시)
+        const filtered = mapped.filter((item: any) =>
+          !cityLat || item.dist === null || item.dist <= 30
+        );
+
+        // 거리 가까운 순 정렬
+        filtered.sort((a: any, b: any) => {
+          if (a.dist === null) return 1;
+          if (b.dist === null) return -1;
+          return a.dist - b.dist;
+        });
+
+        result = { success: true, items: filtered };
         break;
       }
 

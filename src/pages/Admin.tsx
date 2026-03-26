@@ -88,7 +88,7 @@ const Admin = () => {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [naverSearching, setNaverSearching] = useState(false);
-  const [naverResults, setNaverResults] = useState<{ name: string; address: string; phone: string; lat: number | null; lng: number | null }[]>([]);
+  const [naverResults, setNaverResults] = useState<{ name: string; address: string; phone: string; lat: number | null; lng: number | null; dist?: number | null }[]>([]);
   const [showPwChange, setShowPwChange] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
@@ -419,7 +419,13 @@ const Admin = () => {
     setNaverSearching(true);
     setNaverResults([]);
     try {
-      const res = await adminApi("search_naver_place", { name: form.name });
+      const currentCity = cities.find(c => c.id === adminCityId);
+      const res = await adminApi("search_naver_place", {
+        name: form.name,
+        cityName: currentCity?.name,
+        cityLat: currentCity?.lat,
+        cityLng: currentCity?.lng,
+      });
       setNaverResults(res.items ?? []);
     } catch (err: any) {
       toast({ title: "검색 오류", description: err.message, variant: "destructive" });
@@ -1081,7 +1087,12 @@ const Admin = () => {
                       {naverResults.map((item, i) => (
                         <button key={i} type="button" onClick={() => applyNaverResult(item)}
                           className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b border-border/40 last:border-0 transition-colors">
-                          <div className="font-semibold text-foreground">{item.name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">{item.name}</span>
+                            {item.dist != null && (
+                              <span className="text-[10px] text-primary font-medium shrink-0">{item.dist.toFixed(1)}km</span>
+                            )}
+                          </div>
                           <div className="text-muted-foreground truncate">{item.address}</div>
                           {item.phone && <div className="text-muted-foreground">{item.phone}</div>}
                         </button>
