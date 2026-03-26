@@ -298,7 +298,7 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
           </button>
           <Link
             to={`/${cityId}/restaurant/${restaurant.slug}`}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onClick?.(); }}
             className="ml-auto flex items-center gap-0.5 text-[11px] font-semibold text-primary px-3 py-1.5 rounded-lg bg-primary/8 active:bg-primary/15 transition-colors"
           >
             상세보기 <ChevronRight className="h-3 w-3" />
@@ -460,7 +460,7 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
               )}
               <Link
                 to={`/${cityId}/restaurant/${restaurant.slug}`}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onClick?.(); }}
                 className="flex items-center gap-0.5 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
               >
                 상세보기 <ChevronRight className="h-3 w-3" />

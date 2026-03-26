@@ -123,6 +123,7 @@ const Admin = () => {
   // Drag and drop state
   const dragItem = useRef<string | null>(null);
   const dragOverItem = useRef<string | null>(null);
+  const [dragOrder, setDragOrder] = useState<typeof categories | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -872,35 +873,48 @@ const Admin = () => {
             )}
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1.5">
-            {categories.map((cat) => {
+            {(dragOrder ?? [...categories].sort((a, b) => a.sort_order - b.sort_order)).map((cat) => {
               const isActive = adminCategory === cat.id;
               const count = categoryCount(cat.id);
               return (
                 <div
                   key={cat.id}
                   draggable={editMode}
-                  onDragStart={() => { dragItem.current = cat.id; }}
-                  onDragEnter={() => { dragOverItem.current = cat.id; }}
+                  onDragStart={() => {
+                    dragItem.current = cat.id;
+                    setDragOrder([...categories].sort((a, b) => a.sort_order - b.sort_order));
+                  }}
+                  onDragEnter={() => {
+                    if (!dragItem.current || dragItem.current === cat.id) return;
+                    dragOverItem.current = cat.id;
+                    setDragOrder(prev => {
+                      const base = prev ?? [...categories].sort((a, b) => a.sort_order - b.sort_order);
+                      const fromIdx = base.findIndex(c => c.id === dragItem.current);
+                      const toIdx = base.findIndex(c => c.id === cat.id);
+                      if (fromIdx < 0 || toIdx < 0) return prev;
+                      const next = [...base];
+                      const [moved] = next.splice(fromIdx, 1);
+                      next.splice(toIdx, 0, moved);
+                      return next;
+                    });
+                  }}
                   onDragOver={(e) => e.preventDefault()}
                   onDragEnd={async () => {
-                    if (!dragItem.current || !dragOverItem.current || dragItem.current === dragOverItem.current) return;
-                    const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
-                    const fromIdx = sorted.findIndex(c => c.id === dragItem.current);
-                    const toIdx = sorted.findIndex(c => c.id === dragOverItem.current);
-                    if (fromIdx < 0 || toIdx < 0) return;
-                    const reordered = [...sorted];
-                    const [moved] = reordered.splice(fromIdx, 1);
-                    reordered.splice(toIdx, 0, moved);
-                    const updates = reordered.map((c, i) => ({ id: c.id, sort_order: i + 1 }));
-                    try {
-                      await adminApi("category_reorder", { updates });
-                      invalidateCategories();
-                      toast({ title: "순서 변경 완료 ✅" });
-                    } catch (err: any) {
-                      toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
-                    }
+                    const finalOrder = dragOrder;
+                    setDragOrder(null);
                     dragItem.current = null;
                     dragOverItem.current = null;
+                    if (!finalOrder) return;
+                    const updates = finalOrder.map((c, i) => ({ id: c.id, sort_order: i + 1 }));
+                    const queryKey = adminCityId ? ["categories", adminCityId] : ["categories"];
+                    queryClient.setQueryData(queryKey, finalOrder.map((c, i) => ({ ...c, sort_order: i + 1 })));
+                    try {
+                      await adminApi("category_reorder", { updates });
+                      toast({ title: "순서 변경 완료 ✅" });
+                    } catch (err: any) {
+                      invalidateCategories();
+                      toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
+                    }
                   }}
                   onClick={() => {
                     if (editMode) {

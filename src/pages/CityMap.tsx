@@ -30,6 +30,7 @@ import { CityContext } from "@/contexts/CityContext";
 import { useFirstVisitorCounts } from "@/hooks/useVisitCount";
 
 const INDEX_STATE_KEY = "index_scroll_state";
+const SCROLL_TOP_KEY = "citymap_list_scrolltop";
 
 interface SavedState {
   categories: string[];
@@ -123,16 +124,22 @@ const CityMap = () => {
 
   useEffect(() => {
     return () => {
-      saveState({ categories, showList, scrollTop: listRef.current?.scrollTop || 0, query, sort, filter });
+      saveState({ categories, showList, scrollTop: 0, query, sort, filter });
     };
   }, [categories, showList, query, sort, filter]);
 
   useEffect(() => {
-    if (!isRestored.current && saved.current && listRef.current && restaurants.length > 0) {
+    if (!isRestored.current && listRef.current && restaurants.length > 0) {
       isRestored.current = true;
-      requestAnimationFrame(() => {
-        if (listRef.current) listRef.current.scrollTop = saved.current!.scrollTop;
-      });
+      try {
+        const raw = sessionStorage.getItem(SCROLL_TOP_KEY);
+        const savedScrollTop = raw ? Number(raw) : 0;
+        if (savedScrollTop > 0) {
+          setTimeout(() => {
+            if (listRef.current) listRef.current.scrollTop = savedScrollTop;
+          }, 150);
+        }
+      } catch {}
     }
   }, [restaurants]);
 
@@ -153,7 +160,7 @@ const CityMap = () => {
     toast({ title: "📍 현재 위치를 확인하고 있습니다..." });
   }, [requestGeo, toast]);
 
-  const handleSelect = useCallback((id: string) => { setSelectedId(id); addViewed(id); }, [setSelectedId, addViewed]);
+  const handleSelect = useCallback((id: string) => { setSelectedId(id); addViewed(id); }, [addViewed]);
 
   const handleFindNearest = useCallback(() => {
     if (!position || restaurants.length === 0) return;
@@ -392,7 +399,7 @@ const CityMap = () => {
               </div>
             </div>
 
-            <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin">
+            <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin" onScroll={() => { try { sessionStorage.setItem(SCROLL_TOP_KEY, String(listRef.current?.scrollTop || 0)); } catch {} }}>
               {recentRestaurants.length > 0 && (
                 <div className="px-4 pt-3 pb-1">
                   <p className="text-[10px] text-muted-foreground/50 font-medium uppercase tracking-wide mb-2">최근 본 식당</p>

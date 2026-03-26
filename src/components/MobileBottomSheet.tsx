@@ -1,4 +1,7 @@
 import { useRef, useState, useCallback, useEffect, memo } from "react";
+
+const MOBILE_SCROLL_KEY = "citymap_mobile_scrolltop";
+const SHEET_STATE_KEY = "citymap_sheet_state";
 import { motion, PanInfo } from "framer-motion";
 import { ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -78,16 +81,35 @@ const MobileBottomSheet = memo(({
   const { city } = useCityContext();
   const { data: visitCounts } = useFirstVisitorCounts();
   const cityName = city?.name;
-  const [state, setState] = useState<SheetState>("half");
+  const savedSheetState = (() => { try { return sessionStorage.getItem(SHEET_STATE_KEY) as SheetState | null; } catch { return null; } })();
+  const [state, setState] = useState<SheetState>(savedSheetState ?? "half");
   const [isDraggable, setIsDraggable] = useState(true);
   const [visibleCount, setVisibleCount] = useState(15);
   const listRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
 
-  // 카테고리/필터 변경 시 visible count 초기화
+  const isFirstRestaurantLoad = useRef(true);
+
+  useEffect(() => {
+    try { sessionStorage.setItem(SHEET_STATE_KEY, state); } catch {}
+  }, [state]);
+
+  // 카테고리/필터 변경 시 visible count 초기화 (첫 로드 시 스크롤 복원)
   useEffect(() => {
     setVisibleCount(15);
-    if (listRef.current) listRef.current.scrollTop = 0;
+    if (!listRef.current) return;
+    if (isFirstRestaurantLoad.current) {
+      isFirstRestaurantLoad.current = false;
+      try {
+        const saved = sessionStorage.getItem(MOBILE_SCROLL_KEY);
+        if (saved && Number(saved) > 0) {
+          const scrollTop = Number(saved);
+          setTimeout(() => { if (listRef.current) listRef.current.scrollTop = scrollTop; }, 150);
+          return;
+        }
+      } catch {}
+    }
+    listRef.current.scrollTop = 0;
   }, [restaurants]);
 
   const handleDragStart = useCallback((_: unknown, info: PanInfo) => {
@@ -133,6 +155,7 @@ const MobileBottomSheet = memo(({
     if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
       setVisibleCount(prev => prev + 15);
     }
+    try { sessionStorage.setItem(MOBILE_SCROLL_KEY, String(el.scrollTop)); } catch {}
   }, []);
 
   const handleListTouchStart = useCallback(() => {
