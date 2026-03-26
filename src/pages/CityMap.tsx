@@ -137,7 +137,7 @@ const CityMap = () => {
   }, [restaurants]);
 
   const handleCategoryChange = useCallback((cat: string) => {
-    setCategories((prev) => prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]);
+    setCategories((prev) => prev.includes(cat) ? [] : [cat]);
     setSelectedId(null);
     setQuery("");
   }, []);
