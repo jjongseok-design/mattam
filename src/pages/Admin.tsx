@@ -1093,7 +1093,7 @@ const Admin = () => {
                               <span className="text-[10px] text-primary font-medium shrink-0">{item.dist.toFixed(1)}km</span>
                             )}
                           </div>
-                          <div className="text-muted-foreground truncate">{item.address}</div>
+                          <div className="text-muted-foreground truncate">{item.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</div>
                           {item.phone && <div className="text-muted-foreground">{item.phone}</div>}
                         </button>
                       ))}
@@ -1406,7 +1406,7 @@ const Admin = () => {
                           <span className="text-sm">{r.name}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-xs whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{r.address}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-xs whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{r.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</td>
                       <td className="px-3 py-2.5 text-center whitespace-nowrap text-sm">⭐ {r.rating}</td>
                       <td className="px-3 py-2.5 text-center text-muted-foreground whitespace-nowrap hidden sm:table-cell text-sm">{r.review_count}</td>
                       <td className="px-3 py-2.5">

@@ -235,7 +235,7 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
 
               <div className="flex items-center gap-1 mb-1">
                 <p className="text-[13px] text-muted-foreground truncate flex-1">
-                  {restaurant.address}
+                  {restaurant.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}
                 </p>
                 {distText && (
                   <span className="text-[11px] font-semibold text-primary/80 flex-shrink-0 flex items-center gap-0.5">
@@ -394,7 +394,7 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
           {/* Address */}
           <div className="flex items-center gap-1.5 mb-1">
             <MapPin className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
-            <span className="text-[13px] text-muted-foreground truncate flex-1">{restaurant.address}</span>
+            <span className="text-[13px] text-muted-foreground truncate flex-1">{restaurant.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</span>
             {distText && (
               <span className="text-[11px] font-semibold text-primary/70 flex-shrink-0 flex items-center gap-0.5">
                 <Navigation className="h-2.5 w-2.5" />

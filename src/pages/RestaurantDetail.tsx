@@ -71,6 +71,7 @@ const RestaurantDetail = () => {
   const [reportText, setReportText] = useState("");
   const [reportSending, setReportSending] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const lightboxTouchStartX = useRef<number | null>(null);
 
   // Match by slug first, then fall back to id for backwards compat
   const restaurant = restaurants.find((r) => r.slug === slug || r.id === slug);
@@ -245,39 +246,23 @@ const RestaurantDetail = () => {
           );
         }
         return (
-          <div className="w-full max-w-2xl mx-auto">
-            <div className="flex gap-1 h-56 sm:h-72 overflow-hidden rounded-none">
-              <div className="flex-1 overflow-hidden bg-muted/40 animate-pulse cursor-pointer" onClick={() => setLightboxIndex(0)}>
+          <div className="w-full max-w-2xl mx-auto overflow-x-auto flex gap-1 h-56 sm:h-72 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+            {allImages.map((url, i) => (
+              <div
+                key={url}
+                className="flex-shrink-0 w-[calc(50%-2px)] sm:w-[calc(33.333%-3px)] overflow-hidden bg-muted/40 animate-pulse cursor-pointer snap-start"
+                onClick={() => setLightboxIndex(i)}
+              >
                 <img
-                  src={allImages[0]}
-                  alt={restaurant.name}
+                  src={url}
+                  alt={`${restaurant.name} ${i + 1}`}
+                  loading={i === 0 ? undefined : "lazy"}
                   decoding="async"
                   className="w-full h-full object-cover"
                   onLoad={(e) => { (e.target as HTMLImageElement).parentElement!.classList.remove("animate-pulse", "bg-muted/40"); }}
                 />
               </div>
-              {allImages.length > 1 && (
-                <div className="flex flex-col gap-1 w-[35%]">
-                  {allImages.slice(1, 3).map((url, i) => (
-                    <div key={url} className="flex-1 overflow-hidden relative bg-muted/40 animate-pulse cursor-pointer" onClick={() => setLightboxIndex(i + 1)}>
-                      <img
-                        src={url}
-                        alt={`${restaurant.name} ${i + 2}`}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover"
-                        onLoad={(e) => { (e.target as HTMLImageElement).parentElement!.classList.remove("animate-pulse", "bg-muted/40"); }}
-                      />
-                      {i === 1 && allImages.length > 3 && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                          <span className="text-white text-sm font-bold">+{allImages.length - 3} 더보기</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            ))}
           </div>
         );
       })()}
@@ -287,10 +272,22 @@ const RestaurantDetail = () => {
         const allImages = [restaurant.imageUrl, ...(restaurant.extraImages ?? [])].filter(Boolean);
         return (
           <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center" onClick={() => setLightboxIndex(null)}>
-            <button className="absolute top-4 right-4 text-white/80 hover:text-white p-2" onClick={() => setLightboxIndex(null)}>
-              <XCircle className="h-7 w-7" />
-            </button>
-            <div className="relative w-full max-w-2xl px-4" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="relative w-full max-w-2xl px-4"
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={(e) => { lightboxTouchStartX.current = e.touches[0].clientX; }}
+              onTouchEnd={(e) => {
+                if (lightboxTouchStartX.current === null) return;
+                const diff = lightboxTouchStartX.current - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) {
+                  setLightboxIndex(diff > 0
+                    ? (lightboxIndex! + 1) % allImages.length
+                    : (lightboxIndex! - 1 + allImages.length) % allImages.length
+                  );
+                }
+                lightboxTouchStartX.current = null;
+              }}
+            >
               <img
                 src={allImages[lightboxIndex]}
                 alt={`${restaurant.name} ${lightboxIndex + 1}`}
@@ -322,6 +319,14 @@ const RestaurantDetail = () => {
                   disabled={allImages.length <= 1}
                 >
                   다음 →
+                </button>
+              </div>
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={() => setLightboxIndex(null)}
+                  className="flex items-center gap-1.5 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full px-6 py-2.5 text-sm"
+                >
+                  <XCircle className="h-4 w-4" /> 닫기
                 </button>
               </div>
             </div>
