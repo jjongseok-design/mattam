@@ -350,23 +350,23 @@ const CityMap = () => {
                 </div>
                 <div className="flex items-center gap-0.5">
                   {!position ? (
-                    <button onClick={handleLocationRequest} className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="내 위치 찾기">
-                      <Navigation className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    <button onClick={handleLocationRequest} className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="내 위치 찾기">
+                      <Navigation className="h-5 w-5 text-muted-foreground/50" />
                     </button>
                   ) : (
-                    <button onClick={handleFindNearest} className="w-7 h-7 rounded-lg hover:bg-primary/10 text-primary/60 hover:text-primary flex items-center justify-center transition-colors" title="가장 가까운 맛집">
-                      <Navigation className="h-3.5 w-3.5" />
+                    <button onClick={handleFindNearest} className="w-9 h-9 rounded-lg hover:bg-primary/10 text-primary/60 hover:text-primary flex items-center justify-center transition-colors" title="가장 가까운 맛집">
+                      <Navigation className="h-5 w-5" />
                     </button>
                   )}
                   <ThemeToggle />
                   <Link to="/install">
-                    <button className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="앱 설치">
-                      <Download className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    <button className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="앱 설치">
+                      <Download className="h-5 w-5 text-muted-foreground/50" />
                     </button>
                   </Link>
                   <Link to="/admin">
-                    <button className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="관리자">
-                      <Settings className="h-3.5 w-3.5 text-muted-foreground/40" />
+                    <button className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="관리자">
+                      <Settings className="h-5 w-5 text-muted-foreground/40" />
                     </button>
                   </Link>
                 </div>

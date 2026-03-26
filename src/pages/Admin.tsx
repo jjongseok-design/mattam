@@ -944,13 +944,13 @@ const Admin = () => {
                       ×
                     </button>
                   )}
-                  <span className="relative z-10 text-xl">{cat.emoji}</span>
-                  <span className={`relative z-10 text-[11px] font-medium leading-tight w-full text-center truncate ${
+                  <span className="relative z-10 text-4xl">{cat.emoji}</span>
+                  <span className={`relative z-10 text-[15px] font-medium leading-tight w-full text-center truncate ${
                     isActive && !editMode ? "text-primary" : "text-muted-foreground"
                   }`}>
                     {cat.label}
                   </span>
-                  <span className={`relative z-10 text-[10px] leading-tight ${
+                  <span className={`relative z-10 text-[13px] leading-tight ${
                     isActive && !editMode ? "text-primary/70" : "text-muted-foreground/60"
                   }`}>
                     ({count})
@@ -1398,18 +1398,18 @@ const Admin = () => {
               <table className="w-full text-sm" style={{ minWidth: 700 }}>
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="text-left px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap w-[90px]">ID</th>
-                    <th className="text-left px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap">이름</th>
-                    <th className="text-left px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap hidden md:table-cell">주소</th>
-                    <th className="text-center px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap w-[70px]">평점</th>
-                    <th className="text-center px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap w-[60px] hidden sm:table-cell">리뷰</th>
-                    <th className="text-center px-3 py-2.5 font-medium text-xs text-muted-foreground whitespace-nowrap w-[200px]">관리</th>
+                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[90px]">ID</th>
+                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap">이름</th>
+                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap hidden md:table-cell">주소</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[70px]">평점</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[60px] hidden sm:table-cell">리뷰</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[200px]">관리</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((r) => (
                     <tr key={r.id} className="border-t border-border hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2.5 text-muted-foreground text-xs whitespace-nowrap max-w-[90px] overflow-hidden text-ellipsis">{r.id}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-sm whitespace-nowrap max-w-[90px] overflow-hidden text-ellipsis">{r.id}</td>
                       <td className="px-3 py-2.5 font-medium whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {r.image_url ? (
@@ -1417,18 +1417,18 @@ const Admin = () => {
                           ) : (
                             <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">📷</span>
                           )}
-                          <span className="text-sm">{r.name}</span>
+                          <span className="text-base">{r.name}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-xs whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{r.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</td>
-                      <td className="px-3 py-2.5 text-center whitespace-nowrap text-sm">⭐ {r.rating}</td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground whitespace-nowrap hidden sm:table-cell text-sm">{r.review_count}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-sm whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{r.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</td>
+                      <td className="px-3 py-2.5 text-center whitespace-nowrap text-base">⭐ {r.rating}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground whitespace-nowrap hidden sm:table-cell text-base">{r.review_count}</td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center justify-center gap-1 whitespace-nowrap">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                            className="h-8 px-2 text-[13px] gap-1 text-muted-foreground hover:text-foreground"
                             title="네이버 정보 업데이트 (전화번호·주소·좌표)"
                             disabled={fetchingNaverInfoId === r.id}
                             onClick={() => handleFetchNaverInfo(r.id)}
@@ -1442,7 +1442,7 @@ const Admin = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                            className="h-8 px-2 text-[13px] gap-1 text-muted-foreground hover:text-foreground"
                             title="네이버 사진 가져오기"
                             disabled={fetchingNaverImageId === r.id}
                             onClick={() => handleFetchNaverImage(r.id)}
@@ -1457,7 +1457,7 @@ const Admin = () => {
                             variant="outline"
                             size="sm"
                             title="추천 토글"
-                            className={`h-7 px-2 text-[11px] gap-1 ${r.is_recommended ? "text-yellow-500 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"}`}
+                            className={`h-8 px-2 text-[13px] gap-1 ${r.is_recommended ? "text-yellow-500 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"}`}
                             onClick={async () => {
                               const newVal = !r.is_recommended;
                               setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_recommended: newVal } : x));
@@ -1471,7 +1471,7 @@ const Admin = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 px-2 text-[11px] gap-1 hover:text-primary hover:border-primary/40"
+                            className="h-8 px-2 text-[13px] gap-1 hover:text-primary hover:border-primary/40"
                             onClick={() => openEdit(r)}
                           >
                             <Pencil className="h-3 w-3" />
@@ -1480,7 +1480,7 @@ const Admin = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 px-2 text-[11px] gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
+                            className="h-8 px-2 text-[13px] gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
                             onClick={() => setPendingDeleteId(r.id)}
                           >
                             <Trash2 className="h-3 w-3" />
