@@ -246,11 +246,6 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
               </div>
 
               <div className="flex items-center gap-1 flex-wrap">
-                {restaurant.tags.slice(0, 2).map((tag) => (
-                  <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-muted/80 rounded-md text-muted-foreground">
-                    {tag}
-                  </span>
-                ))}
                 {cardVisitCount !== undefined && cardVisitCount > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
                     👥 방문 {cardVisitCount}명
@@ -407,22 +402,12 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
             )}
           </div>
 
-          {/* Tags */}
-          {(restaurant.tags.length > 0 || (cardVisitCount !== undefined && cardVisitCount > 0)) && (
+          {/* Visit count */}
+          {cardVisitCount !== undefined && cardVisitCount > 0 && (
             <div className="flex gap-1 flex-wrap mb-auto pt-1">
-              {restaurant.tags.slice(0, 4).map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[10px] px-2 py-0.5 bg-muted/60 rounded-md text-muted-foreground font-medium"
-                >
-                  {tag}
-                </span>
-              ))}
-              {cardVisitCount !== undefined && cardVisitCount > 0 && (
-                <span className="text-[10px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
-                  👥 방문 {cardVisitCount}명
-                </span>
-              )}
+              <span className="text-[10px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
+                👥 방문 {cardVisitCount}명
+              </span>
             </div>
           )}
 
