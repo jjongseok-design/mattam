@@ -31,7 +31,7 @@ interface RestaurantRow {
   is_recommended: boolean | null;
 }
 
-const getEmptyForm = (category: string) => ({
+const getEmptyForm = (category: string, lat = 37.8813, lng = 127.7298) => ({
   id: "",
   name: "",
   category,
@@ -39,8 +39,8 @@ const getEmptyForm = (category: string) => ({
   phone: "",
   rating: 0,
   review_count: 0,
-  lat: 37.8813,
-  lng: 127.7298,
+  lat,
+  lng,
   price_range: "",
   tags: [] as string[],
   description: "",
@@ -69,7 +69,11 @@ const Admin = () => {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: cities = [] } = useCities();
-  const [adminCityId, setAdminCityId] = useState("chuncheon");
+  const [adminCityId, setAdminCityId] = useState(() => {
+    // URL에 cityId 파라미터가 있으면 우선 사용
+    const params = new URLSearchParams(window.location.search);
+    return params.get("city") ?? "chuncheon";
+  });
   const { data: categories = [] } = useCategories(adminCityId);
   const invalidateCategories = useInvalidateCategories();
   const [email, setEmail] = useState("");
@@ -129,6 +133,16 @@ const Admin = () => {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // cities 로드 후 기본 도시가 유효하지 않으면 첫 번째 활성 도시로 설정
+  useEffect(() => {
+    if (cities.length === 0) return;
+    const valid = cities.find(c => c.id === adminCityId && c.isActive && !c.comingSoon);
+    if (!valid) {
+      const first = cities.find(c => c.isActive && !c.comingSoon);
+      if (first) setAdminCityId(first.id);
+    }
+  }, [cities]);
 
   // 카테고리 로드 후 초기 선택 (adminCategory가 비어있거나 유효하지 않으면 첫 번째 카테고리 선택)
   useEffect(() => {
@@ -260,7 +274,8 @@ const Admin = () => {
       return m ? Math.max(max, parseInt(m[1])) : max;
     }, 0);
     const nextId = `${prefix}${String(maxNum + 1).padStart(2, "0")}`;
-    setForm({ ...getEmptyForm(adminCategory), id: nextId });
+    const currentCity = cities.find(c => c.id === adminCityId);
+    setForm({ ...getEmptyForm(adminCategory, currentCity?.lat, currentCity?.lng), id: nextId });
     setEditing(null);
     setShowForm(true);
   };

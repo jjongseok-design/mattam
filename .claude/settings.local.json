@@ -43,7 +43,16 @@
       "Bash(python:*)",
       "Bash(where inkscape:*)",
       "Bash(where convert:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(npx supabase:*)",
+      "Bash(node -e \"const p = require\\(''''./package.json''''\\); console.log\\(Object.keys\\(p.dependencies || {}\\).join\\(''''\\\\n''''\\)\\)\")",
+      "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\)\\); console.log\\(Object.keys\\({...d.dependencies,...d.devDependencies}\\).join\\(''''\\\\n''''\\)\\)\")",
+      "Bash(DRY_RUN=1 LIMIT=3 node scripts/fetch-opening-hours.mjs)",
+      "Bash(DRY_RUN=1 LIMIT=5 node scripts/fetch-opening-hours.mjs)",
+      "Bash(RETRY_BY_ADDRESS=1 DRY_RUN=1 LIMIT=10 node scripts/fetch-opening-hours.mjs)",
+      "Bash(RETRY_BY_ADDRESS=1 node scripts/fetch-opening-hours.mjs)",
+      "Bash(DRY_RUN=1 LIMIT=8 node scripts/fetch-menus.mjs)",
+      "Bash(DRY_RUN=1 LIMIT=10 node scripts/fetch-menus.mjs)"
     ]
   }
 }
