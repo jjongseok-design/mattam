@@ -132,7 +132,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     });
     kakaoMapRef.current = map;
 
-    // 도시 경계 이탈 방지
+    // 도시 경계 이탈 방지 (중심 좌표 클램프)
     const clamp = () => {
       const c = map.getCenter();
       const sw = mapBoundsSWRef.current, ne = mapBoundsNERef.current;
@@ -141,6 +141,17 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       if (lat !== c.getLat() || lng !== c.getLng()) map.setCenter(new kakao.maps.LatLng(lat, lng));
     };
     kakao.maps.event.addListener(map, "dragend", clamp);
+
+    // 줌아웃 제한: 도시 bounds에서 적정 최대 레벨 계산 (레벨 높을수록 줌아웃)
+    // 카카오 레벨 7 ≈ 0.15° lat 가시범위; 1레벨 오를 때마다 약 2배
+    const latSpan = mapBoundsNERef.current.lat - mapBoundsSWRef.current.lat;
+    const lngSpan = mapBoundsNERef.current.lng - mapBoundsSWRef.current.lng;
+    const neededSpan = Math.max(latSpan, lngSpan * 0.7) * 1.5;
+    const maxLevel = Math.max(7, Math.min(12, 7 + Math.ceil(Math.log2(neededSpan / 0.15))));
+    const clampZoom = () => {
+      if (map.getLevel() > maxLevel) map.setLevel(maxLevel);
+    };
+    kakao.maps.event.addListener(map, "zoom_changed", clampZoom);
 
     return () => { kakaoMapRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
