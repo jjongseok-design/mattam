@@ -142,16 +142,13 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     };
     kakao.maps.event.addListener(map, "dragend", clamp);
 
-    // 줌아웃 제한: 도시 bounds에서 적정 최대 레벨 계산 (레벨 높을수록 줌아웃)
+    // 줌아웃 제한: 도시 bounds에서 최대 레벨 계산 후 SDK 네이티브 메서드로 설정
     // 카카오 레벨 7 ≈ 0.15° lat 가시범위; 1레벨 오를 때마다 약 2배
     const latSpan = mapBoundsNERef.current.lat - mapBoundsSWRef.current.lat;
     const lngSpan = mapBoundsNERef.current.lng - mapBoundsSWRef.current.lng;
     const neededSpan = Math.max(latSpan, lngSpan * 0.7) * 1.5;
     const maxLevel = Math.max(7, Math.min(12, 7 + Math.ceil(Math.log2(neededSpan / 0.15))));
-    const clampZoom = () => {
-      if (map.getLevel() > maxLevel) map.setLevel(maxLevel);
-    };
-    kakao.maps.event.addListener(map, "zoom_changed", clampZoom);
+    (map as any).setMaxLevel(maxLevel);
 
     return () => { kakaoMapRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
