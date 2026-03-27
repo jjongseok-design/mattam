@@ -72,6 +72,7 @@ const RestaurantDetail = () => {
   const [reportSending, setReportSending] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const lightboxTouchStartX = useRef<number | null>(null);
+  const galleryRef = useRef<HTMLDivElement>(null);
 
   // Match by slug first, then fall back to id for backwards compat
   const restaurant = restaurants.find((r) => r.slug === slug || r.id === slug);
@@ -245,24 +246,37 @@ const RestaurantDetail = () => {
             </div>
           );
         }
+        const scrollGallery = (dir: 'left' | 'right') => {
+          if (!galleryRef.current) return;
+          const amount = galleryRef.current.clientWidth * 0.6;
+          galleryRef.current.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
+        };
         return (
-          <div className="w-full max-w-2xl mx-auto overflow-x-auto flex gap-1 h-56 sm:h-72 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
-            {allImages.map((url, i) => (
-              <div
-                key={url}
-                className="flex-shrink-0 w-[calc(50%-2px)] sm:w-[calc(33.333%-3px)] overflow-hidden bg-muted/40 animate-pulse cursor-pointer snap-start"
-                onClick={() => setLightboxIndex(i)}
-              >
-                <img
-                  src={url}
-                  alt={`${restaurant.name} ${i + 1}`}
-                  loading={i === 0 ? undefined : "lazy"}
-                  decoding="async"
-                  className="w-full h-full object-cover"
-                  onLoad={(e) => { (e.target as HTMLImageElement).parentElement!.classList.remove("animate-pulse", "bg-muted/40"); }}
-                />
-              </div>
-            ))}
+          <div className="relative w-full max-w-2xl mx-auto">
+            <div ref={galleryRef} className="overflow-x-auto flex gap-1 h-56 sm:h-72 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+              {allImages.map((url, i) => (
+                <div
+                  key={url}
+                  className="flex-shrink-0 w-[calc(50%-2px)] sm:w-[calc(33.333%-3px)] overflow-hidden bg-muted/40 animate-pulse cursor-pointer snap-start"
+                  onClick={() => setLightboxIndex(i)}
+                >
+                  <img
+                    src={url}
+                    alt={`${restaurant.name} ${i + 1}`}
+                    loading={i === 0 ? undefined : "lazy"}
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                    onLoad={(e) => { (e.target as HTMLImageElement).parentElement!.classList.remove("animate-pulse", "bg-muted/40"); }}
+                  />
+                </div>
+              ))}
+            </div>
+            {allImages.length > 3 && (
+              <>
+                <button onClick={() => scrollGallery('left')} className="absolute left-1 top-1/2 -translate-y-1/2 z-10 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center">‹</button>
+                <button onClick={() => scrollGallery('right')} className="absolute right-1 top-1/2 -translate-y-1/2 z-10 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center">›</button>
+              </>
+            )}
           </div>
         );
       })()}
