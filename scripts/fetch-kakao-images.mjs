@@ -108,6 +108,47 @@ async function uploadToStorage(path, buf, contentType) {
   return `${SUPABASE_URL}/storage/v1/object/public/restaurant-images/${path}`;
 }
 
+// ── 카카오 로컬: 좌표 기반 장소 확인 → 공식 이름 반환 ───────────────────────
+
+async function kakaoLocalName(name, lat, lng, address) {
+  // 1차: 좌표 + 반경 200m로 정확한 장소 찾기
+  if (lat && lng) {
+    const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
+    url.searchParams.set("query", name);
+    url.searchParams.set("x", String(lng));
+    url.searchParams.set("y", String(lat));
+    url.searchParams.set("radius", "200");
+    url.searchParams.set("size", "5");
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `KakaoAK ${KAKAO_KEY}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const place = data.documents?.[0];
+      if (place) return place.place_name;
+    }
+  }
+
+  // 2차: 주소로 검색
+  if (address) {
+    const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
+    url.searchParams.set("query", address);
+    url.searchParams.set("size", "3");
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `KakaoAK ${KAKAO_KEY}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const place = data.documents?.[0];
+      if (place) return place.place_name;
+    }
+  }
+
+  return null; // 못 찾으면 null → 기존 이름 사용
+}
+
 // ── 카카오 이미지 검색 ───────────────────────────────────────────────────────
 
 async function kakaoImageSearch(query, size = 5) {
@@ -156,7 +197,7 @@ async function main() {
 
   // image_url 없는 식당만 조회
   const params = {
-    select: "id,name,address,city_id",
+    select: "id,name,address,lat,lng,city_id",
     image_url: "is.null",
     order: "name.asc",
   };
@@ -176,12 +217,19 @@ async function main() {
     const prefix = `[${String(i + 1).padStart(3, " ")}/${targets.length}] ${r.name}`;
 
     try {
-      // 쿼리 순서: 식당명+도시 → 식당명+맛집 → 식당명만
+      // 카카오 로컬로 공식 이름 확인 (좌표 → 주소 순으로 시도)
+      const kakaoName = await kakaoLocalName(r.name, r.lat, r.lng, r.address);
+      const searchName = kakaoName ?? r.name;
+      if (kakaoName && kakaoName !== r.name) {
+        console.log(`  📍 카카오 공식명: ${r.name} → ${kakaoName}`);
+      }
+
+      // 이미지 검색 쿼리: 공식이름+맛집 → 공식이름만
       const cityHint = r.address?.match(/([가-힣]+시)/)?.[1] ?? "춘천";
       const queries = [
-        `${r.name} ${cityHint} 맛집`,
-        `${r.name} ${cityHint}`,
-        r.name,
+        `${searchName} ${cityHint} 맛집`,
+        `${searchName} ${cityHint}`,
+        searchName,
       ];
 
       let docs = [];
