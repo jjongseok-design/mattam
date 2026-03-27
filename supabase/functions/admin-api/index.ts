@@ -383,6 +383,59 @@ Deno.serve(async (req) => {
         result = { success: true, results };
         break;
       }
+      case "search_kakao_place": {
+        // 카카오 로컬 키워드 검색 → 식당명·주소·전화번호·좌표 반환 (신규 식당 폼용)
+        const kakaoKey2 = Deno.env.get("KAKAO_REST_API_KEY");
+        if (!kakaoKey2) throw new Error("KAKAO_REST_API_KEY가 설정되지 않았습니다");
+
+        const { name: searchName2, cityName: cityName2, cityLat: cityLat2, cityLng: cityLng2 } = data;
+        const query2 = cityName2 ? `${cityName2} ${searchName2}` : searchName2;
+
+        const haversine2 = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+          const R = 6371;
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLng = (lng2 - lng1) * Math.PI / 180;
+          const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        };
+
+        const kakaoRes = await fetch(
+          `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query2)}&size=10`,
+          { headers: { Authorization: `KakaoAK ${kakaoKey2}` } }
+        );
+        if (!kakaoRes.ok) throw new Error(`카카오 검색 오류 (${kakaoRes.status})`);
+        const kakaoData = await kakaoRes.json();
+        const docs: any[] = kakaoData.documents ?? [];
+
+        const mapped2 = docs.map((doc: any) => {
+          const lat = parseFloat(doc.y);
+          const lng = parseFloat(doc.x);
+          const valid = lat > 33 && lat < 39 && lng > 124 && lng < 132;
+          const dist = (cityLat2 && cityLng2 && valid) ? haversine2(cityLat2, cityLng2, lat, lng) : null;
+          return {
+            name: doc.place_name ?? "",
+            address: doc.road_address_name || doc.address_name || "",
+            phone: doc.phone ?? "",
+            lat: valid ? lat : null,
+            lng: valid ? lng : null,
+            dist,
+          };
+        });
+
+        const filtered2 = mapped2.filter((item: any) => {
+          if (cityName2 && item.address) return item.address.includes(cityName2);
+          return !cityLat2 || item.dist === null || item.dist <= 30;
+        });
+        filtered2.sort((a: any, b: any) => {
+          if (a.dist === null) return 1;
+          if (b.dist === null) return -1;
+          return a.dist - b.dist;
+        });
+
+        result = { success: true, items: filtered2 };
+        break;
+      }
+
       case "search_naver_place": {
         // 식당명으로 네이버 지역 검색 → 도로명주소·전화번호·좌표 반환 (신규 식당 폼용)
         const naverClientId = Deno.env.get("NAVER_CLIENT_ID");
@@ -453,70 +506,85 @@ Deno.serve(async (req) => {
         break;
       }
 
-      case "fetch_naver_info": {
-        // 네이버 지역 검색으로 식당 정보(전화번호, 주소, 영업시간) 업데이트
-        const naverClientId = Deno.env.get("NAVER_CLIENT_ID");
-        const naverClientSecret = Deno.env.get("NAVER_CLIENT_SECRET");
-        if (!naverClientId || !naverClientSecret) {
-          throw new Error("NAVER_CLIENT_ID 또는 NAVER_CLIENT_SECRET이 설정되지 않았습니다");
-        }
+      case "fetch_naver_info":
+      case "fetch_kakao_info": {
+        // 카카오 로컬 API로 식당 정보(전화번호, 주소, 좌표) 업데이트
+        const kakaoKey = Deno.env.get("KAKAO_REST_API_KEY");
+        if (!kakaoKey) throw new Error("KAKAO_REST_API_KEY가 Supabase 시크릿에 설정되지 않았습니다");
 
         const { id: targetId } = data;
         const { data: rest } = await supabase
           .from("restaurants")
-          .select("id,name,address,phone,opening_hours,closed_days")
+          .select("id,name,address,phone")
           .eq("id", targetId)
           .single();
         if (!rest) throw new Error("식당을 찾을 수 없습니다");
 
-        // 네이버 지역 검색
-        const query = encodeURIComponent(`${rest.name}`);
-        const searchRes = await fetch(
-          `https://openapi.naver.com/v1/search/local.json?query=${query}&display=5`,
-          { headers: { "X-Naver-Client-Id": naverClientId, "X-Naver-Client-Secret": naverClientSecret } }
-        );
-        if (!searchRes.ok) throw new Error(`네이버 지역 검색 오류 (${searchRes.status})`);
-        const searchData = await searchRes.json();
-        const items: any[] = searchData.items ?? [];
+        const searchKakao = async (query: string): Promise<any[]> => {
+          const res = await fetch(
+            `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&size=5`,
+            { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
+          );
+          if (!res.ok) return [];
+          const d = await res.json();
+          return d.documents ?? [];
+        };
 
-        if (items.length === 0) {
-          result = { success: false, error: "네이버에서 해당 식당을 찾을 수 없습니다" };
+        const normalizeAddr = (addr: string) =>
+          (addr ?? "").replace(/^(강원특별자치도|강원도)\s*/, "").replace(/\s+/g, " ").trim().toLowerCase();
+
+        const roadAddressMatches = (dbAddr: string, kakaoAddr: string) => {
+          const db = normalizeAddr(dbAddr);
+          const kakao = normalizeAddr(kakaoAddr);
+          if (!db || !kakao) return false;
+          const parts = db.split(" ").slice(0, 4);
+          return parts.filter((p: string) => p.length > 1 && kakao.includes(p)).length >= 3;
+        };
+
+        const findMatch = (docs: any[]) => {
+          for (const doc of docs) {
+            const road = doc.road_address_name ?? "";
+            const addr = doc.address_name ?? "";
+            if (roadAddressMatches(rest.address, road) || roadAddressMatches(rest.address, addr)) {
+              return doc;
+            }
+          }
+          return null;
+        };
+
+        // 전략 1: 식당명 + 춘천
+        let docs = await searchKakao(`${rest.name} 춘천`);
+        let matched = findMatch(docs);
+
+        // 전략 2: 식당명만
+        if (!matched) {
+          docs = await searchKakao(rest.name);
+          matched = findMatch(docs);
+        }
+
+        if (!matched) {
+          result = { success: false, error: "카카오에서 해당 식당을 찾을 수 없습니다" };
           break;
         }
 
-        // 주소 키워드로 가장 관련된 결과 선택
-        const addressKeyword = rest.address?.replace(/춘천시?|강원도?/g, "").trim() ?? "";
-        const best = items.find(i =>
-          (i.roadAddress || i.address || "").includes(addressKeyword.slice(0, 5))
-        ) ?? items[0];
-
-        // HTML 태그 제거
-        const stripHtml = (s: string) => s?.replace(/<[^>]+>/g, "") ?? "";
-
         const updates: Record<string, any> = {};
-        const phone = stripHtml(best.telephone ?? "").trim();
-        const roadAddr = stripHtml(best.roadAddress ?? "").trim();
-        const addr = stripHtml(best.address ?? "").trim();
+        const roadAddr = matched.road_address_name?.trim();
+        const phone = matched.phone?.trim();
+        const lat = parseFloat(matched.y);
+        const lng = parseFloat(matched.x);
 
-        if (phone) updates.phone = phone;
         if (roadAddr) updates.address = roadAddr;
-        else if (addr) updates.address = addr;
-
-        // 좌표 변환 (Naver mapx/mapy는 경도/위도 × 10^7)
-        if (best.mapx && best.mapy) {
-          const lng = parseInt(best.mapx) / 10000000;
-          const lat = parseInt(best.mapy) / 10000000;
-          if (lat > 33 && lat < 39 && lng > 124 && lng < 132) {
-            updates.lat = lat;
-            updates.lng = lng;
-          }
+        if (phone) updates.phone = phone;
+        if (lat > 33 && lat < 39 && lng > 124 && lng < 132) {
+          updates.lat = lat;
+          updates.lng = lng;
         }
 
         if (Object.keys(updates).length > 0) {
           await supabase.from("restaurants").update(updates).eq("id", targetId);
         }
 
-        result = { success: true, updates, name: stripHtml(best.title ?? rest.name) };
+        result = { success: true, updates, name: matched.place_name ?? rest.name };
         break;
       }
 

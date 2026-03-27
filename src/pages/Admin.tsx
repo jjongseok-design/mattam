@@ -88,8 +88,8 @@ const Admin = () => {
   const [form, setForm] = useState(getEmptyForm("닭갈비"));
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [naverSearching, setNaverSearching] = useState(false);
-  const [naverResults, setNaverResults] = useState<{ name: string; address: string; phone: string; lat: number | null; lng: number | null; dist?: number | null }[]>([]);
+  const [kakaoSearching, setKakaoSearching] = useState(false);
+  const [kakaoResults, setKakaoResults] = useState<{ name: string; address: string; phone: string; lat: number | null; lng: number | null; dist?: number | null }[]>([]);
   const [showPwChange, setShowPwChange] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
@@ -102,7 +102,7 @@ const Admin = () => {
   const [showNeedsReview, setShowNeedsReview] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [fetchingNaverImageId, setFetchingNaverImageId] = useState<string | null>(null);
-  const [fetchingNaverInfoId, setFetchingNaverInfoId] = useState<string | null>(null);
+  const [fetchingKakaoInfoId, setFetchingKakaoInfoId] = useState<string | null>(null);
   const [fetchingAllNaverImages, setFetchingAllNaverImages] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [savingImageUrl, setSavingImageUrl] = useState(false);
@@ -402,9 +402,9 @@ const Admin = () => {
   };
 
   const handleFetchNaverInfo = async (id: string) => {
-    setFetchingNaverInfoId(id);
+    setFetchingKakaoInfoId(id);
     try {
-      const res = await adminApi("fetch_naver_info", { id });
+      const res = await adminApi("fetch_kakao_info", { id });
       if (res.success) {
         const updated = Object.keys(res.updates ?? {}).join(", ");
         toast({ title: `정보 업데이트 완료 ✅`, description: updated || "변경 없음" });
@@ -418,29 +418,29 @@ const Admin = () => {
     } catch (err: any) {
       toast({ title: "오류", description: err.message, variant: "destructive" });
     }
-    setFetchingNaverInfoId(null);
+    setFetchingKakaoInfoId(null);
   };
 
   const handleNaverSearch = async () => {
     if (!form.name.trim()) return;
-    setNaverSearching(true);
-    setNaverResults([]);
+    setKakaoSearching(true);
+    setKakaoResults([]);
     try {
       const currentCity = cities.find(c => c.id === adminCityId);
-      const res = await adminApi("search_naver_place", {
+      const res = await adminApi("search_kakao_place", {
         name: form.name,
         cityName: currentCity?.name,
         cityLat: currentCity?.lat,
         cityLng: currentCity?.lng,
       });
-      setNaverResults(res.items ?? []);
+      setKakaoResults(res.items ?? []);
     } catch (err: any) {
       toast({ title: "검색 오류", description: err.message, variant: "destructive" });
     }
-    setNaverSearching(false);
+    setKakaoSearching(false);
   };
 
-  const applyNaverResult = (item: typeof naverResults[0]) => {
+  const applyNaverResult = (item: typeof kakaoResults[0]) => {
     setForm(f => ({
       ...f,
       address: item.address || f.address,
@@ -448,7 +448,7 @@ const Admin = () => {
       lat: item.lat ?? f.lat,
       lng: item.lng ?? f.lng,
     }));
-    setNaverResults([]);
+    setKakaoResults([]);
   };
 
   const handleSaveImageUrl = async () => {
@@ -1106,15 +1106,15 @@ const Admin = () => {
                 <div className="col-span-2">
                   <label className="text-sm font-medium">이름 *</label>
                   <div className="flex gap-2">
-                    <Input value={form.name} onChange={(e) => { setForm({ ...form, name: e.target.value }); setNaverResults([]); }} />
-                    <Button type="button" variant="outline" size="sm" className="shrink-0 h-10 text-xs px-3 gap-1" onClick={handleNaverSearch} disabled={naverSearching || !form.name.trim()}>
-                      {naverSearching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
-                      네이버
+                    <Input value={form.name} onChange={(e) => { setForm({ ...form, name: e.target.value }); setKakaoResults([]); }} />
+                    <Button type="button" variant="outline" size="sm" className="shrink-0 h-10 text-xs px-3 gap-1" onClick={handleNaverSearch} disabled={kakaoSearching || !form.name.trim()}>
+                      {kakaoSearching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                      카카오
                     </Button>
                   </div>
-                  {naverResults.length > 0 && (
+                  {kakaoResults.length > 0 && (
                     <div className="mt-1 border border-border rounded-lg overflow-hidden text-xs shadow-md bg-card z-10">
-                      {naverResults.map((item, i) => (
+                      {kakaoResults.map((item, i) => (
                         <button key={i} type="button" onClick={() => applyNaverResult(item)}
                           className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b border-border/40 last:border-0 transition-colors">
                           <div className="flex items-center gap-2">
@@ -1455,11 +1455,11 @@ const Admin = () => {
                             variant="outline"
                             size="sm"
                             className="h-7 px-1.5 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground"
-                            title="네이버 정보 업데이트 (전화번호·주소·좌표)"
-                            disabled={fetchingNaverInfoId === r.id}
+                            title="카카오 정보 업데이트 (전화번호·주소·좌표)"
+                            disabled={fetchingKakaoInfoId === r.id}
                             onClick={() => handleFetchNaverInfo(r.id)}
                           >
-                            {fetchingNaverInfoId === r.id
+                            {fetchingKakaoInfoId === r.id
                               ? <Loader2 className="h-3 w-3 animate-spin" />
                               : <MapPin className="h-3 w-3" />
                             }
