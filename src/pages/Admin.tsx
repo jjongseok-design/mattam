@@ -29,6 +29,7 @@ interface RestaurantRow {
   image_url: string | null;
   extra_images: string[] | null;
   is_recommended: boolean | null;
+  needs_review?: boolean | null;
 }
 
 const getEmptyForm = (category: string, lat = 37.8813, lng = 127.7298) => ({
@@ -98,6 +99,7 @@ const Admin = () => {
   const [tipsLoading, setTipsLoading] = useState(false);
   const [tipsTab, setTipsTab] = useState<"tips" | "feedback">("tips");
   const [showNoImage, setShowNoImage] = useState(false);
+  const [showNeedsReview, setShowNeedsReview] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [fetchingNaverImageId, setFetchingNaverImageId] = useState<string | null>(null);
   const [fetchingNaverInfoId, setFetchingNaverInfoId] = useState<string | null>(null);
@@ -257,12 +259,13 @@ const Admin = () => {
   // adminCategory가 아직 로드 안 됐거나 유효하지 않으면 전체 표시
   const validCategory = categories.length > 0 && !!categories.find(c => c.id === adminCategory);
   const filtered = restaurants.filter((r) => {
-    const matchCategory = showNoImage ? !r.image_url : (!validCategory || r.category === adminCategory);
     const matchSearch =
       !search ||
       r.name.includes(search) ||
       r.address.includes(search) ||
       (r.tags ?? []).some((t) => t.includes(search));
+    // 검색어 있으면 전체 대상, 없으면 카테고리/특수필터 적용
+    const matchCategory = search ? true : showNeedsReview ? r.needs_review === true : showNoImage ? !r.image_url : (!validCategory || r.category === adminCategory);
     return matchCategory && matchSearch;
   });
 
@@ -330,6 +333,7 @@ const Admin = () => {
       description: form.description || null,
       city_id: adminCityId,
       is_recommended: form.is_recommended ?? false,
+      ...(showNeedsReview ? { needs_review: false } : {}),
     };
 
     try {
@@ -758,18 +762,27 @@ const Admin = () => {
 
       <div className="max-w-5xl mx-auto px-4 pt-3 pb-1">
         {/* Stats summary card */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="grid grid-cols-4 gap-2 mb-3">
           <div className="bg-card border border-border rounded-lg p-3 text-center">
             <p className="text-2xl font-bold text-foreground">{restaurants.length}</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">전체 식당</p>
           </div>
           <button
-            onClick={() => { setShowNoImage((v) => !v); setSearch(""); }}
+            onClick={() => { setShowNoImage((v) => !v); setShowNeedsReview(false); setSearch(""); }}
             className={`border rounded-lg p-3 text-center transition-colors w-full ${showNoImage ? "bg-orange-50 border-orange-300 dark:bg-orange-950/30 dark:border-orange-700" : "bg-card border-border hover:border-orange-300"}`}
           >
             <p className="text-2xl font-bold text-orange-500">{restaurants.filter(r => !r.image_url).length}</p>
             <p className={`text-[11px] mt-0.5 ${showNoImage ? "text-orange-600 font-semibold" : "text-muted-foreground"}`}>
               {showNoImage ? "▼ 이미지 없음" : "이미지 없음"}
+            </p>
+          </button>
+          <button
+            onClick={() => { setShowNeedsReview((v) => !v); setShowNoImage(false); setSearch(""); }}
+            className={`border rounded-lg p-3 text-center transition-colors w-full ${showNeedsReview ? "bg-yellow-50 border-yellow-300 dark:bg-yellow-950/30 dark:border-yellow-700" : "bg-card border-border hover:border-yellow-300"}`}
+          >
+            <p className="text-2xl font-bold text-yellow-500">{restaurants.filter(r => r.needs_review).length}</p>
+            <p className={`text-[11px] mt-0.5 ${showNeedsReview ? "text-yellow-600 font-semibold" : "text-muted-foreground"}`}>
+              {showNeedsReview ? "▼ 검토필요" : "검토필요"}
             </p>
           </button>
           <div className="bg-card border border-border rounded-lg p-3 text-center">
@@ -1406,7 +1419,7 @@ const Admin = () => {
                     <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap hidden md:table-cell">주소</th>
                     <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[70px]">평점</th>
                     <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[60px] hidden sm:table-cell">리뷰</th>
-                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[200px]">관리</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[200px] sticky right-0 bg-muted/50 border-l border-border">관리</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1426,7 +1439,7 @@ const Admin = () => {
                       <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-sm whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{r.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</td>
                       <td className="px-3 py-2.5 text-center whitespace-nowrap text-base">⭐ {r.rating}</td>
                       <td className="px-3 py-2.5 text-center text-muted-foreground whitespace-nowrap hidden sm:table-cell text-base">{r.review_count}</td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5 sticky right-0 bg-card border-l border-border">
                         <div className="flex items-center justify-center gap-0.5 whitespace-nowrap">
                           <Button
                             variant="outline"
