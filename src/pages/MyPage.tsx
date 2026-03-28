@@ -60,8 +60,8 @@ const MyPage = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* 헤더 */}
-      <div className="sticky top-0 z-10 bg-card/90 border-b border-border/30 px-4 py-3 flex items-center gap-3"
-        style={{ backdropFilter: "blur(16px)" }}>
+      <div className="sticky top-0 z-10 bg-card/90 border-b border-border/30 px-4 pb-3 flex items-center gap-3"
+        style={{ backdropFilter: "blur(16px)", paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}>
         <Link to={`/${cityId}`} className="w-8 h-8 rounded-lg flex items-center justify-center glass">
           <ArrowLeft className="h-4 w-4 text-muted-foreground" />
         </Link>
