@@ -419,7 +419,7 @@ const CityMap = () => {
                   </Link>
                 </div>
               </div>
-              <div ref={stripRef} className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin py-2 pb-1" style={{ paddingLeft: "20px", paddingRight: "20px" }}>
+              <div ref={stripRef} className="grid grid-rows-2 grid-flow-col gap-1.5 overflow-x-auto scrollbar-thin py-2 pb-1" style={{ paddingLeft: "20px", paddingRight: "20px" }}>
                 {dbCategories.map((cat) => (
                   <button
                     key={cat.id}
