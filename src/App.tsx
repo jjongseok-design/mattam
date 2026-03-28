@@ -12,6 +12,7 @@ const Admin = lazy(() => import("./pages/Admin"));
 const Install = lazy(() => import("./pages/Install"));
 const RestaurantDetail = lazy(() => import("./pages/RestaurantDetail"));
 const Tour = lazy(() => import("./pages/Tour"));
+const MyPage = lazy(() => import("./pages/MyPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/:cityId" element={<CityMap />} />
             <Route path="/:cityId/restaurant/:slug" element={<RestaurantDetail />} />
             <Route path="/:cityId/tour" element={<Tour />} />
+            <Route path="/:cityId/mypage" element={<MyPage />} />
             {/* 공통 페이지 */}
             <Route path="/admin" element={<Admin />} />
             <Route path="/install" element={<Install />} />

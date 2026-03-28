@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { MapPin, Utensils, Loader2, Settings, Navigation, Download, ArrowLeft } from "lucide-react";
+import { MapPin, Utensils, Heart, User, Loader2, Settings, Navigation, Download, ArrowLeft } from "lucide-react";
 import { Link, useSearchParams, useParams } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
@@ -85,6 +85,8 @@ const CityMap = () => {
   const [filter, setFilter] = useState<FilterOption>(saved.current?.filter || "all");
   const [ratingMin, setRatingMin] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"map" | "list" | "favorites">("map");
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
 
   const isMobile = useIsMobile();
@@ -315,20 +317,58 @@ const CityMap = () => {
             <div className="absolute inset-0 z-0">
               <MapView restaurants={filtered} selectedId={selectedId} onSelect={handleSelect} visitedIds={visited} isDarkMode={isDarkMode} city={city} />
             </div>
-            <MobileBottomSheet
-              restaurants={filtered} selectedId={selectedId} onSelect={handleSelect}
-              query={query} onQueryChange={setQuery} totalCount={categoryRestaurants.length}
-              category={categoryLabel} onCategoryChange={handleCategoryChange}
-              isVisited={isVisited} onToggleVisited={toggleVisited}
-              isFavorite={isFavorite} onToggleFavorite={toggleFavorite}
-              sort={sort} onSortChange={setSort} filter={filter} onFilterChange={setFilter}
-              hasLocation={!!position} ratingMin={ratingMin} onRatingMinChange={setRatingMin}
-              getDistance={getDistance} onClose={handleCloseList}
-              recentRestaurants={recentRestaurants} allRestaurants={restaurants} visited={visited}
-              onShare={() => setShareOpen(true)}
-            />
+            {showList && (
+              <MobileBottomSheet
+                restaurants={filtered} selectedId={selectedId} onSelect={handleSelect}
+                query={query} onQueryChange={setQuery} totalCount={categoryRestaurants.length}
+                category={categoryLabel} onCategoryChange={handleCategoryChange}
+                isVisited={isVisited} onToggleVisited={toggleVisited}
+                isFavorite={isFavorite} onToggleFavorite={toggleFavorite}
+                sort={sort} onSortChange={setSort} filter={filter} onFilterChange={setFilter}
+                hasLocation={!!position} ratingMin={ratingMin} onRatingMinChange={setRatingMin}
+                getDistance={getDistance} onClose={handleCloseList}
+                recentRestaurants={recentRestaurants} allRestaurants={restaurants} visited={visited}
+                onShare={() => setShareOpen(true)}
+              />
+            )}
           </div>
-          <TipForm />
+          <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
+
+          {/* 하단 탭바 */}
+          <div className="fixed bottom-0 left-0 right-0 z-[1400] bg-card/95 border-t border-border/30"
+            style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+            <div className="flex items-center justify-around px-4 h-16">
+              <button
+                onClick={() => { setActiveTab("map"); setShowList(false); setFilter("all"); }}
+                className={`flex flex-col items-center gap-[3px] transition-colors ${activeTab === "map" ? "text-primary" : "text-muted-foreground/60"}`}>
+                <MapPin className="h-[22px] w-[22px]" strokeWidth={1.8} />
+                <span className="text-[10px] font-medium tracking-tight">지도</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab("list"); setShowList(true); setFilter("all"); }}
+                className={`flex flex-col items-center gap-[3px] transition-colors ${activeTab === "list" ? "text-primary" : "text-muted-foreground/60"}`}>
+                <Utensils className="h-[22px] w-[22px]" strokeWidth={1.8} />
+                <span className="text-[10px] font-medium tracking-tight">목록</span>
+              </button>
+              <button
+                onClick={() => setTipOpen(true)}
+                className="w-14 h-14 -mt-6 rounded-full bg-primary shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
+                <span className="text-white text-[28px] font-light leading-none">+</span>
+              </button>
+              <button
+                onClick={() => { setActiveTab("favorites"); setShowList(true); setFilter("favorites"); }}
+                className={`flex flex-col items-center gap-[3px] transition-colors ${activeTab === "favorites" ? "text-primary" : "text-muted-foreground/60"}`}>
+                <Heart className="h-[22px] w-[22px]" strokeWidth={1.8} fill={activeTab === "favorites" ? "currentColor" : "none"} />
+                <span className="text-[10px] font-medium tracking-tight">찜</span>
+              </button>
+              <Link to={`/${cityId}/mypage`} className="flex flex-col items-center gap-[3px] text-muted-foreground/60 hover:text-foreground transition-colors">
+                <User className="h-[22px] w-[22px]" strokeWidth={1.8} />
+                <span className="text-[10px] font-medium tracking-tight">내정보</span>
+              </Link>
+            </div>
+          </div>
+
           <FeedbackForm />
           <JsonLd />
           <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} cityName={city?.name} />

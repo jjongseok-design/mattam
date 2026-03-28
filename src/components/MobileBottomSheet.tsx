@@ -181,7 +181,7 @@ const MobileBottomSheet = memo(({
   const isPeek = state === "peek";
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-[1400] pointer-events-none">
+    <div className="absolute inset-x-0 bottom-[64px] z-[1400] pointer-events-none">
       <motion.div
         className="pointer-events-auto bg-card rounded-t-3xl shadow-panel border-t border-border/40 pb-[env(safe-area-inset-bottom)] flex flex-col will-change-transform"
         animate={{ height: HEIGHTS[state] }}
