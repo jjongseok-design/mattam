@@ -75,6 +75,7 @@ export const useRestaurants = (cityId?: string) => {
       let q = (supabase
         .from("restaurants")
         .select("*")
+        .eq("is_hidden", false)
         .order("review_count", { ascending: false })) as any;
 
       if (cityId) {

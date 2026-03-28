@@ -30,6 +30,7 @@ interface RestaurantRow {
   extra_images: string[] | null;
   is_recommended: boolean | null;
   needs_review?: boolean | null;
+  is_hidden?: boolean | null;
 }
 
 const getEmptyForm = (category: string, lat = 37.8813, lng = 127.7298) => ({
@@ -259,14 +260,20 @@ const Admin = () => {
   // adminCategory가 아직 로드 안 됐거나 유효하지 않으면 전체 표시
   const validCategory = categories.length > 0 && !!categories.find(c => c.id === adminCategory);
   const filtered = restaurants.filter((r) => {
+    if (r.is_hidden) return false;
     const matchSearch =
       !search ||
       r.name.includes(search) ||
       r.address.includes(search) ||
       (r.tags ?? []).some((t) => t.includes(search));
-    // 검색어 있으면 전체 대상, 없으면 카테고리/특수필터 적용
     const matchCategory = search ? true : showNeedsReview ? r.needs_review === true : showNoImage ? !r.image_url : (!validCategory || r.category === adminCategory);
     return matchCategory && matchSearch;
+  });
+
+  const filteredHidden = restaurants.filter((r) => {
+    if (!r.is_hidden) return false;
+    const matchCategory = !validCategory || r.category === adminCategory;
+    return matchCategory;
   });
 
   const categoryCount = (catId: string) => restaurants.filter((r) => r.category === catId).length;
@@ -1414,12 +1421,11 @@ const Admin = () => {
               <table className="w-full text-sm" style={{ minWidth: 700 }}>
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[90px]">ID</th>
-                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap">이름</th>
+                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[60px]">ID</th>
+                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[160px]">이름</th>
                     <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap hidden md:table-cell">주소</th>
-                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[70px]">평점</th>
-                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[60px] hidden sm:table-cell">리뷰</th>
-                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[200px] sticky right-0 bg-muted/50 border-l border-border">관리</th>
+
+                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[280px] sticky right-0 bg-muted/50 border-l border-border">관리</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1431,14 +1437,16 @@ const Admin = () => {
                           {r.image_url ? (
                             <img src={r.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
                           ) : (
-                            <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">📷</span>
+                            <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">🍽️</span>
                           )}
-                          <span className="text-base">{r.name}</span>
+                          <div className="flex flex-col">
+                            <span className="text-base">{r.name}</span>
+                            <span className="text-[11px] text-muted-foreground">⭐ {r.rating} · 리뷰 {r.review_count}</span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-sm whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{r.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</td>
-                      <td className="px-3 py-2.5 text-center whitespace-nowrap text-base">⭐ {r.rating}</td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground whitespace-nowrap hidden sm:table-cell text-base">{r.review_count}</td>
+
                       <td className="px-3 py-2.5 sticky right-0 bg-card border-l border-border">
                         <div className="flex items-center justify-center gap-0.5 whitespace-nowrap">
                           <Button
@@ -1497,6 +1505,20 @@ const Admin = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            className={`h-7 px-1.5 text-[11px] gap-0.5 ${r.is_hidden ? "text-red-400 border-red-300 bg-red-50 dark:bg-red-900/20" : "text-muted-foreground"}`}
+                            onClick={async () => {
+                              const newVal = !r.is_hidden;
+                              setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_hidden: newVal } : x));
+                              await adminApi("update", { id: r.id, is_hidden: newVal });
+                              queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
+                            }}
+                          >
+                            <span>{r.is_hidden ? "👁️" : "🙈"}</span>
+                            <span>{r.is_hidden ? "숨김" : "숨기기"}</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="h-7 px-1.5 text-[11px] gap-0.5 hover:text-primary hover:border-primary/40"
                             onClick={() => openEdit(r)}
                           >
@@ -1521,6 +1543,46 @@ const Admin = () => {
             </div>
             {filtered.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">검색 결과가 없습니다</div>
+            )}
+            {filteredHidden.length > 0 && (
+              <div className="mt-2 border-t-2 border-dashed border-border/50">
+                <div className="px-3 py-2 text-[11px] text-muted-foreground/50 font-medium">숨긴 식당 ({filteredHidden.length})</div>
+                {filteredHidden.map((r) => (
+                  <tr key={r.id} className="border-t border-border bg-muted/20 opacity-60 hover:opacity-100 transition-opacity">
+                    <td className="px-3 py-2.5 text-muted-foreground text-sm">{r.id}</td>
+                    <td className="px-3 py-2.5 font-medium whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {r.image_url ? (
+                          <img src={r.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0 grayscale" />
+                        ) : (
+                          <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">🙈</span>
+                        )}
+                        <span className="text-base text-muted-foreground">{r.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-sm">{r.address}</td>
+                    <td className="px-3 py-2.5 text-center">-</td>
+                    <td className="px-3 py-2.5 text-center hidden sm:table-cell">-</td>
+                    <td className="px-3 py-2.5 sticky right-0 bg-card border-l border-border">
+                      <div className="flex items-center justify-center gap-0.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-1.5 text-[11px] gap-0.5 text-primary border-primary/30"
+                          onClick={async () => {
+                            setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_hidden: false } : x));
+                            await adminApi("update", { id: r.id, is_hidden: false });
+                            queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
+                          }}
+                        >
+                          <span>👁️</span>
+                          <span>복원</span>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </div>
             )}
           </div>
         )}
