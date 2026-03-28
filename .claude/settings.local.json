@@ -52,7 +52,11 @@
       "Bash(RETRY_BY_ADDRESS=1 DRY_RUN=1 LIMIT=10 node scripts/fetch-opening-hours.mjs)",
       "Bash(RETRY_BY_ADDRESS=1 node scripts/fetch-opening-hours.mjs)",
       "Bash(DRY_RUN=1 LIMIT=8 node scripts/fetch-menus.mjs)",
-      "Bash(DRY_RUN=1 LIMIT=10 node scripts/fetch-menus.mjs)"
+      "Bash(DRY_RUN=1 LIMIT=10 node scripts/fetch-menus.mjs)",
+      "Bash(git stash:*)",
+      "Bash(ls -la /c/Users/DELL/mattam/.env*)",
+      "Bash(DRY_RUN=1 node scripts/remove-url-duplicates.mjs)",
+      "Bash(git pull:*)"
     ]
   }
 }
