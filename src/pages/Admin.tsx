@@ -1243,7 +1243,18 @@ const Admin = () => {
                             toast({ title: "파일 크기는 10MB 이하여야 합니다", variant: "destructive" });
                             return;
                           }
-                          setSaving(true);
+                          // 로컬 미리보기 즉시 표시
+                          const localUrl = URL.createObjectURL(file);
+                          const prevEditing = editing;
+                          if (slot === 0) {
+                            setEditing({ ...editing, image_url: localUrl });
+                            setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, image_url: localUrl } : r));
+                          } else {
+                            const newExtras = [...(editing.extra_images ?? [])];
+                            newExtras[slot - 1] = localUrl;
+                            setEditing({ ...editing, extra_images: newExtras });
+                            setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, extra_images: newExtras } : r));
+                          }
                           try {
                             const base64 = await new Promise<string>((resolve, reject) => {
                               const img = new window.Image();
@@ -1260,7 +1271,7 @@ const Admin = () => {
                                 resolve(canvas.toDataURL("image/jpeg", 0.85).split(",")[1]);
                               };
                               img.onerror = reject;
-                              img.src = URL.createObjectURL(file);
+                              img.src = localUrl;
                             });
                             const res = await adminApi("upload_image", {
                               restaurant_id: editing.id,
@@ -1270,18 +1281,19 @@ const Admin = () => {
                               slot,
                             });
                             if (slot === 0) {
-                              setEditing({ ...editing, image_url: res.image_url });
+                              setEditing(e => ({ ...e!, image_url: res.image_url }));
                               setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, image_url: res.image_url } : r));
                             } else {
-                              setEditing({ ...editing, extra_images: res.extra_images });
+                              setEditing(e => ({ ...e!, extra_images: res.extra_images }));
                               setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, extra_images: res.extra_images } : r));
                             }
                             toast({ title: "사진 업로드 완료 ✅" });
                             silentRefresh();
                           } catch (err: any) {
+                            // 실패 시 이전 상태로 복구
+                            setEditing(prevEditing);
+                            setRestaurants(prev => prev.map(r => r.id === prevEditing.id ? { ...r, image_url: prevEditing.image_url, extra_images: prevEditing.extra_images } : r));
                             toast({ title: "업로드 실패", description: err.message, variant: "destructive" });
-                          } finally {
-                            setSaving(false);
                           }
                         };
 
@@ -1326,27 +1338,39 @@ const Admin = () => {
                                 <button
                                   type="button"
                                   onClick={async () => {
+                                    const prevEditing = editing;
+                                    // UI 즉시 반영
+                                    if (idx === 0) {
+                                      const extras = editing.extra_images ?? [];
+                                      const next = extras.length > 0
+                                        ? { image_url: extras[0], extra_images: extras.slice(1) }
+                                        : { image_url: null, extra_images: [] };
+                                      setEditing({ ...editing, ...next });
+                                      setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, ...next } : r));
+                                    } else {
+                                      const extras = (editing.extra_images ?? []).filter(u => u !== url);
+                                      setEditing({ ...editing, extra_images: extras });
+                                      setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, extra_images: extras } : r));
+                                    }
                                     try {
                                       if (idx === 0) {
-                                        await adminApi("delete_image", { restaurant_id: editing.id });
-                                        const extras = editing.extra_images ?? [];
+                                        await adminApi("delete_image", { restaurant_id: prevEditing.id });
+                                        const extras = prevEditing.extra_images ?? [];
                                         if (extras.length > 0) {
-                                          await adminApi("update", { id: editing.id, image_url: extras[0], extra_images: extras.slice(1) });
-                                          setEditing({ ...editing, image_url: extras[0], extra_images: extras.slice(1) });
-                                          setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, image_url: extras[0], extra_images: extras.slice(1) } : r));
+                                          await adminApi("update", { id: prevEditing.id, image_url: extras[0], extra_images: extras.slice(1) });
                                         } else {
-                                          setEditing({ ...editing, image_url: null, extra_images: [] });
-                                          setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, image_url: null, extra_images: [] } : r));
+                                          await adminApi("update", { id: prevEditing.id, image_url: null, extra_images: [] });
                                         }
                                       } else {
-                                        const extras = (editing.extra_images ?? []).filter(u => u !== url);
-                                        await adminApi("update", { id: editing.id, extra_images: extras });
-                                        setEditing({ ...editing, extra_images: extras });
-                                        setRestaurants(prev => prev.map(r => r.id === editing.id ? { ...r, extra_images: extras } : r));
+                                        const extras = (prevEditing.extra_images ?? []).filter(u => u !== url);
+                                        await adminApi("update", { id: prevEditing.id, extra_images: extras });
                                       }
                                       toast({ title: "사진 삭제 완료 ✅" });
                                       silentRefresh();
                                     } catch (err: any) {
+                                      // 실패 시 이전 상태로 복구
+                                      setEditing(prevEditing);
+                                      setRestaurants(prev => prev.map(r => r.id === prevEditing.id ? { ...r, image_url: prevEditing.image_url, extra_images: prevEditing.extra_images } : r));
                                       toast({ title: "삭제 실패", description: err.message, variant: "destructive" });
                                     }
                                   }}
