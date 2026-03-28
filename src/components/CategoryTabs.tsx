@@ -31,7 +31,7 @@ const CategoryTabs = ({ active, onChange, categoryCounts = {}, cityId, size }: C
   return (
     <div
       ref={scrollRef}
-      className="grid grid-rows-2 grid-flow-col gap-1.5 overflow-x-auto scrollbar-none py-0.5"
+      className="grid grid-rows-2 grid-flow-col gap-1 overflow-x-auto scrollbar-none py-0.5"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
       {cats.map((cat) => {
@@ -43,7 +43,7 @@ const CategoryTabs = ({ active, onChange, categoryCounts = {}, cityId, size }: C
             data-cat-id={cat.id}
             onClick={() => onChange(cat.id)}
             className={`
-              inline-flex items-center ${lg ? "gap-2 px-3.5 py-2 text-[14px]" : "gap-1.5 px-3 py-1.5 text-[12px]"} rounded-full font-semibold
+              inline-flex items-center ${lg ? "gap-2 px-3.5 py-2 text-[14px]" : "gap-1 px-2 py-0.5 text-[10px]"} rounded-full font-semibold
               whitespace-nowrap flex-shrink-0 transition-all duration-200
               ${isActive
                 ? "bg-foreground text-background shadow-sm scale-[1.02]"
