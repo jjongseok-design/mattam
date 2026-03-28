@@ -15,6 +15,7 @@ const STAR_LABELS = ["", "별로예요", "그저그래요", "괜찮아요", "좋
 
 const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
   const deviceId = getDeviceId();
+  const nickname = (() => { try { return localStorage.getItem("mattam_nickname") || ""; } catch { return ""; } })();
   const { data: myReview, isLoading: loadingMyReview } = useMyReview(restaurantId);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -85,6 +86,7 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
         rating,
         comment: comment.trim() || null,
         photo_url: photoUrl,
+        nickname: nickname || null,
       };
 
       let error;
