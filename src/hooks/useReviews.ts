@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceId } from "./useDeviceId";
 
@@ -14,13 +15,27 @@ export interface Review {
 
 /** 특정 식당의 리뷰 목록 */
 export const useReviews = (restaurantId: string | undefined) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel("reviews-realtime-" + restaurantId)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reviews", filter: `restaurant_id=eq.${restaurantId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
+        queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId, queryClient]);
+
   return useQuery({
     queryKey: ["reviews", restaurantId],
     queryFn: async (): Promise<Review[]> => {
       if (!restaurantId) return [];
       const { data, error } = await supabase
         .from("reviews")
-        .select("id, restaurant_id, device_id, rating, comment, photo_url, created_at")
+        .select("id, restaurant_id, device_id, rating, comment, photo_url, created_at, nickname")
         .eq("restaurant_id", restaurantId)
         .order("created_at", { ascending: false });
       if (error) {
@@ -30,7 +45,7 @@ export const useReviews = (restaurantId: string | undefined) => {
       return (data ?? []) as Review[];
     },
     enabled: !!restaurantId,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 10 * 1000,
   });
 };
 
@@ -43,19 +58,31 @@ export const useMyReview = (restaurantId: string | undefined) => {
       if (!restaurantId) return null;
       const { data } = await supabase
         .from("reviews")
-        .select("id, restaurant_id, device_id, rating, comment, photo_url, created_at")
+        .select("id, restaurant_id, device_id, rating, comment, photo_url, created_at, nickname")
         .eq("restaurant_id", restaurantId)
         .eq("device_id", deviceId)
         .maybeSingle();
       return (data as Review | null) ?? null;
     },
     enabled: !!restaurantId,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 10 * 1000,
   });
 };
 
 /** 전체 식당 평균 별점 맵 { restaurant_id: { avg, count } } */
 export const useAllAvgRatings = () => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("reviews-avg-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "reviews" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ["all-avg-ratings"],
     queryFn: async (): Promise<Record<string, { avg: number; count: number }>> => {
@@ -78,6 +105,6 @@ export const useAllAvgRatings = () => {
       }
       return result;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 1000,
   });
 };

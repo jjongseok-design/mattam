@@ -297,7 +297,7 @@ const CityMap = () => {
                   <h1 className="text-[14px] font-bold text-foreground">{cityLabel} 맛집</h1>
                   {categories.length > 0 && (
                     <span className="text-[11px] text-muted-foreground font-medium">
-                      {categoryEmoji} {categoryRestaurants.length}개
+                      {categoryEmoji} {categoryRestaurants.filter(r => !r.is_hidden).length}개
                     </span>
                   )}
                 </div>
@@ -327,7 +327,7 @@ const CityMap = () => {
             {showList && (
               <MobileBottomSheet
                 restaurants={filtered} selectedId={selectedId} onSelect={handleSelect}
-                query={query} onQueryChange={setQuery} totalCount={categoryRestaurants.length}
+                query={query} onQueryChange={setQuery} totalCount={categoryRestaurants.filter(r => !r.is_hidden).length}
                 category={categoryLabel} onCategoryChange={handleCategoryChange}
                 isVisited={isVisited} onToggleVisited={toggleVisited}
                 isFavorite={isFavorite} onToggleFavorite={toggleFavorite}

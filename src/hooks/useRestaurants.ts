@@ -68,7 +68,7 @@ export const useRestaurants = (cityId?: string) => {
 
   const query = useQuery({
     queryKey,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 30,
     placeholderData: loadCache(cityId) ?? undefined,
     queryFn: async (): Promise<Restaurant[]> => {
@@ -121,11 +121,11 @@ export const useRestaurants = (cityId?: string) => {
             );
           }
 
-          // 캐시 동기화 보장용 백그라운드 재조회 (2초 디바운스)
+          // 캐시 동기화 보장용 백그라운드 재조회 (300ms 디바운스)
           if (debounceRef.current) clearTimeout(debounceRef.current);
           debounceRef.current = setTimeout(() => {
             queryClient.invalidateQueries({ queryKey });
-          }, 2000);
+          }, 300);
         }
       )
       .subscribe();
