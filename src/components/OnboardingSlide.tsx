@@ -2,9 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const slides = [
-  { emoji: "🍽️", title: "맛탐에 오신 걸 환영해요!", desc: "춘천의 진짜 맛집을 함께 찾아가요." },
-  { emoji: "📍", title: "유저가 만들어가는 맛집 지도", desc: "제보한 맛집으로 함께 성장해요." },
-  { emoji: "✨", title: "제보하고 함께 만들어요", desc: "아는 맛집이 있다면 + 버튼으로 알려주세요!" },
+  { emoji: "🗺️", title: "춘천 맛집 지도, 맛탐", desc: "AI가 아닌 직접 가본 사람들이\n만들어가는 진짜 맛집 지도예요." },
+  { emoji: "📮", title: "제보하면 지도에 추가돼요", desc: "아는 맛집을 + 버튼으로 제보하면\n맛탐팀이 확인 후 지도에 올려드려요." },
+  { emoji: "🌱", title: "함께 만들수록 더 풍성해져요", desc: "여러분의 제보 하나하나가\n춘천 최고의 맛집 지도를 만들어요." },
 ];
 
 const OnboardingSlide = ({ onClose }: { onClose: () => void }) => {
@@ -26,7 +26,7 @@ const OnboardingSlide = ({ onClose }: { onClose: () => void }) => {
               <span className="text-4xl">{slides[current].emoji}</span>
             </div>
             <h2 className="text-[20px] font-bold tracking-tight mb-2">{slides[current].title}</h2>
-            <p className="text-[13px] text-muted-foreground">{slides[current].desc}</p>
+            <p className="text-[13px] text-muted-foreground whitespace-pre-line">{slides[current].desc}</p>
           </motion.div>
         </AnimatePresence>
         <div className="flex flex-col gap-2">

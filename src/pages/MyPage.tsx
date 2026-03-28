@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Heart, Clock, Star, User, MapPin, Utensils } from "lucide-react";
 import { useVisited } from "@/hooks/useVisited";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -25,6 +26,29 @@ const MyPage = () => {
     setNickname(tempNickname);
     setEditing(false);
   };
+
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("tab") === "favorites") {
+      setTimeout(() => {
+        document.getElementById("favorites-section")?.scrollIntoView({ behavior: "smooth" });
+      }, 600);
+    }
+  }, [searchParams]);
+
+  const deviceId = (() => {
+    try { return localStorage.getItem("mattam_device_id") || ""; } catch { return ""; }
+  })();
+
+  const [myTips, setMyTips] = useState<any[]>([]);
+  useEffect(() => {
+    if (!deviceId) return;
+    supabase.from("tips" as any)
+      .select("*")
+      .eq("device_id", deviceId)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setMyTips(data ?? []));
+  }, [deviceId]);
 
   const favoriteRestaurants = restaurants.filter((r) => isFavorite(r.id));
   const visitedRestaurants = restaurants.filter((r) => isVisited(r.id));
@@ -82,7 +106,7 @@ const MyPage = () => {
         </div>
 
         {/* 즐겨찾기 */}
-        <section>
+        <section id="favorites-section">
           <h2 className="text-[13px] font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
             <Heart className="h-3.5 w-3.5" /> 즐겨찾기 ({favoriteRestaurants.length})
           </h2>
@@ -126,6 +150,41 @@ const MyPage = () => {
             </div>
           )}
         </section>
+
+        {/* 내 제보 목록 */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base">📮</span>
+            <h2 className="text-[13px] font-semibold">내 제보</h2>
+            <span className="text-[11px] text-muted-foreground">{myTips.length}건</span>
+          </div>
+          {myTips.length === 0 ? (
+            <p className="text-[12px] text-muted-foreground/50 px-1">아직 제보한 맛집이 없어요</p>
+          ) : (
+            <div className="space-y-2">
+              {myTips.map((tip) => (
+                <div key={tip.id} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border/30">
+                  {tip.image_url ? (
+                    <img src={tip.image_url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 text-xl">🍽️</div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium truncate">{tip.restaurant_name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{tip.address || tip.category}</p>
+                  </div>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                    tip.status === "approved" ? "bg-emerald-100 text-emerald-600" :
+                    tip.status === "rejected" ? "bg-red-100 text-red-500" :
+                    "bg-yellow-100 text-yellow-600"
+                  }`}>
+                    {tip.status === "approved" ? "등록완료" : tip.status === "rejected" ? "미등록" : "검토중"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* 최근 본 곳 */}
         <section>

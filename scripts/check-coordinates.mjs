@@ -19,7 +19,7 @@ const env = { ...parseEnvFile(resolve(ROOT, ".env")), ...parseEnvFile(resolve(RO
 
 const supabase = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY);
 
-const { data: restaurants } = await supabase.from("restaurants").select("id, name, address, lat, lng").limit(20);
+const { data: restaurants } = await supabase.from("restaurants").select("id, name, address, lat, lng");
 
 for (const r of restaurants) {
   const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${r.lat}&lon=${r.lng}&format=json&accept-language=ko`, {

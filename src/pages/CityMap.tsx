@@ -366,12 +366,10 @@ const CityMap = () => {
                 style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
                 <span className="text-white text-[28px] font-light leading-none">+</span>
               </button>
-              <button
-                onClick={() => { setActiveTab("favorites"); setShowList(true); setFilter("favorites"); }}
-                className={`flex flex-col items-center gap-[3px] transition-colors ${activeTab === "favorites" ? "text-primary" : "text-muted-foreground/60"}`}>
-                <Heart className="h-[22px] w-[22px]" strokeWidth={1.8} fill={activeTab === "favorites" ? "currentColor" : "none"} />
+              <Link to={`/${cityId}/mypage?tab=favorites`} className="flex flex-col items-center gap-[3px] transition-colors text-muted-foreground/60">
+                <Heart className="h-[22px] w-[22px]" strokeWidth={1.8} />
                 <span className="text-[10px] font-medium tracking-tight">찜</span>
-              </button>
+              </Link>
               <Link to={`/${cityId}/mypage`} className="flex flex-col items-center gap-[3px] text-muted-foreground/60 hover:text-foreground transition-colors">
                 <User className="h-[22px] w-[22px]" strokeWidth={1.8} />
                 <span className="text-[10px] font-medium tracking-tight">내정보</span>
