@@ -8,6 +8,7 @@ import MobileBottomSheet from "@/components/MobileBottomSheet";
 import CategoryTabs from "@/components/CategoryTabs";
 import { useCategories } from "@/hooks/useCategories";
 import TipForm from "@/components/TipForm";
+import OnboardingSlide from "@/components/OnboardingSlide";
 import FeedbackForm from "@/components/FeedbackForm";
 import ThemeToggle from "@/components/ThemeToggle";
 import ErrorState from "@/components/ErrorState";
@@ -86,6 +87,12 @@ const CityMap = () => {
   const [ratingMin, setRatingMin] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(true);
+
+  const handleOnboardingClose = () => {
+    try { localStorage.setItem("mattam_onboarding_done", "1"); } catch {}
+    setShowOnboarding(false);
+  };
   const [activeTab, setActiveTab] = useState<"map" | "list" | "favorites">("map");
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
 
@@ -333,6 +340,9 @@ const CityMap = () => {
             )}
           </div>
           <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
+          <AnimatePresence>
+            {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} />}
+          </AnimatePresence>
 
           {/* 하단 탭바 */}
           <div className="fixed bottom-0 left-0 right-0 z-[1400] bg-card/95 border-t border-border/30"

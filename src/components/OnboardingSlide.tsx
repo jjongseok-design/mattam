@@ -1,0 +1,45 @@
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const slides = [
+  { emoji: "🍽️", title: "맛탐에 오신 걸 환영해요!", desc: "춘천의 진짜 맛집을 함께 찾아가요." },
+  { emoji: "📍", title: "유저가 만들어가는 맛집 지도", desc: "제보한 맛집으로 함께 성장해요." },
+  { emoji: "✨", title: "제보하고 함께 만들어요", desc: "아는 맛집이 있다면 + 버튼으로 알려주세요!" },
+];
+
+const OnboardingSlide = ({ onClose }: { onClose: () => void }) => {
+  const [current, setCurrent] = useState(0);
+  const isLast = current === slides.length - 1;
+  const handleNext = () => { if (isLast) { onClose(); } else { setCurrent((p) => p + 1); } };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[3000] bg-background/80 backdrop-blur-sm flex items-end justify-center">
+      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }} className="bg-card rounded-t-3xl w-full max-w-lg px-8 pt-10 pb-14 border-t border-border/30">
+        <div className="flex justify-center gap-2 mb-10">
+          {slides.map((_, i) => (
+            <div key={i} className={`h-[3px] rounded-full transition-all duration-300 ${i === current ? "w-8 bg-primary" : "w-3 bg-muted-foreground/20"}`} />
+          ))}
+        </div>
+        <AnimatePresence mode="wait">
+          <motion.div key={current} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.25 }} className="text-center mb-12">
+            <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <span className="text-4xl">{slides[current].emoji}</span>
+            </div>
+            <h2 className="text-[20px] font-bold tracking-tight mb-2">{slides[current].title}</h2>
+            <p className="text-[13px] text-muted-foreground">{slides[current].desc}</p>
+          </motion.div>
+        </AnimatePresence>
+        <div className="flex flex-col gap-2">
+          <button onClick={handleNext} className="w-full py-4 bg-primary text-white rounded-2xl font-semibold text-[15px] active:scale-95 transition-transform">
+            {isLast ? "시작하기 🎉" : "다음 →"}
+          </button>
+          {!isLast && (
+            <button onClick={onClose} className="w-full py-2 text-[12px] text-muted-foreground/60">건너뛰기</button>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+export default OnboardingSlide;
