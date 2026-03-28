@@ -394,7 +394,7 @@ const CityMap = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h1 className="text-[15px] font-bold text-foreground tracking-tight">{cityLabel} 맛집</h1>
-                  <p className="text-[11px] text-muted-foreground">{city?.description ?? ""} · {restaurants.length}곳</p>
+                  <p className="text-[11px] text-muted-foreground">{city?.description ?? ""} · {restaurants.filter(r => !r.is_hidden).length}곳</p>
                 </div>
                 <div className="flex items-center gap-0.5">
                   {!position ? (
