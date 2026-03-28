@@ -1411,6 +1411,12 @@ const Admin = () => {
         )}
 
         {/* Table */}
+        {!loading && (
+          <div className="px-1 py-1.5 text-[12px] text-muted-foreground">
+            표시 <span className="font-semibold text-foreground">{filtered.length}</span> / 전체 <span className="font-semibold text-foreground">{restaurants.length}</span>
+            {filteredHidden.length > 0 && <span className="ml-1.5 text-muted-foreground/60">(숨김 {filteredHidden.length})</span>}
+          </div>
+        )}
         {loading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

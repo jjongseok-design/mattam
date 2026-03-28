@@ -412,6 +412,11 @@ const CityMap = () => {
                       <Download className="h-5 w-5 text-muted-foreground/50" />
                     </button>
                   </Link>
+                  <Link to={`/${cityId}/mypage`}>
+                    <button className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="내정보">
+                      <User className="h-5 w-5 text-muted-foreground/50" />
+                    </button>
+                  </Link>
                   <Link to="/admin">
                     <button className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="관리자">
                       <Settings className="h-5 w-5 text-muted-foreground/40" />
