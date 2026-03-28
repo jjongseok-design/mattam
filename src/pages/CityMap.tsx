@@ -528,6 +528,9 @@ const CityMap = () => {
             <MapView restaurants={filtered} selectedId={selectedId} onSelect={handleSelect} visitedIds={visited} city={city} />
           </div>
           <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
+          <AnimatePresence>
+            {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} />}
+          </AnimatePresence>
           <JsonLd />
           <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} cityName={city?.name} />
         </div>
