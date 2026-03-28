@@ -27,5 +27,18 @@ export const useRecentlyViewed = () => {
     });
   }, []);
 
-  return { recentIds, addViewed };
+  const removeViewed = useCallback((id: string) => {
+    setRecentIds((prev) => {
+      const next = prev.filter((x) => x !== id);
+      save(next);
+      return next;
+    });
+  }, []);
+
+  const clearAllViewed = useCallback(() => {
+    save([]);
+    setRecentIds([]);
+  }, []);
+
+  return { recentIds, addViewed, removeViewed, clearAllViewed };
 };

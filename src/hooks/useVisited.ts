@@ -152,5 +152,19 @@ export const useVisited = () => {
 
   const isVisited = useCallback((id: string) => visited.has(id), [visited]);
 
-  return { visited, toggle, isVisited };
+  const clearAllVisited = useCallback(() => {
+    setVisited(new Set());
+    saveLocal(new Set());
+    saveFirstVisited(new Set());
+    supabase
+      .from("device_visits")
+      .delete()
+      .eq("device_id", deviceId)
+      .then(({ error }) => {
+        if (error) console.warn("[useVisited] clearAll error:", error.message);
+        queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+      });
+  }, [deviceId, queryClient]);
+
+  return { visited, toggle, isVisited, clearAllVisited };
 };

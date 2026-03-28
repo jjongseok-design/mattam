@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Heart, Clock, Star, User, MapPin, Utensils } from "lucide-react";
+import { ArrowLeft, Heart, Clock, Star, User, MapPin, Utensils, X } from "lucide-react";
 import { useVisited } from "@/hooks/useVisited";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
@@ -11,9 +11,9 @@ import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 const MyPage = () => {
   const { cityId } = useParams<{ cityId: string }>();
   const { data: restaurants = [] } = useRestaurants(cityId);
-  const { visited, isVisited } = useVisited();
+  const { visited, toggle: toggleVisited, isVisited, clearAllVisited } = useVisited();
   const { isFavorite } = useFavorites();
-  const { recentIds } = useRecentlyViewed();
+  const { recentIds, removeViewed, clearAllViewed } = useRecentlyViewed();
 
   const [nickname, setNickname] = useState(() => {
     try { return localStorage.getItem("mattam_nickname") || ""; } catch { return ""; }
@@ -130,22 +130,36 @@ const MyPage = () => {
 
         {/* 방문한 곳 */}
         <section>
-          <h2 className="text-[13px] font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Star className="h-3.5 w-3.5" /> 방문한 곳 ({visitedRestaurants.length})
-          </h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-[13px] font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Star className="h-3.5 w-3.5" /> 방문한 곳 ({visitedRestaurants.length})
+            </h2>
+            {visitedRestaurants.length > 0 && (
+              <button onClick={clearAllVisited}
+                className="text-[11px] text-muted-foreground/60 hover:text-destructive transition-colors">
+                전체 삭제
+              </button>
+            )}
+          </div>
           {visitedRestaurants.length === 0 ? (
             <p className="text-[13px] text-muted-foreground/60 py-4 text-center">방문한 맛집이 없어요</p>
           ) : (
             <div className="space-y-2">
               {visitedRestaurants.map((r) => (
-                <Link key={r.id} to={`/${cityId}/restaurant/${r.slug || r.id}`}
-                  className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border/30 active:scale-[0.98] transition-transform">
-                  <span className="text-xl">{CATEGORY_EMOJI[r.category] ?? "🍽️"}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-medium truncate">{r.name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{r.category}</p>
-                  </div>
-                </Link>
+                <div key={r.id} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border/30">
+                  <Link to={`/${cityId}/restaurant/${r.slug || r.id}`} className="flex items-center gap-3 flex-1 min-w-0 active:scale-[0.98] transition-transform">
+                    <span className="text-xl">{CATEGORY_EMOJI[r.category] ?? "🍽️"}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-medium truncate">{r.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{r.category}</p>
+                    </div>
+                  </Link>
+                  <button onClick={() => toggleVisited(r.id)}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+                    aria-label="삭제">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -188,22 +202,36 @@ const MyPage = () => {
 
         {/* 최근 본 곳 */}
         <section>
-          <h2 className="text-[13px] font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5" /> 최근 본 곳
-          </h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-[13px] font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5" /> 최근 본 곳
+            </h2>
+            {recentRestaurants.length > 0 && (
+              <button onClick={clearAllViewed}
+                className="text-[11px] text-muted-foreground/60 hover:text-destructive transition-colors">
+                전체 삭제
+              </button>
+            )}
+          </div>
           {recentRestaurants.length === 0 ? (
             <p className="text-[13px] text-muted-foreground/60 py-4 text-center">최근 본 맛집이 없어요</p>
           ) : (
             <div className="space-y-2">
               {recentRestaurants.map((r) => (
-                <Link key={r.id} to={`/${cityId}/restaurant/${r.slug || r.id}`}
-                  className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border/30 active:scale-[0.98] transition-transform">
-                  <span className="text-xl">{CATEGORY_EMOJI[r.category] ?? "🍽️"}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-medium truncate">{r.name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{r.category}</p>
-                  </div>
-                </Link>
+                <div key={r.id} className="flex items-center gap-3 bg-card rounded-xl p-3 border border-border/30">
+                  <Link to={`/${cityId}/restaurant/${r.slug || r.id}`} className="flex items-center gap-3 flex-1 min-w-0 active:scale-[0.98] transition-transform">
+                    <span className="text-xl">{CATEGORY_EMOJI[r.category] ?? "🍽️"}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-medium truncate">{r.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{r.category}</p>
+                    </div>
+                  </Link>
+                  <button onClick={() => removeViewed(r.id)}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+                    aria-label="삭제">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               ))}
             </div>
           )}
