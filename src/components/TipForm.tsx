@@ -80,7 +80,7 @@ const TipForm = ({ open, onClose }: TipFormProps) => {
       if (error) {
         toast({ title: "제보 실패", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "제보 완료! 🎉", description: "맛탐팀이 확인 후 등록해드립니다." });
+        toast({ title: "제보하기가 완료되었습니다 🎉", description: "맛탐팀이 확인 후 등록해드립니다." });
         setForm({ restaurant_name: "", category: "기타", address: "", reason: "" });
         setImagePreview(null);
         setImageBase64(null);

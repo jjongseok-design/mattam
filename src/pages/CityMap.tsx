@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { MapPin, Utensils, Heart, User, Loader2, Settings, Navigation, Download, ArrowLeft } from "lucide-react";
+import { MapPin, Utensils, Heart, User, Loader2, Settings, Navigation, Download, ArrowLeft, MessageSquarePlus } from "lucide-react";
 import { Link, useSearchParams, useParams } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import RestaurantCard from "@/components/RestaurantCard";
@@ -87,7 +87,9 @@ const CityMap = () => {
   const [ratingMin, setRatingMin] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return !localStorage.getItem("mattam_onboarding_done"); } catch { return true; }
+  });
 
   const handleOnboardingClose = () => {
     try { localStorage.setItem("mattam_onboarding_done", "1"); } catch {}
@@ -417,6 +419,9 @@ const CityMap = () => {
                       <User className="h-5 w-5 text-muted-foreground/50" />
                     </button>
                   </Link>
+                  <button onClick={() => setTipOpen(true)} className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="맛집 제보">
+                    <MessageSquarePlus className="h-5 w-5 text-muted-foreground/50" />
+                  </button>
                   <Link to="/admin">
                     <button className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="관리자">
                       <Settings className="h-5 w-5 text-muted-foreground/40" />
@@ -522,7 +527,7 @@ const CityMap = () => {
             </div>
             <MapView restaurants={filtered} selectedId={selectedId} onSelect={handleSelect} visitedIds={visited} city={city} />
           </div>
-          <TipForm />
+          <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
           <JsonLd />
           <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} cityName={city?.name} />
         </div>
