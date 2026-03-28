@@ -277,6 +277,7 @@ const Admin = () => {
   });
 
   const categoryCount = (catId: string) => restaurants.filter((r) => r.category === catId).length;
+  const categoryVisibleCount = (catId: string) => restaurants.filter((r) => r.category === catId && !r.is_hidden).length;
 
   const currentCat = categories.find(c => c.id === adminCategory);
 
@@ -899,6 +900,7 @@ const Admin = () => {
             {(dragOrder ?? [...categories].sort((a, b) => a.sort_order - b.sort_order)).map((cat) => {
               const isActive = adminCategory === cat.id;
               const count = categoryCount(cat.id);
+              const visibleCount = categoryVisibleCount(cat.id);
               return (
                 <div
                   key={cat.id}
@@ -976,7 +978,7 @@ const Admin = () => {
                   <span className={`relative z-10 text-[13px] leading-tight ${
                     isActive && !editMode ? "text-primary/70" : "text-muted-foreground/60"
                   }`}>
-                    ({count})
+                    ({visibleCount}/{count})
                   </span>
                 </div>
               );
