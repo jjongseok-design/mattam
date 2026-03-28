@@ -529,7 +529,7 @@ const CityMap = () => {
           </div>
           <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
           <AnimatePresence>
-            {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} />}
+            {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} centered />}
           </AnimatePresence>
           <JsonLd />
           <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} cityName={city?.name} />

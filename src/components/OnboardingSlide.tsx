@@ -7,14 +7,14 @@ const slides = [
   { emoji: "🌱", title: "함께 만들수록 더 풍성해져요", desc: "여러분의 제보 하나하나가\n춘천 최고의 맛집 지도를 만들어요." },
 ];
 
-const OnboardingSlide = ({ onClose }: { onClose: () => void }) => {
+const OnboardingSlide = ({ onClose, centered }: { onClose: () => void; centered?: boolean }) => {
   const [current, setCurrent] = useState(0);
   const isLast = current === slides.length - 1;
   const handleNext = () => { if (isLast) { onClose(); } else { setCurrent((p) => p + 1); } };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[3000] bg-background/80 backdrop-blur-sm flex items-end justify-center">
-      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }} className="bg-card rounded-t-3xl w-full max-w-lg px-8 pt-10 pb-14 border-t border-border/30">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`fixed inset-0 z-[3000] bg-background/80 backdrop-blur-sm flex justify-center ${centered ? "items-center" : "items-end"}`}>
+      <motion.div initial={{ y: centered ? 24 : "100%" }} animate={{ y: 0 }} exit={{ y: centered ? 24 : "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }} className={`bg-card w-full max-w-lg px-8 pt-10 pb-14 border border-border/30 ${centered ? "rounded-3xl shadow-2xl" : "rounded-t-3xl border-t"}`}>
         <div className="flex justify-center gap-2 mb-10">
           {slides.map((_, i) => (
             <div key={i} className={`h-[3px] rounded-full transition-all duration-300 ${i === current ? "w-8 bg-primary" : "w-3 bg-muted-foreground/20"}`} />
