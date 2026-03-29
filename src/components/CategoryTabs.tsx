@@ -43,15 +43,15 @@ const CategoryTabs = ({ active, onChange, categoryCounts = {}, cityId, size }: C
             data-cat-id={cat.id}
             onClick={() => onChange(cat.id)}
             className={`
-              inline-flex items-center ${lg ? "gap-2 px-3.5 py-2 text-[14px]" : "gap-0.5 px-1.5 py-px text-[9px]"} rounded-full font-semibold
+              inline-flex items-center ${lg ? "gap-2 px-3.5 py-2 text-[14px]" : "gap-0.5 px-2 py-1 text-[11px]"} rounded-full font-semibold
               whitespace-nowrap flex-shrink-0 transition-all duration-200
               ${isActive
-                ? "bg-foreground text-background shadow-sm scale-[1.02]"
-                : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm scale-[1.02]"
+                : "bg-muted text-foreground/70 hover:bg-muted/80 hover:text-foreground"
               }
             `}
           >
-            <span className={`${lg ? "text-base" : "text-[11px]"} leading-none`}>{cat.emoji}</span>
+            <span className={`${lg ? "text-base" : "text-[13px]"} leading-none`}>{cat.emoji}</span>
             <span>{cat.label}</span>
             {count != null && (
               <span className={`${lg ? "text-[12px]" : "text-[9px]"} font-normal ${isActive ? "opacity-60" : "opacity-50"}`}>
