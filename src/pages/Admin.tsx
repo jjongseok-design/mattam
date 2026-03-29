@@ -698,11 +698,11 @@ const Admin = () => {
               로그아웃
             </Button>
           </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin pb-1">
+          <div className="flex flex-wrap items-center gap-1 pb-1">
             <Button
               variant={showTips ? "default" : "outline"}
               size="sm"
-              className="shrink-0 h-10 text-xs px-3"
+              className="h-8 text-[11px] px-2"
               onClick={async () => {
                 setShowTips(!showTips);
                 if (!showTips && tips.length === 0) {
@@ -726,18 +726,18 @@ const Admin = () => {
             <Button
               variant={editMode ? "default" : "outline"}
               size="sm"
-              className="shrink-0 h-10 text-xs px-3"
+              className="h-8 text-[11px] px-2"
               onClick={() => setEditMode(!editMode)}
             >
               <Settings2 className="h-3.5 w-3.5 mr-1" /> {editMode ? "편집 완료" : "카테고리"}
             </Button>
-            <Button variant="outline" size="sm" className="shrink-0 h-10 text-xs px-3" onClick={() => setShowPwChange(true)}>
+            <Button variant="outline" size="sm" className="h-8 text-[11px] px-2" onClick={() => setShowPwChange(true)}>
               <Lock className="h-3.5 w-3.5 mr-1" /> 비밀번호
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="shrink-0 h-10 text-xs px-3"
+              className="h-8 text-[11px] px-2"
               onClick={handleFetchAllNaverImages}
               disabled={fetchingAllNaverImages}
               title="이미지 없는 식당 사진 일괄 가져오기 (네이버)"
@@ -748,7 +748,7 @@ const Admin = () => {
             <Button
               variant={showVisitStats ? "default" : "outline"}
               size="sm"
-              className="shrink-0 h-10 text-xs px-3"
+              className="h-8 text-[11px] px-2"
               onClick={() => setShowVisitStats((v) => !v)}
             >
               <Users className="h-3.5 w-3.5 mr-1" /> 방문통계
@@ -756,12 +756,28 @@ const Admin = () => {
             <Button
               variant={showReviews ? "default" : "outline"}
               size="sm"
-              className="shrink-0 h-10 text-xs px-3"
+              className="h-8 text-[11px] px-2"
               onClick={() => { setShowReviews((v) => !v); if (!showReviews) fetchReviews(); }}
             >
               <MessageSquare className="h-3.5 w-3.5 mr-1" /> 리뷰관리
             </Button>
-            <Button onClick={openNew} size="sm" className="shrink-0 h-10 text-xs px-3">
+            {restaurants.filter(r => r.needs_review).length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-[11px] px-2 text-yellow-600 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100"
+                onClick={async () => {
+                  const targets = restaurants.filter(r => r.needs_review);
+                  setRestaurants(prev => prev.map(x => targets.find(t => t.id === x.id) ? { ...x, needs_review: false } : x));
+                  await Promise.all(targets.map(r => adminApi("update", { id: r.id, needs_review: false })));
+                  queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
+                  toast({ title: `검토완료 처리 ✅`, description: `${targets.length}개 식당을 검토완료로 변경했습니다.` });
+                }}
+              >
+                <span className="mr-1">✅</span> 일괄검토완료 ({restaurants.filter(r => r.needs_review).length})
+              </Button>
+            )}
+            <Button onClick={openNew} size="sm" className="h-8 text-[11px] px-2">
               <Plus className="h-3.5 w-3.5 mr-1" /> 추가
             </Button>
           </div>
@@ -896,7 +912,7 @@ const Admin = () => {
               </Button>
             )}
           </div>
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1.5">
+          <div className="grid grid-cols-6 md:grid-cols-8 gap-1 sm:gap-1.5">
             {(dragOrder ?? [...categories].sort((a, b) => a.sort_order - b.sort_order)).map((cat) => {
               const isActive = adminCategory === cat.id;
               const count = categoryCount(cat.id);
@@ -949,7 +965,7 @@ const Admin = () => {
                       setSearch("");
                     }
                   }}
-                  className={`relative flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg transition-all duration-200 select-none
+                  className={`relative flex flex-col items-center gap-px py-1 px-0.5 sm:gap-0.5 sm:py-2 sm:px-1 rounded-lg transition-all duration-200 select-none
                     ${editMode ? "cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-primary/40" : "cursor-pointer"}
                     ${isActive && !editMode ? "" : ""}
                   `}
@@ -969,13 +985,13 @@ const Admin = () => {
                       ×
                     </button>
                   )}
-                  <span className="relative z-10 text-4xl">{cat.emoji}</span>
-                  <span className={`relative z-10 text-[15px] font-medium leading-tight w-full text-center truncate ${
+                  <span className="relative z-10 text-xl sm:text-4xl">{cat.emoji}</span>
+                  <span className={`relative z-10 text-[10px] sm:text-[15px] font-medium leading-tight w-full text-center truncate ${
                     isActive && !editMode ? "text-primary" : "text-muted-foreground"
                   }`}>
                     {cat.label}
                   </span>
-                  <span className={`relative z-10 text-[13px] leading-tight ${
+                  <span className={`relative z-10 text-[9px] sm:text-[13px] leading-tight ${
                     isActive && !editMode ? "text-primary/70" : "text-muted-foreground/60"
                   }`}>
                     ({visibleCount}/{count})
@@ -1449,173 +1465,262 @@ const Admin = () => {
           </div>
         ) : (
           <div className="border border-border rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm" style={{ minWidth: 700 }}>
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[60px]">ID</th>
-                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[160px]">이름</th>
-                    <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap hidden md:table-cell">주소</th>
+            {/* 모바일 카드 목록 */}
+            <div className="md:hidden divide-y divide-border">
+              {filtered.map((r) => (
+                <div key={r.id} className="px-3 py-3">
+                  <div className="flex gap-3 items-start">
+                    {r.image_url ? (
+                      <img src={r.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                    ) : (
+                      <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">🍽️</span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm">{r.name}</div>
+                      <div className="text-[11px] text-muted-foreground">⭐ {r.rating} · 리뷰 {r.review_count}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">{r.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground" title="사진 관리" onClick={() => setImgMgr(r)}>
+                      <span>🖼️</span><span>사진</span>
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground" title="카카오 정보 업데이트 (전화번호·주소·좌표)" disabled={fetchingKakaoInfoId === r.id} onClick={() => handleFetchNaverInfo(r.id)}>
+                      {fetchingKakaoInfoId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
+                      <span>정보</span>
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground" title="네이버 사진 가져오기" disabled={fetchingNaverImageId === r.id} onClick={() => handleFetchNaverImage(r.id)}>
+                      {fetchingNaverImageId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+                      <span>이미지</span>
+                    </Button>
+                    <Button variant="outline" size="sm" title="추천 토글" className={`h-7 px-2 text-[11px] gap-0.5 ${r.is_recommended ? "text-yellow-500 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"}`}
+                      onClick={async () => { const newVal = !r.is_recommended; setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_recommended: newVal } : x)); await adminApi("update", { id: r.id, is_recommended: newVal }); queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] }); }}>
+                      <span>{r.is_recommended ? "⭐" : "☆"}</span><span>추천</span>
+                    </Button>
+                    <Button variant="outline" size="sm" className={`h-7 px-2 text-[11px] gap-0.5 ${r.is_hidden ? "text-red-400 border-red-300 bg-red-50 dark:bg-red-900/20" : "text-muted-foreground"}`}
+                      onClick={async () => { const newVal = !r.is_hidden; setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_hidden: newVal } : x)); await adminApi("update", { id: r.id, is_hidden: newVal }); queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] }); }}>
+                      <span>{r.is_hidden ? "👁️" : "🙈"}</span><span>{r.is_hidden ? "숨김" : "숨기기"}</span>
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 hover:text-primary hover:border-primary/40" onClick={() => openEdit(r)}>
+                      <Pencil className="h-3 w-3" /><span>수정</span>
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30" onClick={() => setPendingDeleteId(r.id)}>
+                      <Trash2 className="h-3 w-3" /><span>삭제</span>
+                    </Button>
+                    {r.needs_review && (
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-yellow-600 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100"
+                        onClick={async () => { setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, needs_review: false } : x)); await adminApi("update", { id: r.id, needs_review: false }); queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] }); }}>
+                        <span>✅</span><span>검토완료</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {filtered.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">검색 결과가 없습니다</div>
+              )}
+              {filteredHidden.length > 0 && (
+                <div className="mt-2 border-t-2 border-dashed border-border/50">
+                  <div className="px-3 py-2 text-[11px] text-muted-foreground/50 font-medium">숨긴 식당 ({filteredHidden.length})</div>
+                  {filteredHidden.map((r) => (
+                    <div key={r.id} className="flex items-center gap-3 px-3 py-2 opacity-60 border-t border-border">
+                      {r.image_url ? (
+                        <img src={r.image_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 grayscale" />
+                      ) : (
+                        <span className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-base flex-shrink-0">🙈</span>
+                      )}
+                      <span className="flex-1 text-sm text-muted-foreground truncate">{r.name}</span>
+                      <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-primary border-primary/30 shrink-0"
+                        onClick={async () => { setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_hidden: false } : x)); await adminApi("update", { id: r.id, is_hidden: false }); queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] }); }}>
+                        <span>👁️</span><span>복원</span>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                    <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[280px] sticky right-0 bg-muted/50 border-l border-border">관리</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((r) => (
-                    <tr key={r.id} className="border-t border-border hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2.5 text-muted-foreground text-sm whitespace-nowrap max-w-[90px] overflow-hidden text-ellipsis">{r.id}</td>
+            {/* 데스크탑 테이블 */}
+            <div className="hidden md:block">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm" style={{ minWidth: 700 }}>
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[60px]">ID</th>
+                      <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[160px]">이름</th>
+                      <th className="text-left px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap hidden md:table-cell">주소</th>
+
+                      <th className="text-center px-3 py-2.5 font-medium text-sm text-muted-foreground whitespace-nowrap w-[280px] sticky right-0 bg-muted/50 border-l border-border">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((r) => (
+                      <tr key={r.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                        <td className="px-3 py-2.5 text-muted-foreground text-sm whitespace-nowrap max-w-[90px] overflow-hidden text-ellipsis">{r.id}</td>
+                        <td className="px-3 py-2.5 font-medium whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            {r.image_url ? (
+                              <img src={r.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                            ) : (
+                              <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">🍽️</span>
+                            )}
+                            <div className="flex flex-col">
+                              <span className="text-base">{r.name}</span>
+                              <span className="text-[11px] text-muted-foreground">⭐ {r.rating} · 리뷰 {r.review_count}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-sm whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{r.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</td>
+
+                        <td className="px-3 py-2.5 sticky right-0 bg-card border-l border-border">
+                          <div className="flex items-center justify-center gap-0.5 whitespace-nowrap">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-1.5 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground"
+                              title="사진 관리"
+                              onClick={() => setImgMgr(r)}
+                            >
+                              <span>🖼️</span>
+                              <span>사진</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-1.5 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground"
+                              title="카카오 정보 업데이트 (전화번호·주소·좌표)"
+                              disabled={fetchingKakaoInfoId === r.id}
+                              onClick={() => handleFetchNaverInfo(r.id)}
+                            >
+                              {fetchingKakaoInfoId === r.id
+                                ? <Loader2 className="h-3 w-3 animate-spin" />
+                                : <MapPin className="h-3 w-3" />
+                              }
+                              <span>정보</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-1.5 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground"
+                              title="네이버 사진 가져오기"
+                              disabled={fetchingNaverImageId === r.id}
+                              onClick={() => handleFetchNaverImage(r.id)}
+                            >
+                              {fetchingNaverImageId === r.id
+                                ? <Loader2 className="h-3 w-3 animate-spin" />
+                                : <Search className="h-3 w-3" />
+                              }
+                              <span>이미지</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="추천 토글"
+                              className={`h-7 px-1.5 text-[11px] gap-0.5 ${r.is_recommended ? "text-yellow-500 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"}`}
+                              onClick={async () => {
+                                const newVal = !r.is_recommended;
+                                setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_recommended: newVal } : x));
+                                await adminApi("update", { id: r.id, is_recommended: newVal });
+                                queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
+                              }}
+                            >
+                              <span>{r.is_recommended ? "⭐" : "☆"}</span>
+                              <span>추천</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={`h-7 px-1.5 text-[11px] gap-0.5 ${r.is_hidden ? "text-red-400 border-red-300 bg-red-50 dark:bg-red-900/20" : "text-muted-foreground"}`}
+                              onClick={async () => {
+                                const newVal = !r.is_hidden;
+                                setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_hidden: newVal } : x));
+                                await adminApi("update", { id: r.id, is_hidden: newVal });
+                                queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
+                              }}
+                            >
+                              <span>{r.is_hidden ? "👁️" : "🙈"}</span>
+                              <span>{r.is_hidden ? "숨김" : "숨기기"}</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-1.5 text-[11px] gap-0.5 hover:text-primary hover:border-primary/40"
+                              onClick={() => openEdit(r)}
+                            >
+                              <Pencil className="h-3 w-3" />
+                              <span>수정</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-1.5 text-[11px] gap-0.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
+                              onClick={() => setPendingDeleteId(r.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              <span>삭제</span>
+                            </Button>
+                            {r.needs_review && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-1.5 text-[11px] gap-0.5 text-yellow-600 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100"
+                                onClick={async () => { setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, needs_review: false } : x)); await adminApi("update", { id: r.id, needs_review: false }); queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] }); }}
+                              >
+                                <span>✅</span>
+                                <span>검토완료</span>
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {filtered.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">검색 결과가 없습니다</div>
+              )}
+              {filteredHidden.length > 0 && (
+                <div className="mt-2 border-t-2 border-dashed border-border/50">
+                  <div className="px-3 py-2 text-[11px] text-muted-foreground/50 font-medium">숨긴 식당 ({filteredHidden.length})</div>
+                  {filteredHidden.map((r) => (
+                    <tr key={r.id} className="border-t border-border bg-muted/20 opacity-60 hover:opacity-100 transition-opacity">
+                      <td className="px-3 py-2.5 text-muted-foreground text-sm">{r.id}</td>
                       <td className="px-3 py-2.5 font-medium whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {r.image_url ? (
-                            <img src={r.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                            <img src={r.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0 grayscale" />
                           ) : (
-                            <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">🍽️</span>
+                            <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">🙈</span>
                           )}
-                          <div className="flex flex-col">
-                            <span className="text-base">{r.name}</span>
-                            <span className="text-[11px] text-muted-foreground">⭐ {r.rating} · 리뷰 {r.review_count}</span>
-                          </div>
+                          <span className="text-base text-muted-foreground">{r.name}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-sm whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{r.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</td>
-
+                      <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-sm">{r.address}</td>
+                      <td className="px-3 py-2.5 text-center">-</td>
+                      <td className="px-3 py-2.5 text-center hidden sm:table-cell">-</td>
                       <td className="px-3 py-2.5 sticky right-0 bg-card border-l border-border">
-                        <div className="flex items-center justify-center gap-0.5 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-0.5">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 px-1.5 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground"
-                            title="사진 관리"
-                            onClick={() => setImgMgr(r)}
-                          >
-                            <span>🖼️</span>
-                            <span>사진</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-1.5 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground"
-                            title="카카오 정보 업데이트 (전화번호·주소·좌표)"
-                            disabled={fetchingKakaoInfoId === r.id}
-                            onClick={() => handleFetchNaverInfo(r.id)}
-                          >
-                            {fetchingKakaoInfoId === r.id
-                              ? <Loader2 className="h-3 w-3 animate-spin" />
-                              : <MapPin className="h-3 w-3" />
-                            }
-                            <span>정보</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-1.5 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground"
-                            title="네이버 사진 가져오기"
-                            disabled={fetchingNaverImageId === r.id}
-                            onClick={() => handleFetchNaverImage(r.id)}
-                          >
-                            {fetchingNaverImageId === r.id
-                              ? <Loader2 className="h-3 w-3 animate-spin" />
-                              : <Search className="h-3 w-3" />
-                            }
-                            <span>이미지</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            title="추천 토글"
-                            className={`h-7 px-1.5 text-[11px] gap-0.5 ${r.is_recommended ? "text-yellow-500 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"}`}
+                            className="h-7 px-1.5 text-[11px] gap-0.5 text-primary border-primary/30"
                             onClick={async () => {
-                              const newVal = !r.is_recommended;
-                              setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_recommended: newVal } : x));
-                              await adminApi("update", { id: r.id, is_recommended: newVal });
+                              setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_hidden: false } : x));
+                              await adminApi("update", { id: r.id, is_hidden: false });
                               queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
                             }}
                           >
-                            <span>{r.is_recommended ? "⭐" : "☆"}</span>
-                            <span>추천</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`h-7 px-1.5 text-[11px] gap-0.5 ${r.is_hidden ? "text-red-400 border-red-300 bg-red-50 dark:bg-red-900/20" : "text-muted-foreground"}`}
-                            onClick={async () => {
-                              const newVal = !r.is_hidden;
-                              setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_hidden: newVal } : x));
-                              await adminApi("update", { id: r.id, is_hidden: newVal });
-                              queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
-                            }}
-                          >
-                            <span>{r.is_hidden ? "👁️" : "🙈"}</span>
-                            <span>{r.is_hidden ? "숨김" : "숨기기"}</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-1.5 text-[11px] gap-0.5 hover:text-primary hover:border-primary/40"
-                            onClick={() => openEdit(r)}
-                          >
-                            <Pencil className="h-3 w-3" />
-                            <span>수정</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-1.5 text-[11px] gap-0.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
-                            onClick={() => setPendingDeleteId(r.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            <span>삭제</span>
+                            <span>👁️</span>
+                            <span>복원</span>
                           </Button>
                         </div>
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
-            {filtered.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">검색 결과가 없습니다</div>
-            )}
-            {filteredHidden.length > 0 && (
-              <div className="mt-2 border-t-2 border-dashed border-border/50">
-                <div className="px-3 py-2 text-[11px] text-muted-foreground/50 font-medium">숨긴 식당 ({filteredHidden.length})</div>
-                {filteredHidden.map((r) => (
-                  <tr key={r.id} className="border-t border-border bg-muted/20 opacity-60 hover:opacity-100 transition-opacity">
-                    <td className="px-3 py-2.5 text-muted-foreground text-sm">{r.id}</td>
-                    <td className="px-3 py-2.5 font-medium whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {r.image_url ? (
-                          <img src={r.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0 grayscale" />
-                        ) : (
-                          <span className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">🙈</span>
-                        )}
-                        <span className="text-base text-muted-foreground">{r.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 text-muted-foreground hidden md:table-cell text-sm">{r.address}</td>
-                    <td className="px-3 py-2.5 text-center">-</td>
-                    <td className="px-3 py-2.5 text-center hidden sm:table-cell">-</td>
-                    <td className="px-3 py-2.5 sticky right-0 bg-card border-l border-border">
-                      <div className="flex items-center justify-center gap-0.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-1.5 text-[11px] gap-0.5 text-primary border-primary/30"
-                          onClick={async () => {
-                            setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_hidden: false } : x));
-                            await adminApi("update", { id: r.id, is_hidden: false });
-                            queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] });
-                          }}
-                        >
-                          <span>👁️</span>
-                          <span>복원</span>
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
