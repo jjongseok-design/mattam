@@ -1481,34 +1481,34 @@ const Admin = () => {
                       <div className="text-[11px] text-muted-foreground truncate">{r.address?.replace(/^[\w\uAC00-\uD7A3]+[도시]\s[\w\uAC00-\uD7A3]+[시군구]\s/, '')}</div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground" title="사진 관리" onClick={() => setImgMgr(r)}>
+                  <div className="flex gap-0.5 mt-2 overflow-x-auto scrollbar-none">
+                    <Button variant="outline" size="sm" className="h-6 px-1.5 text-[10px] gap-0.5 shrink-0 text-muted-foreground hover:text-foreground" title="사진 관리" onClick={() => setImgMgr(r)}>
                       <span>🖼️</span><span>사진</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground" title="카카오 정보 업데이트 (전화번호·주소·좌표)" disabled={fetchingKakaoInfoId === r.id} onClick={() => handleFetchNaverInfo(r.id)}>
-                      {fetchingKakaoInfoId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
+                    <Button variant="outline" size="sm" className="h-6 px-1.5 text-[10px] gap-0.5 shrink-0 text-muted-foreground hover:text-foreground" title="카카오 정보 업데이트 (전화번호·주소·좌표)" disabled={fetchingKakaoInfoId === r.id} onClick={() => handleFetchNaverInfo(r.id)}>
+                      {fetchingKakaoInfoId === r.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <MapPin className="h-2.5 w-2.5" />}
                       <span>정보</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground" title="네이버 사진 가져오기" disabled={fetchingNaverImageId === r.id} onClick={() => handleFetchNaverImage(r.id)}>
-                      {fetchingNaverImageId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+                    <Button variant="outline" size="sm" className="h-6 px-1.5 text-[10px] gap-0.5 shrink-0 text-muted-foreground hover:text-foreground" title="네이버 사진 가져오기" disabled={fetchingNaverImageId === r.id} onClick={() => handleFetchNaverImage(r.id)}>
+                      {fetchingNaverImageId === r.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Search className="h-2.5 w-2.5" />}
                       <span>이미지</span>
                     </Button>
-                    <Button variant="outline" size="sm" title="추천 토글" className={`h-7 px-2 text-[11px] gap-0.5 ${r.is_recommended ? "text-yellow-500 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"}`}
+                    <Button variant="outline" size="sm" title="추천 토글" className={`h-6 px-1.5 text-[10px] gap-0.5 shrink-0 ${r.is_recommended ? "text-yellow-500 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"}`}
                       onClick={async () => { const newVal = !r.is_recommended; setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_recommended: newVal } : x)); await adminApi("update", { id: r.id, is_recommended: newVal }); queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] }); }}>
                       <span>{r.is_recommended ? "⭐" : "☆"}</span><span>추천</span>
                     </Button>
-                    <Button variant="outline" size="sm" className={`h-7 px-2 text-[11px] gap-0.5 ${r.is_hidden ? "text-red-400 border-red-300 bg-red-50 dark:bg-red-900/20" : "text-muted-foreground"}`}
+                    <Button variant="outline" size="sm" className={`h-6 px-1.5 text-[10px] gap-0.5 shrink-0 ${r.is_hidden ? "text-red-400 border-red-300 bg-red-50 dark:bg-red-900/20" : "text-muted-foreground"}`}
                       onClick={async () => { const newVal = !r.is_hidden; setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_hidden: newVal } : x)); await adminApi("update", { id: r.id, is_hidden: newVal }); queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] }); }}>
                       <span>{r.is_hidden ? "👁️" : "🙈"}</span><span>{r.is_hidden ? "숨김" : "숨기기"}</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 hover:text-primary hover:border-primary/40" onClick={() => openEdit(r)}>
-                      <Pencil className="h-3 w-3" /><span>수정</span>
+                    <Button variant="outline" size="sm" className="h-6 px-1.5 text-[10px] gap-0.5 shrink-0 hover:text-primary hover:border-primary/40" onClick={() => openEdit(r)}>
+                      <Pencil className="h-2.5 w-2.5" /><span>수정</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30" onClick={() => setPendingDeleteId(r.id)}>
-                      <Trash2 className="h-3 w-3" /><span>삭제</span>
+                    <Button variant="outline" size="sm" className="h-6 px-1.5 text-[10px] gap-0.5 shrink-0 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30" onClick={() => setPendingDeleteId(r.id)}>
+                      <Trash2 className="h-2.5 w-2.5" /><span>삭제</span>
                     </Button>
                     {r.needs_review && (
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-[11px] gap-0.5 text-yellow-600 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100"
+                      <Button variant="outline" size="sm" className="h-6 px-1.5 text-[10px] gap-0.5 shrink-0 text-yellow-600 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100"
                         onClick={async () => { setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, needs_review: false } : x)); await adminApi("update", { id: r.id, needs_review: false }); queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] }); }}>
                         <span>✅</span><span>검토완료</span>
                       </Button>
