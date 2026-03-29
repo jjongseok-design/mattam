@@ -225,10 +225,12 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
                     </span>
                   )}
                 </div>
-                {matamRating && (
+                {(matamRating || restaurant.rating) && (
                   <div className="flex items-center gap-0.5 shrink-0">
                     <Star className="h-3 w-3 text-rating fill-current" />
-                    <span className="text-[12px] font-bold text-foreground">{matamRating.avg}</span>
+                    <span className="text-[12px] font-bold text-foreground">
+                      {matamRating ? matamRating.avg : restaurant.rating?.toFixed(1)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -245,24 +247,28 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
                 )}
               </div>
 
-              <div className="flex items-center gap-1 flex-wrap">
-                {cardVisitCount !== undefined && (
-                  <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
-                    👥 방문 {cardVisitCount}명
-                  </span>
-                )}
-                {openStatus === 'open' && (
-                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold ml-auto">영업중</span>
-                )}
-                {openStatus === 'lastorder' && (
-                  <span className="text-[9px] text-orange-500 font-semibold ml-auto">라스트오더 {closeTime}</span>
-                )}
-                {openStatus === 'closed' && (
-                  <span className="text-[9px] text-muted-foreground/50 ml-auto">영업종료</span>
-                )}
-                {openStatus === 'holiday' && (
-                  <span className="text-[9px] text-rose-400 font-semibold ml-auto">휴무</span>
-                )}
+              <div className="flex items-center justify-between gap-1">
+                <div>
+                  {cardVisitCount !== undefined && (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded-md text-muted-foreground font-medium">
+                      👥 방문 {cardVisitCount}명
+                    </span>
+                  )}
+                </div>
+                <div>
+                  {openStatus === 'open' && (
+                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">영업중</span>
+                  )}
+                  {openStatus === 'lastorder' && (
+                    <span className="text-[9px] text-orange-500 font-semibold">라스트오더 {closeTime}</span>
+                  )}
+                  {openStatus === 'closed' && (
+                    <span className="text-[9px] text-muted-foreground/50">영업종료</span>
+                  )}
+                  {openStatus === 'holiday' && (
+                    <span className="text-[9px] text-rose-400 font-semibold">휴무</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -383,10 +389,12 @@ const RestaurantCard = memo(forwardRef<HTMLDivElement, RestaurantCardProps>(({
               <p className="text-[15px] text-muted-foreground/60 mt-0.5">{restaurant.category}</p>
             </div>
 
-            {matamRating && (
+            {(matamRating || restaurant.rating) && (
               <div className="flex items-center gap-1 shrink-0">
                 <Star className="h-4 w-4 text-rating fill-current" />
-                <span className="text-[17px] font-bold text-foreground">{matamRating.avg}</span>
+                <span className="text-[17px] font-bold text-foreground">
+                  {matamRating ? matamRating.avg : restaurant.rating?.toFixed(1)}
+                </span>
               </div>
             )}
           </div>

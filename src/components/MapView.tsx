@@ -95,6 +95,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
   const kakaoMapRef = useRef<kakao.maps.Map | null>(null);
   const kakaoMarkersRef = useRef<kakao.maps.Marker[]>([]);
   const kakaoOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
+  const kakaoClustererRef = useRef<any>(null);
   const prevSelectedIdRef = useRef<string | null>(null);
 
   const leafMapRef = useRef<L.Map | null>(null);
@@ -167,27 +168,30 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     kakaoMarkersRef.current = [];
     kakaoOverlaysRef.current.forEach(o => o.setMap(null));
     kakaoOverlaysRef.current = [];
+    if (kakaoClustererRef.current) kakaoClustererRef.current.clear();
 
     const imgDefault = new kakao.maps.MarkerImage(IMG_DEFAULT, new kakao.maps.Size(24, 35));
     const imgSelected = new kakao.maps.MarkerImage(IMG_DEFAULT, new kakao.maps.Size(36, 52));
     const imgVisited = new kakao.maps.MarkerImage(IMG_VISITED, new kakao.maps.Size(24, 35));
 
     let selectedRestaurant: Restaurant | null = null;
+    const clusterMarkers: kakao.maps.Marker[] = [];
 
     restaurants.forEach(r => {
       const isSelected = r.id === selectedId;
       const isVisited = visitedIds.has(r.id);
       const pos = new kakao.maps.LatLng(r.lat, r.lng);
 
-      // 마커 생성 — 모두 map에 직접 추가
+      // 선택된 마커는 map에 직접, 나머지는 clusterer에 추가
       const marker = new kakao.maps.Marker({
         position: pos,
-        map,
         image: isSelected ? imgSelected : isVisited ? imgVisited : imgDefault,
         zIndex: isSelected ? 10 : isVisited ? 5 : 1,
+        ...(isSelected ? { map } : {}),
       });
       kakao.maps.event.addListener(marker, "click", () => onSelect(r.id));
       kakaoMarkersRef.current.push(marker);
+      if (!isSelected) clusterMarkers.push(marker);
 
       if (isSelected) {
         selectedRestaurant = r;
@@ -216,6 +220,31 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
         kakaoOverlaysRef.current.push(label);
       }
     });
+
+    // 클러스터러 생성 또는 재사용
+    if (!kakaoClustererRef.current) {
+      kakaoClustererRef.current = new (kakao.maps as any).MarkerClusterer({
+        map,
+        averageCenter: true,
+        minLevel: 5,
+        gridSize: 60,
+        styles: [{
+          width: '38px', height: '38px',
+          background: 'rgba(249,115,22,0.9)',
+          borderRadius: '50%',
+          color: '#fff',
+          textAlign: 'center',
+          fontWeight: '700',
+          lineHeight: '38px',
+          fontSize: '13px',
+          border: '2px solid rgba(249,115,22,0.4)',
+          boxShadow: '0 2px 8px rgba(249,115,22,0.4)',
+        }],
+      });
+    } else {
+      kakaoClustererRef.current.setMap(map);
+    }
+    kakaoClustererRef.current.addMarkers(clusterMarkers);
 
     // 선택된 식당이 있으면 그 위치로 지도 이동, 없고 이전에 선택했었으면 도시 기본 위치로 복귀
     if (selectedRestaurant) {
