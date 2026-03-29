@@ -1904,13 +1904,14 @@ const Admin = () => {
                             : tip.category;
 
                           return (
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                  <span className="font-bold text-base">{tip.restaurant_name}</span>
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{categoryLabel}</span>
+                            <div className="flex flex-col gap-2">
+                              {/* 1행: 이름 + 상태뱃지 */}
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-bold text-sm truncate flex-1 min-w-0">{tip.restaurant_name}</span>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground whitespace-nowrap">{categoryLabel}</span>
                                   {!isFeedback && (
-                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap ${
                                       tip.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
                                       tip.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
                                       'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
@@ -1919,27 +1920,29 @@ const Admin = () => {
                                     </span>
                                   )}
                                 </div>
-                                {tip.address && (
-                                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                    📍 {tip.address}
-                                  </p>
-                                )}
-                                {tip.reason && (
-                                  <p className="text-sm mt-1.5 text-foreground/80 bg-muted/50 rounded-lg p-2">
-                                    {isFeedback ? "📝 " : "💬 "}{tip.reason}
-                                  </p>
-                                )}
-                                <p className="text-xs text-muted-foreground/60 mt-2">
-                                  {new Date(tip.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                </p>
                               </div>
-                              <div className="flex gap-1.5 flex-shrink-0">
+                              {/* 2행: 주소 + 날짜 */}
+                              <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                                {tip.address
+                                  ? <span className="truncate flex-1 min-w-0">📍 {tip.address}</span>
+                                  : <span />
+                                }
+                                <span className="flex-shrink-0">{new Date(tip.created_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}</span>
+                              </div>
+                              {/* 3행: 내용 */}
+                              {tip.reason && (
+                                <p className="text-xs text-foreground/80 bg-muted/50 rounded-lg px-2 py-1.5 line-clamp-2">
+                                  {isFeedback ? "📝 " : "💬 "}{tip.reason}
+                                </p>
+                              )}
+                              {/* 4행: 액션 버튼 */}
+                              <div className="flex gap-1 justify-end">
                                 {!isFeedback && tip.status === 'pending' && (
                                   <>
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                      className="h-7 px-2 text-[11px] text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20"
                                       onClick={async () => {
                                         try {
                                           await adminApi("approve_tip", {
@@ -1960,12 +1963,12 @@ const Admin = () => {
                                         }
                                       }}
                                     >
-                                      <Check className="h-3.5 w-3.5 mr-1" /> 승인
+                                      <Check className="h-3 w-3 mr-0.5" /> 승인
                                     </Button>
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                                      className="h-7 px-2 text-[11px] text-destructive border-destructive/30 hover:bg-destructive/10"
                                       onClick={async () => {
                                         try {
                                           await adminApi("update_tip_status", { id: tip.id, status: "rejected" });
@@ -1976,14 +1979,14 @@ const Admin = () => {
                                         }
                                       }}
                                     >
-                                      <X className="h-3.5 w-3.5 mr-1" /> 거절
+                                      <X className="h-3 w-3 mr-0.5" /> 거절
                                     </Button>
                                   </>
                                 )}
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-9 w-9 text-muted-foreground"
+                                  className="h-7 w-7 text-muted-foreground"
                                   onClick={async () => {
                                     if (!confirm(isFeedback ? "이 피드백을 삭제하시겠습니까?" : "이 제보를 삭제하시겠습니까?")) return;
                                     try {
@@ -1995,7 +1998,7 @@ const Admin = () => {
                                     }
                                   }}
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
                             </div>
