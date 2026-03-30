@@ -113,6 +113,8 @@ const Admin = () => {
   const [savingImageUrl, setSavingImageUrl] = useState(false);
   const [dragImageIdx, setDragImageIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
+  const [dragOverMgrSlot, setDragOverMgrSlot] = useState<number | null>(null);
   const [showVisitStats, setShowVisitStats] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   const [imgMgr, setImgMgr] = useState<RestaurantRow | null>(null);
@@ -1337,6 +1339,27 @@ const Admin = () => {
                           }
                         };
 
+                        const handleExternalImageDrop = async (e: React.DragEvent, slot: number) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const droppedFile = e.dataTransfer.files?.[0];
+                          if (droppedFile && droppedFile.type.startsWith('image/')) {
+                            handleUpload(droppedFile, slot);
+                            return;
+                          }
+                          const imageUrl = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+                          if (imageUrl?.startsWith('http')) {
+                            try {
+                              const fetchRes = await fetch(imageUrl);
+                              const blob = await fetchRes.blob();
+                              const urlFile = new File([blob], 'image.jpg', { type: blob.type || 'image/jpeg' });
+                              handleUpload(urlFile, slot);
+                            } catch {
+                              toast({ title: "이미지 가져오기 실패", description: "직접 파일로 저장 후 업로드해주세요", variant: "destructive" });
+                            }
+                          }
+                        };
+
                         return (
                           <div className="flex flex-wrap gap-2">
                             {allImages.map((url, idx) => (
@@ -1348,9 +1371,15 @@ const Admin = () => {
                                 onDragEnd={() => { setDragImageIdx(null); setDragOverIdx(null); }}
                                 onDrop={(e) => {
                                   e.preventDefault();
-                                  if (dragImageIdx !== null) handleReorderImages(dragImageIdx, idx);
-                                  setDragImageIdx(null);
-                                  setDragOverIdx(null);
+                                  if (dragImageIdx !== null) {
+                                    handleReorderImages(dragImageIdx, idx);
+                                    setDragImageIdx(null);
+                                    setDragOverIdx(null);
+                                  } else {
+                                    setDragImageIdx(null);
+                                    setDragOverIdx(null);
+                                    handleExternalImageDrop(e, idx);
+                                  }
                                 }}
                                 className={`relative group cursor-grab transition-all duration-150 ${dragImageIdx === idx ? "opacity-40 scale-95" : ""} ${dragOverIdx === idx && dragImageIdx !== idx ? "ring-2 ring-primary scale-105" : ""}`}
                               >
@@ -1424,7 +1453,13 @@ const Admin = () => {
                             {Array.from({ length: emptySlots }).map((_, i) => {
                               const slot = allImages.length + i;
                               return (
-                                <label key={`empty-${i}`} className="w-20 h-20 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/30 transition-colors text-muted-foreground hover:text-primary">
+                                <label
+                                  key={`empty-${i}`}
+                                  onDragOver={(e) => { e.preventDefault(); setDragOverSlot(slot); }}
+                                  onDragLeave={() => setDragOverSlot(null)}
+                                  onDrop={(e) => { setDragOverSlot(null); handleExternalImageDrop(e, slot); }}
+                                  className={`w-20 h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all text-muted-foreground ${dragOverSlot === slot ? 'border-primary bg-primary/10 text-primary scale-105' : 'border-border hover:border-primary hover:bg-muted/30 hover:text-primary'}`}
+                                >
                                   <span className="text-2xl leading-none">+</span>
                                   <span className="text-[9px] mt-0.5">{slot === 0 ? "대표" : `추가${slot}`}</span>
                                   <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, slot); e.target.value = ""; }} />
@@ -1784,18 +1819,75 @@ const Admin = () => {
               </div>
               {(() => {
                 const allImgs = [imgMgr.image_url, ...(imgMgr.extra_images ?? [])].filter(Boolean) as string[];
-                if (allImgs.length === 0) return <p className="text-sm text-muted-foreground text-center py-6">사진이 없습니다.</p>;
+                const emptyMgrSlots = Math.max(0, 5 - allImgs.length);
+
+                const handleMgrUpload = async (file: File, slot: number) => {
+                  if (file.size > 10 * 1024 * 1024) {
+                    toast({ title: "파일 크기는 10MB 이하여야 합니다", variant: "destructive" });
+                    return;
+                  }
+                  try {
+                    const localUrl = URL.createObjectURL(file);
+                    const base64 = await new Promise<string>((resolve, reject) => {
+                      const img = new window.Image();
+                      img.onload = () => {
+                        const maxSize = 1200;
+                        let w = img.width, h = img.height;
+                        if (w > maxSize || h > maxSize) {
+                          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                          else { w = Math.round(w * maxSize / h); h = maxSize; }
+                        }
+                        const canvas = document.createElement("canvas");
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL("image/jpeg", 0.85).split(",")[1]);
+                      };
+                      img.onerror = reject;
+                      img.src = localUrl;
+                    });
+                    const res = await adminApi("upload_image", { restaurant_id: imgMgr.id, base64, content_type: "image/jpeg", file_ext: "jpg", slot });
+                    const updated = { ...imgMgr, ...(slot === 0 ? { image_url: res.image_url } : { extra_images: res.extra_images }) };
+                    setImgMgr(updated);
+                    setRestaurants(prev => prev.map(r => r.id === imgMgr.id ? { ...r, ...(slot === 0 ? { image_url: res.image_url } : { extra_images: res.extra_images }) } : r));
+                    toast({ title: "사진 업로드 완료 ✅" });
+                    silentRefresh();
+                    URL.revokeObjectURL(localUrl);
+                  } catch (err: any) {
+                    toast({ title: "업로드 실패", description: err.message, variant: "destructive" });
+                  }
+                };
+
+                const handleExternalMgrDrop = async (e: React.DragEvent, slot: number) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const droppedFile = e.dataTransfer.files?.[0];
+                  if (droppedFile && droppedFile.type.startsWith('image/')) {
+                    handleMgrUpload(droppedFile, slot);
+                    return;
+                  }
+                  const imageUrl = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+                  if (imageUrl?.startsWith('http')) {
+                    try {
+                      const fetchRes = await fetch(imageUrl);
+                      const blob = await fetchRes.blob();
+                      const urlFile = new File([blob], 'image.jpg', { type: blob.type || 'image/jpeg' });
+                      handleMgrUpload(urlFile, slot);
+                    } catch {
+                      toast({ title: "이미지 가져오기 실패", description: "직접 파일로 저장 후 업로드해주세요", variant: "destructive" });
+                    }
+                  }
+                };
+
                 return (
                   <>
                     {/* 확대 미리보기 */}
-                    {imgPreviewIdx !== null && (
+                    {allImgs.length > 0 && imgPreviewIdx !== null && (
                       <div className="mb-4 relative">
                         <img
                           src={allImgs[imgPreviewIdx]}
                           alt=""
                           className="w-full max-h-72 object-contain rounded-xl border border-border bg-muted"
                         />
-                        {/* 좌우 이동 */}
                         {imgPreviewIdx > 0 && (
                           <button onClick={() => setImgPreviewIdx(imgPreviewIdx - 1)} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70">‹</button>
                         )}
@@ -1807,10 +1899,16 @@ const Admin = () => {
                         </div>
                       </div>
                     )}
-                    {/* 썸네일 목록 */}
+                    {/* 썸네일 목록 + 빈 슬롯 */}
                     <div className="flex flex-wrap gap-3">
                       {allImgs.map((url, idx) => (
-                        <div key={url + idx} className={`relative group cursor-pointer ${imgPreviewIdx === idx ? "ring-2 ring-primary rounded-xl" : ""}`}>
+                        <div
+                          key={url + idx}
+                          onDragOver={(e) => { e.preventDefault(); setDragOverMgrSlot(idx); }}
+                          onDragLeave={() => setDragOverMgrSlot(null)}
+                          onDrop={(e) => { setDragOverMgrSlot(null); handleExternalMgrDrop(e, idx); }}
+                          className={`relative group cursor-pointer transition-all ${imgPreviewIdx === idx ? "ring-2 ring-primary rounded-xl" : ""} ${dragOverMgrSlot === idx ? "ring-2 ring-primary scale-105 rounded-xl" : ""}`}
+                        >
                           <img
                             src={url}
                             alt=""
@@ -1848,6 +1946,23 @@ const Admin = () => {
                           >✕</button>
                         </div>
                       ))}
+                      {/* 빈 슬롯 — 드래그 드롭 또는 파일 선택 */}
+                      {Array.from({ length: emptyMgrSlots }).map((_, i) => {
+                        const slot = allImgs.length + i;
+                        return (
+                          <label
+                            key={`mgr-empty-${i}`}
+                            onDragOver={(e) => { e.preventDefault(); setDragOverMgrSlot(slot); }}
+                            onDragLeave={() => setDragOverMgrSlot(null)}
+                            onDrop={(e) => { setDragOverMgrSlot(null); handleExternalMgrDrop(e, slot); }}
+                            className={`w-24 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all text-muted-foreground ${dragOverMgrSlot === slot ? 'border-primary bg-primary/10 text-primary scale-105' : 'border-border hover:border-primary hover:bg-muted/30 hover:text-primary'}`}
+                          >
+                            <span className="text-2xl leading-none">+</span>
+                            <span className="text-[9px] mt-0.5">{slot === 0 ? "대표" : `추가${slot}`}</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleMgrUpload(f, slot); e.target.value = ""; }} />
+                          </label>
+                        );
+                      })}
                     </div>
                   </>
                 );
