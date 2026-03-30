@@ -105,6 +105,9 @@ const Admin = () => {
   const [fetchingNaverImageId, setFetchingNaverImageId] = useState<string | null>(null);
   const [fetchingKakaoInfoId, setFetchingKakaoInfoId] = useState<string | null>(null);
   const [fetchingAllNaverImages, setFetchingAllNaverImages] = useState(false);
+  const [naverImagePicker, setNaverImagePicker] = useState<{ restaurantId: string; restaurantName: string; candidates: string[] } | null>(null);
+  const [selectedNaverImages, setSelectedNaverImages] = useState<Set<string>>(new Set());
+  const [savingNaverImages, setSavingNaverImages] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [savingImageUrl, setSavingImageUrl] = useState(false);
   const [dragImageIdx, setDragImageIdx] = useState<number | null>(null);
@@ -380,18 +383,38 @@ const Admin = () => {
   const handleFetchNaverImage = async (id: string) => {
     setFetchingNaverImageId(id);
     try {
-      const res = await adminApi("fetch_naver_images", { id });
-      const r = res.results?.[0];
-      if (r?.success) {
-        toast({ title: "네이버 이미지 가져오기 완료 ✅" });
-        silentRefresh();
+      // preview_naver_images: 저장 없이 후보 URL 목록만 반환
+      const res = await adminApi("preview_naver_images", { id });
+      if (!res.urls || res.urls.length === 0) {
+        toast({ title: "이미지 없음", description: "네이버에서 사진을 찾을 수 없습니다", variant: "destructive" });
       } else {
-        toast({ title: "이미지 없음", description: r?.error || "네이버에서 사진을 찾을 수 없습니다", variant: "destructive" });
+        setSelectedNaverImages(new Set());
+        setNaverImagePicker({ restaurantId: id, restaurantName: res.name, candidates: res.urls });
       }
     } catch (err: any) {
       toast({ title: "오류", description: err.message, variant: "destructive" });
     }
     setFetchingNaverImageId(null);
+  };
+
+  const handleSaveNaverImages = async () => {
+    if (!naverImagePicker || selectedNaverImages.size === 0) return;
+    setSavingNaverImages(true);
+    try {
+      const urls = [...selectedNaverImages];
+      await adminApi("update", {
+        id: naverImagePicker.restaurantId,
+        image_url: urls[0],
+        extra_images: urls.slice(1),
+      });
+      toast({ title: `${urls.length}장 저장 완료 ✅` });
+      setNaverImagePicker(null);
+      setSelectedNaverImages(new Set());
+      silentRefresh();
+    } catch (err: any) {
+      toast({ title: "저장 실패", description: err.message, variant: "destructive" });
+    }
+    setSavingNaverImages(false);
   };
 
   const handleFetchAllNaverImages = async () => {
@@ -1824,6 +1847,90 @@ const Admin = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* 네이버 이미지 피커 모달 */}
+        {naverImagePicker && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60">
+            <div className="bg-card rounded-2xl shadow-xl p-5 w-[90vw] max-w-2xl max-h-[85vh] flex flex-col">
+              {/* 헤더 */}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-base font-semibold">{naverImagePicker.restaurantName}</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    저장할 사진을 선택하세요 ({selectedNaverImages.size}장 선택됨)
+                  </p>
+                </div>
+                <button onClick={() => { setNaverImagePicker(null); setSelectedNaverImages(new Set()); }}>
+                  <X className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* 후보 이미지 그리드 */}
+              <div className="flex-1 overflow-y-auto">
+                {naverImagePicker.candidates.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-12">검색 결과가 없습니다</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {naverImagePicker.candidates.map((url) => {
+                      const isSelected = selectedNaverImages.has(url);
+                      const order = [...selectedNaverImages].indexOf(url) + 1;
+                      return (
+                        <div
+                          key={url}
+                          onClick={() => {
+                            setSelectedNaverImages(prev => {
+                              const next = new Set(prev);
+                              if (next.has(url)) next.delete(url);
+                              else if (next.size < 5) next.add(url);
+                              return next;
+                            });
+                          }}
+                          className={`relative cursor-pointer rounded-xl overflow-hidden aspect-square border-2 transition-all ${
+                            isSelected
+                              ? "border-primary ring-2 ring-primary/30"
+                              : "border-transparent hover:border-primary/40"
+                          }`}
+                        >
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
+                                <Check className="h-4 w-4 text-white" />
+                              </div>
+                            </div>
+                          )}
+                          {isSelected && (
+                            <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
+                              {order}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 하단 버튼 */}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                <p className="text-xs text-muted-foreground">최대 5장 선택 가능 · 첫 번째 선택이 대표 이미지</p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => { setNaverImagePicker(null); setSelectedNaverImages(new Set()); }}>
+                    취소
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={selectedNaverImages.size === 0 || savingNaverImages}
+                    onClick={handleSaveNaverImages}
+                  >
+                    {savingNaverImages ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+                    {selectedNaverImages.size}장 저장
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tips Modal */}
         {showTips && (

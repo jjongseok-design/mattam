@@ -383,6 +383,103 @@ Deno.serve(async (req) => {
         result = { success: true, results };
         break;
       }
+
+      case "preview_naver_images": {
+        // 네이버 이미지 URL만 반환 (다운로드·저장 없음) — 미리보기용
+        const naverClientId2 = Deno.env.get("NAVER_CLIENT_ID");
+        const naverClientSecret2 = Deno.env.get("NAVER_CLIENT_SECRET");
+        if (!naverClientId2 || !naverClientSecret2) {
+          throw new Error("NAVER_CLIENT_ID 또는 NAVER_CLIENT_SECRET이 설정되지 않았습니다");
+        }
+        if (!data?.id) throw new Error("id가 필요합니다");
+
+        const { data: restRows } = await supabase
+          .from("restaurants")
+          .select("id,name,address")
+          .eq("id", data.id)
+          .limit(1);
+        const restaurant2 = restRows?.[0];
+        if (!restaurant2) throw new Error("식당을 찾을 수 없습니다");
+
+        const naverSearch2 = async (query: string, display = 8): Promise<any[]> => {
+          const res = await fetch(
+            `https://openapi.naver.com/v1/search/image.json?query=${encodeURIComponent(query)}&display=${display}&filter=large`,
+            { headers: { "X-Naver-Client-Id": naverClientId2, "X-Naver-Client-Secret": naverClientSecret2 } }
+          );
+          if (!res.ok) return [];
+          const d = await res.json();
+          return d.items ?? [];
+        };
+
+        const signageItems2 = await naverSearch2(`${restaurant2.name} 간판`, 5);
+        const foodItems2 = await naverSearch2(`${restaurant2.name} 맛집`, 8);
+        const allItems = [...signageItems2, ...foodItems2];
+
+        const seen = new Set<string>();
+        const candidateUrls: string[] = [];
+        for (const item of allItems) {
+          const url = item.link || item.thumbnail;
+          if (url?.startsWith("http") && !seen.has(url)) {
+            seen.add(url);
+            candidateUrls.push(url);
+          }
+        }
+
+        result = { success: true, name: restaurant2.name, urls: candidateUrls };
+        break;
+      }
+
+      case "save_naver_images": {
+        // 선택된 URL을 다운로드 → Supabase Storage 업로드 → DB 저장
+        if (!data?.id || !Array.isArray(data?.urls) || data.urls.length === 0) {
+          throw new Error("id와 urls가 필요합니다");
+        }
+
+        const downloadImage2 = async (url: string): Promise<{ buf: ArrayBuffer; ct: string } | null> => {
+          try {
+            const res = await fetch(url, {
+              headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "https://www.naver.com/",
+              },
+            });
+            if (!res.ok) return null;
+            const ct = res.headers.get("content-type") || "";
+            if (!ct.includes("image")) return null;
+            const buf = await res.arrayBuffer();
+            return { buf, ct };
+          } catch {
+            return null;
+          }
+        };
+
+        const uploadedUrls: string[] = [];
+        for (let i = 0; i < data.urls.length; i++) {
+          const img = await downloadImage2(data.urls[i]);
+          if (!img) continue;
+          const ext = img.ct.includes("png") ? "png" : "jpg";
+          const filePath = i === 0 ? `${data.id}.${ext}` : `${data.id}_${i}.${ext}`;
+          const { error: uploadErr } = await supabase.storage
+            .from("restaurant-images")
+            .upload(filePath, img.buf, { contentType: img.ct, upsert: true });
+          if (uploadErr) continue;
+          const { data: urlData } = supabase.storage
+            .from("restaurant-images")
+            .getPublicUrl(filePath);
+          uploadedUrls.push(urlData.publicUrl);
+        }
+
+        if (uploadedUrls.length === 0) throw new Error("업로드에 성공한 이미지가 없습니다");
+
+        await supabase
+          .from("restaurants")
+          .update({ image_url: uploadedUrls[0], extra_images: uploadedUrls.slice(1) })
+          .eq("id", data.id);
+
+        result = { success: true, count: uploadedUrls.length };
+        break;
+      }
+
       case "search_kakao_place": {
         // 카카오 로컬 키워드 검색 → 식당명·주소·전화번호·좌표 반환 (신규 식당 폼용)
         const kakaoKey2 = Deno.env.get("KAKAO_REST_API_KEY");
