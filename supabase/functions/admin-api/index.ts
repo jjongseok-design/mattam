@@ -385,9 +385,13 @@ Deno.serve(async (req) => {
       }
 
       case "preview_naver_images": {
-        // 네이버 이미지 URL만 반환 (다운로드·저장 없음) — 미리보기용
+        // 네이버 → 카카오 → 구글 순으로 음식사진 최대 20장 수집 (저장 없음)
         const naverClientId2 = Deno.env.get("NAVER_CLIENT_ID");
         const naverClientSecret2 = Deno.env.get("NAVER_CLIENT_SECRET");
+        const kakaoKey3 = Deno.env.get("KAKAO_REST_API_KEY");
+        const googleApiKey = Deno.env.get("GOOGLE_API_KEY");
+        const googleCseId = Deno.env.get("GOOGLE_CSE_ID");
+
         if (!naverClientId2 || !naverClientSecret2) {
           throw new Error("NAVER_CLIENT_ID 또는 NAVER_CLIENT_SECRET이 설정되지 않았습니다");
         }
@@ -395,13 +399,33 @@ Deno.serve(async (req) => {
 
         const { data: restRows } = await supabase
           .from("restaurants")
-          .select("id,name,address")
+          .select("id,name,address,category")
           .eq("id", data.id)
           .limit(1);
         const restaurant2 = restRows?.[0];
         if (!restaurant2) throw new Error("식당을 찾을 수 없습니다");
 
-        const naverSearch2 = async (query: string, display = 8): Promise<any[]> => {
+        // 주소에서 시/구 추출 → 쿼리 정밀도 향상
+        const cityHint = restaurant2.address?.match(/(\S+시|\S+구|\S+군)/)?.[0] ?? "";
+
+        const MAX_CANDIDATES = 20;
+        const seen = new Set<string>();
+        const candidateUrls: string[] = [];
+
+        // 스톡 사진 사이트 제외
+        const skipDomains = ["shutterstock", "gettyimages", "istockphoto", "depositphotos", "alamy", "123rf", "freepik"];
+
+        const addUrl = (url: string | null | undefined) => {
+          if (candidateUrls.length >= MAX_CANDIDATES) return;
+          if (!url?.startsWith("http")) return;
+          if (seen.has(url)) return;
+          if (skipDomains.some(d => url.includes(d))) return;
+          seen.add(url);
+          candidateUrls.push(url);
+        };
+
+        // ── 1. 네이버 이미지 검색 (음식 중심 쿼리 3종) ──
+        const naverImgSearch = async (query: string, display = 8): Promise<any[]> => {
           const res = await fetch(
             `https://openapi.naver.com/v1/search/image.json?query=${encodeURIComponent(query)}&display=${display}&filter=large`,
             { headers: { "X-Naver-Client-Id": naverClientId2, "X-Naver-Client-Secret": naverClientSecret2 } }
@@ -411,17 +435,51 @@ Deno.serve(async (req) => {
           return d.items ?? [];
         };
 
-        const signageItems2 = await naverSearch2(`${restaurant2.name} 간판`, 5);
-        const foodItems2 = await naverSearch2(`${restaurant2.name} 맛집`, 8);
-        const allItems = [...signageItems2, ...foodItems2];
+        const naverQueries = [
+          `"${restaurant2.name}" ${cityHint} 음식`,    // 정확한 식당명 + 지역 + 음식
+          `"${restaurant2.name}" 음식사진`,              // 음식사진 명시
+          `"${restaurant2.name}" 대표메뉴`,              // 대표 메뉴
+        ];
 
-        const seen = new Set<string>();
-        const candidateUrls: string[] = [];
-        for (const item of allItems) {
-          const url = item.link || item.thumbnail;
-          if (url?.startsWith("http") && !seen.has(url)) {
-            seen.add(url);
-            candidateUrls.push(url);
+        for (const q of naverQueries) {
+          if (candidateUrls.length >= MAX_CANDIDATES) break;
+          const items = await naverImgSearch(q, 8);
+          for (const item of items) addUrl(item.link || item.thumbnail);
+        }
+
+        // ── 2. 카카오 이미지 검색 (부족 시 보충) ──
+        if (kakaoKey3 && candidateUrls.length < MAX_CANDIDATES) {
+          const kakaoImgSearch = async (query: string, size = 10): Promise<any[]> => {
+            const res = await fetch(
+              `https://dapi.kakao.com/v2/search/image?query=${encodeURIComponent(query)}&size=${size}&sort=accuracy`,
+              { headers: { Authorization: `KakaoAK ${kakaoKey3}` } }
+            );
+            if (!res.ok) return [];
+            const d = await res.json();
+            return d.documents ?? [];
+          };
+
+          const kakaoQueries = [
+            `${restaurant2.name} ${cityHint} 음식`,
+            `${restaurant2.name} 맛집`,
+          ];
+
+          for (const q of kakaoQueries) {
+            if (candidateUrls.length >= MAX_CANDIDATES) break;
+            const items = await kakaoImgSearch(q, MAX_CANDIDATES - candidateUrls.length);
+            for (const item of items) addUrl(item.image_url || item.thumbnail_url);
+          }
+        }
+
+        // ── 3. 구글 Custom Search (부족 시 보충, API 키 설정 시만) ──
+        if (googleApiKey && googleCseId && candidateUrls.length < MAX_CANDIDATES) {
+          const googleQuery = `${restaurant2.name} ${cityHint} 음식 맛집`;
+          const googleRes = await fetch(
+            `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleCseId}&q=${encodeURIComponent(googleQuery)}&searchType=image&num=10&imgSize=large&imgType=photo`
+          );
+          if (googleRes.ok) {
+            const gd = await googleRes.json();
+            for (const item of gd.items ?? []) addUrl(item.link);
           }
         }
 
