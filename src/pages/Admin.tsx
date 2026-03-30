@@ -105,6 +105,7 @@ const Admin = () => {
   const [fetchingNaverImageId, setFetchingNaverImageId] = useState<string | null>(null);
   const [fetchingKakaoInfoId, setFetchingKakaoInfoId] = useState<string | null>(null);
   const [fetchingAllNaverImages, setFetchingAllNaverImages] = useState(false);
+  const [openingNaverPlaceId, setOpeningNaverPlaceId] = useState<string | null>(null);
   const [naverImagePicker, setNaverImagePicker] = useState<{ restaurantId: string; restaurantName: string; candidates: string[] } | null>(null);
   const [selectedNaverImages, setSelectedNaverImages] = useState<Set<string>>(new Set());
   const [savingNaverImages, setSavingNaverImages] = useState(false);
@@ -1516,8 +1517,8 @@ const Admin = () => {
                       {fetchingNaverImageId === r.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Search className="h-2.5 w-2.5" />}
                       <span>이미지</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="h-6 px-1.5 text-[10px] gap-0.5 shrink-0 text-muted-foreground hover:text-foreground" onClick={() => window.open(`https://search.naver.com/search.naver?query=${encodeURIComponent(r.name + ' ' + (cities.find(c => c.id === adminCityId)?.name ?? ''))}`, '_blank')}>
-                      <span>🔍</span><span>플레이스</span>
+                    <Button variant="outline" size="sm" className="h-6 px-1.5 text-[10px] gap-0.5 shrink-0 text-muted-foreground hover:text-foreground" disabled={openingNaverPlaceId === r.id} onClick={async () => { setOpeningNaverPlaceId(r.id); try { const res = await adminApi("search_naver_place", { name: r.name, cityName: cities.find(c => c.id === adminCityId)?.name }); const placeId = res.items?.[0]?.naverPlaceId; const url = placeId ? `https://map.naver.com/p/entry/place/${placeId}` : `https://search.naver.com/search.naver?query=${encodeURIComponent(r.name + ' ' + (cities.find(c => c.id === adminCityId)?.name ?? ''))}`; window.open(url, '_blank'); } catch { window.open(`https://search.naver.com/search.naver?query=${encodeURIComponent(r.name)}`, '_blank'); } setOpeningNaverPlaceId(null); }}>
+                      {openingNaverPlaceId === r.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <span>🗺️</span>}<span>플레이스</span>
                     </Button>
                     <Button variant="outline" size="sm" title="추천 토글" className={`h-6 px-1.5 text-[10px] gap-0.5 shrink-0 ${r.is_recommended ? "text-yellow-500 border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"}`}
                       onClick={async () => { const newVal = !r.is_recommended; setRestaurants(prev => prev.map(x => x.id === r.id ? { ...x, is_recommended: newVal } : x)); await adminApi("update", { id: r.id, is_recommended: newVal }); queryClient.invalidateQueries({ queryKey: ["restaurants", adminCityId] }); }}>
@@ -1642,9 +1643,24 @@ const Admin = () => {
                               variant="outline"
                               size="sm"
                               className="h-7 px-1.5 text-[11px] gap-0.5 text-muted-foreground hover:text-foreground"
-                              onClick={() => window.open(`https://search.naver.com/search.naver?query=${encodeURIComponent(r.name + ' ' + (cities.find(c => c.id === adminCityId)?.name ?? ''))}`, '_blank')}
+                              disabled={openingNaverPlaceId === r.id}
+                              onClick={async () => {
+                                setOpeningNaverPlaceId(r.id);
+                                try {
+                                  const res = await adminApi("search_naver_place", { name: r.name, cityName: cities.find(c => c.id === adminCityId)?.name });
+                                  const placeId = res.items?.[0]?.naverPlaceId;
+                                  const url = placeId
+                                    ? `https://map.naver.com/p/entry/place/${placeId}`
+                                    : `https://search.naver.com/search.naver?query=${encodeURIComponent(r.name + ' ' + (cities.find(c => c.id === adminCityId)?.name ?? ''))}`;
+                                  window.open(url, '_blank');
+                                } catch {
+                                  window.open(`https://search.naver.com/search.naver?query=${encodeURIComponent(r.name)}`, '_blank');
+                                }
+                                setOpeningNaverPlaceId(null);
+                              }}
                             >
-                              <span>🔍</span><span>플레이스</span>
+                              {openingNaverPlaceId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <span>🗺️</span>}
+                              <span>플레이스</span>
                             </Button>
                             <Button
                               variant="outline"

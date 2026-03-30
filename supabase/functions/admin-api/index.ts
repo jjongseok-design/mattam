@@ -573,6 +573,7 @@ Deno.serve(async (req) => {
           const lng = parseInt(item.mapx) / 10000000;
           const valid = lat > 33 && lat < 39 && lng > 124 && lng < 132;
           const dist = (cityLat && cityLng && valid) ? haversine(cityLat, cityLng, lat, lng) : null;
+          const naverPlaceId = item.link?.match(/place\/(\d+)/)?.[1] ?? null;
           return {
             name: stripHtml(item.title ?? ""),
             address: stripHtml(item.roadAddress || item.address || ""),
@@ -580,6 +581,7 @@ Deno.serve(async (req) => {
             lat: valid ? lat : null,
             lng: valid ? lng : null,
             dist,
+            naverPlaceId,
           };
         });
 
