@@ -408,7 +408,7 @@ Deno.serve(async (req) => {
         // 주소에서 시/구 추출 → 쿼리 정밀도 향상
         const cityHint = restaurant2.address?.match(/(\S+시|\S+구|\S+군)/)?.[0] ?? "";
 
-        const MAX_CANDIDATES = 20;
+        const MAX_CANDIDATES = 30; // Claude 검증 후 최대 20장으로 줄임
         const seen = new Set<string>();
         const candidateUrls: string[] = [];
 
@@ -483,7 +483,73 @@ Deno.serve(async (req) => {
           }
         }
 
-        result = { success: true, name: restaurant2.name, urls: candidateUrls };
+        // ── 4. Claude Vision 검증 (ANTHROPIC_API_KEY 있을 때) ──
+        // 식당명+주소 기반으로 동일 식당 음식 사진만 필터링
+        const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+        const DISPLAY_MAX = 20;
+
+        if (anthropicKey && candidateUrls.length > 0) {
+          const verifiedUrls: string[] = [];
+          const batchSize = 8; // 한 번에 8장씩 검증
+
+          for (let i = 0; i < candidateUrls.length && verifiedUrls.length < DISPLAY_MAX; i += batchSize) {
+            const batch = candidateUrls.slice(i, i + batchSize);
+
+            try {
+              const content: any[] = [];
+              for (let j = 0; j < batch.length; j++) {
+                content.push({ type: "text", text: `[${j + 1}]` });
+                content.push({ type: "image", source: { type: "url", url: batch[j] } });
+              }
+              content.push({
+                type: "text",
+                text: `식당명: "${restaurant2.name}", 주소: ${restaurant2.address}\n\n위 ${batch.length}장 중 아래 조건을 모두 만족하는 사진 번호를 쉼표로만 답하세요:\n1. 실제 음식(요리/메뉴) 사진일 것\n2. 이 식당 "${restaurant2.name}"의 사진일 것 (다른 식당 간판·로고 등이 보이면 제외)\n3. 실내 인테리어, 외관·간판, 메뉴판, 영수증, 사람 위주 사진 제외\n\n통과: 번호만 (예: 1,3,5). 없으면: 없음`,
+              });
+
+              const apiRes = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                  "x-api-key": anthropicKey,
+                  "anthropic-version": "2023-06-01",
+                  "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: "claude-haiku-4-5-20251001",
+                  max_tokens: 30,
+                  messages: [{ role: "user", content }],
+                }),
+              });
+
+              if (apiRes.ok) {
+                const apiData = await apiRes.json();
+                const answer = (apiData.content?.[0]?.text ?? "").trim();
+                if (answer !== "없음" && answer !== "") {
+                  const nums = answer.split(",")
+                    .map((s: string) => parseInt(s.trim()) - 1)
+                    .filter((n: number) => Number.isFinite(n) && n >= 0 && n < batch.length);
+                  for (const n of nums) {
+                    if (verifiedUrls.length < DISPLAY_MAX) verifiedUrls.push(batch[n]);
+                  }
+                }
+              } else {
+                // Claude API 실패 → 배치 그대로 포함
+                for (const url of batch) {
+                  if (verifiedUrls.length < DISPLAY_MAX) verifiedUrls.push(url);
+                }
+              }
+            } catch {
+              for (const url of batch) {
+                if (verifiedUrls.length < DISPLAY_MAX) verifiedUrls.push(url);
+              }
+            }
+          }
+
+          result = { success: true, name: restaurant2.name, urls: verifiedUrls, verified: true };
+        } else {
+          // ANTHROPIC_API_KEY 없을 때 → 기존 방식 (최대 20장)
+          result = { success: true, name: restaurant2.name, urls: candidateUrls.slice(0, DISPLAY_MAX) };
+        }
+
         break;
       }
 
