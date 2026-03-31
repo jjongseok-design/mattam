@@ -97,6 +97,12 @@ const CityMap = () => {
   };
   const [activeTab, setActiveTab] = useState<"map" | "list" | "favorites">("map");
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
+  const [panelWidth, setPanelWidth] = useState(() => {
+    try { return Number(localStorage.getItem("mattam_panel_width")) || 40; } catch { return 40; }
+  });
+  const isDraggingPanel = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartWidth = useRef(0);
 
   const isMobile = useIsMobile();
   const { data: restaurants = [], isLoading, isError, refetch } = useRestaurants(cityId);
@@ -173,6 +179,38 @@ const CityMap = () => {
   }, [requestGeo, toast]);
 
   const handleSelect = useCallback((id: string) => { setSelectedId(id); addViewed(id); }, [addViewed]);
+
+  useEffect(() => {
+    try { localStorage.setItem("mattam_panel_width", String(panelWidth)); } catch {}
+  }, [panelWidth]);
+
+  const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    isDraggingPanel.current = true;
+    dragStartX.current = e.clientX;
+    dragStartWidth.current = panelWidth;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDraggingPanel.current) return;
+      const containerWidth = window.innerWidth;
+      const delta = e.clientX - dragStartX.current;
+      const deltaPercent = (delta / containerWidth) * 100;
+      const newWidth = Math.min(65, Math.max(25, dragStartWidth.current + deltaPercent));
+      setPanelWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      isDraggingPanel.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }, [panelWidth]);
 
   const handleFindNearest = useCallback(() => {
     if (!position || restaurants.length === 0) return;
@@ -387,7 +425,7 @@ const CityMap = () => {
         </>
       ) : (
         <div className="flex h-screen w-screen overflow-hidden bg-background">
-          <div className="w-[40%] flex-shrink-0 h-full flex flex-col bg-card z-10" style={{ boxShadow: "var(--panel-shadow)" }}>
+          <div style={{ width: `${panelWidth}%`, boxShadow: "var(--panel-shadow)" }} className="flex-shrink-0 h-full flex flex-col bg-card z-10">
             <div className="border-b border-border/40">
               <div className="px-5 pt-4 pb-3 flex items-center gap-2.5">
                 <Link to="/" className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors flex-shrink-0">
@@ -523,7 +561,16 @@ const CityMap = () => {
             </div>
           </div>
 
-          <div className="w-[60%] h-full relative">
+          {/* 드래그 핸들 */}
+          <div
+            onMouseDown={handleDividerMouseDown}
+            className="w-1 flex-shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors relative group z-10"
+            title="드래그해서 비율 조절"
+          >
+            <div className="absolute inset-y-0 -left-1 -right-1" />
+          </div>
+
+          <div style={{ width: `${100 - panelWidth}%` }} className="h-full relative">
             <div className="absolute top-4 right-4 z-[1000] w-72">
               <TourProgress restaurants={restaurants} visited={visited} onShare={() => setShareOpen(true)} cityName={city?.name} />
             </div>
