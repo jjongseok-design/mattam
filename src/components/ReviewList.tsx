@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Trash2, X } from "lucide-react";
+import { Star, Trash2, Pencil, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useReviews } from "@/hooks/useReviews";
@@ -13,7 +13,7 @@ interface ReviewListProps {
   restaurantId: string;
 }
 
-const ReviewItem = ({ review, isMyReview, onDelete }: { review: any; isMyReview: boolean; onDelete: (id: string) => void }) => (
+const ReviewItem = ({ review, isMyReview, onDelete, onEdit }: { review: any; isMyReview: boolean; onDelete: (id: string) => void; onEdit: (review: any) => void }) => (
   <div className={`p-3 rounded-xl border ${isMyReview ? "bg-primary/5 border-primary/20" : "bg-muted/40 border-border/30"}`}>
     <div className="flex gap-2.5">
       {review.photo_url && (
@@ -39,9 +39,14 @@ const ReviewItem = ({ review, isMyReview, onDelete }: { review: any; isMyReview:
               {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: ko })}
             </span>
             {isMyReview && (
-              <button onClick={() => onDelete(review.id)} className="text-muted-foreground/40 hover:text-destructive transition-colors">
-                <Trash2 className="h-3 w-3" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => onEdit(review)} className="text-muted-foreground/40 hover:text-primary transition-colors">
+                  <Pencil className="h-3 w-3" />
+                </button>
+                <button onClick={() => onDelete(review.id)} className="text-muted-foreground/40 hover:text-destructive transition-colors">
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -80,6 +85,10 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
   const visibleReviews = reviews.slice(0, 5);
   const hasMore = reviews.length > 5;
 
+  const handleEdit = (review: any) => {
+    document.getElementById("review-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   return (
     <div className="space-y-3">
       {reviews.length > 0 && (
@@ -94,7 +103,7 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
       ) : (
         <div className="space-y-2">
           {visibleReviews.map((review) => (
-            <ReviewItem key={review.id} review={review} isMyReview={review.device_id === deviceId} onDelete={handleDelete} />
+            <ReviewItem key={review.id} review={review} isMyReview={review.device_id === deviceId} onDelete={handleDelete} onEdit={handleEdit} />
           ))}
           {hasMore && (
             <button onClick={() => setShowAll(true)} className="w-full py-2 text-[12px] text-primary font-medium border border-primary/20 rounded-xl hover:bg-primary/5 transition-colors">
@@ -116,7 +125,7 @@ const ReviewList = ({ restaurantId }: ReviewListProps) => {
               </div>
               <div className="overflow-y-auto flex-1 p-4 space-y-2">
                 {reviews.map((review) => (
-                  <ReviewItem key={review.id} review={review} isMyReview={review.device_id === deviceId} onDelete={handleDelete} />
+                  <ReviewItem key={review.id} review={review} isMyReview={review.device_id === deviceId} onDelete={handleDelete} onEdit={handleEdit} />
                 ))}
               </div>
             </motion.div>

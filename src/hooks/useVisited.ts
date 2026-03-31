@@ -108,7 +108,7 @@ export const useVisited = () => {
             queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
           });
       } else {
-        // ── 방문 취소 (기존 기록 삭제) ──
+        // ── 방문 취소 (가장 최근 기록 1건만 삭제) ──
         setVisited((prev) => {
           const next = new Set(prev);
           next.delete(id);
@@ -123,27 +123,42 @@ export const useVisited = () => {
           (old) => ({ ...(old ?? {}), [id]: Math.max(0, ((old ?? {})[id] ?? 1) - 1) })
         );
 
+        // 가장 최근 방문 기록 1건 id 조회 후 해당 건만 삭제
         supabase
           .from("device_visits")
-          .delete()
+          .select("id")
           .eq("device_id", deviceId)
           .eq("restaurant_id", id)
-          .then(({ error }) => {
-            if (error) {
-              console.warn("[useVisited] cancel visit error:", error.message);
-              setVisited((prev) => {
-                const next = new Set(prev);
-                next.add(id);
-                saveLocal(next);
-                return next;
-              });
-              queryClient.setQueryData<Record<string, number>>(
-                ["first-visitor-counts"],
-                (old) => ({ ...(old ?? {}), [id]: ((old ?? {})[id] ?? 0) + 1 })
-              );
-              applyVisit(id);
+          .order("visited_at", { ascending: false })
+          .limit(1)
+          .single()
+          .then(({ data, error: fetchError }) => {
+            if (fetchError || !data) {
+              console.warn("[useVisited] fetch recent visit error:", fetchError?.message);
+              queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+              return;
             }
-            queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+            supabase
+              .from("device_visits")
+              .delete()
+              .eq("id", data.id)
+              .then(({ error }) => {
+                if (error) {
+                  console.warn("[useVisited] cancel visit error:", error.message);
+                  setVisited((prev) => {
+                    const next = new Set(prev);
+                    next.add(id);
+                    saveLocal(next);
+                    return next;
+                  });
+                  queryClient.setQueryData<Record<string, number>>(
+                    ["first-visitor-counts"],
+                    (old) => ({ ...(old ?? {}), [id]: ((old ?? {})[id] ?? 0) + 1 })
+                  );
+                  applyVisit(id);
+                }
+                queryClient.invalidateQueries({ queryKey: ["first-visitor-counts"] });
+              });
           });
       }
     },

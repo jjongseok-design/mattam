@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef, memo } from "react";
-import { Star, Loader2, Trash2, Camera, X } from "lucide-react";
+import { useState, useRef, memo } from "react";
+import { Star, Loader2, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { getDeviceId } from "@/hooks/useDeviceId";
-import { useMyReview } from "@/hooks/useReviews";
 
 interface ReviewFormProps {
   restaurantId: string;
@@ -16,7 +15,6 @@ const STAR_LABELS = ["", "별로예요", "그저그래요", "괜찮아요", "좋
 const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
   const deviceId = getDeviceId();
   const nickname = (() => { try { return localStorage.getItem("mattam_nickname") || ""; } catch { return ""; } })();
-  const { data: myReview, isLoading: loadingMyReview } = useMyReview(restaurantId);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -24,20 +22,9 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // 기존 리뷰 불러오기
-  useEffect(() => {
-    if (myReview) {
-      setRating(myReview.rating);
-      setContent(myReview.comment ?? "");
-      setPhotoPreview(myReview.photo_url ?? null);
-    }
-  }, [myReview]);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -52,7 +39,7 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
 
   const handleRemovePhoto = () => {
     setPhoto(null);
-    setPhotoPreview(myReview?.photo_url ?? null);
+    setPhotoPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -75,7 +62,7 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
     setSubmitting(true);
 
     try {
-      let photoUrl: string | null = myReview?.photo_url ?? null;
+      let photoUrl: string | null = null;
       if (photo) {
         photoUrl = await uploadPhoto(photo);
       }
@@ -89,26 +76,18 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
         nickname: nickname || null,
       };
 
-      let error;
-      if (myReview) {
-        const res = await supabase
-          .from("reviews")
-          .update({ rating, comment: comment.trim() || null, photo_url: photoUrl })
-          .eq("id", myReview.id);
-        error = res.error;
-      } else {
-        const res = await supabase.from("reviews").insert(payload);
-        error = res.error;
-      }
+      const { error } = await supabase.from("reviews").insert(payload);
 
       if (error) {
         toast({ title: "리뷰 등록 실패", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: myReview ? "리뷰가 수정되었습니다 ✅" : "리뷰가 등록되었습니다 ✅" });
-        setIsEditing(false);
+        toast({ title: "리뷰가 등록되었습니다 ✅" });
+        setRating(0);
+        setContent("");
         setPhoto(null);
+        setPhotoPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
         queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
-        queryClient.invalidateQueries({ queryKey: ["my-review", restaurantId, deviceId] });
         queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
       }
     } catch (err: any) {
@@ -118,76 +97,12 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
     setSubmitting(false);
   };
 
-  const handleDelete = async () => {
-    if (!myReview) return;
-    setDeleting(true);
-    const { error } = await supabase.from("reviews").delete().eq("id", myReview.id);
-    if (error) {
-      toast({ title: "삭제 실패", description: error.message, variant: "destructive" });
-    } else {
-      setRating(0);
-      setContent("");
-      setPhoto(null);
-      setPhotoPreview(null);
-      queryClient.invalidateQueries({ queryKey: ["reviews", restaurantId] });
-      queryClient.invalidateQueries({ queryKey: ["my-review", restaurantId, deviceId] });
-      queryClient.invalidateQueries({ queryKey: ["all-avg-ratings"] });
-    }
-    setDeleting(false);
-  };
-
-  if (loadingMyReview) return null;
-
-  // 이미 리뷰가 있고 수정 모드가 아닌 경우 → 내 리뷰 요약 + 수정/삭제 버튼
-  if (myReview && !isEditing) {
-    return (
-      <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          {myReview.photo_url && (
-            <img
-              src={myReview.photo_url}
-              alt="내 리뷰 사진"
-              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-            />
-          )}
-          <div className="flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star
-                key={s}
-                className={`h-3.5 w-3.5 ${s <= myReview.rating ? "text-rating fill-current" : "text-muted-foreground/20"}`}
-              />
-            ))}
-          </div>
-          {myReview.comment && (
-            <span className="text-[12px] text-foreground truncate max-w-[160px]">{myReview.comment}</span>
-          )}
-          <span className="text-[10px] text-muted-foreground/60">내 리뷰</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="text-[11px] h-7 px-2" onClick={() => setIsEditing(true)}>
-            수정
-          </Button>
-          <Button variant="ghost" size="sm" className="text-[11px] h-7 px-2 text-destructive hover:text-destructive" onClick={handleDelete} disabled={deleting}>
-            {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const displayRating = hoverRating || rating;
 
   return (
-    <div className="space-y-2.5 p-4 bg-muted/30 rounded-2xl border border-border/50">
+    <div id="review-form" className="space-y-2.5 p-4 bg-muted/30 rounded-2xl border border-border/50">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-foreground">
-          {myReview ? "내 리뷰 수정" : "리뷰 남기기"}
-        </h4>
-        {myReview && (
-          <Button variant="ghost" size="sm" className="text-[11px] h-6 px-2 text-muted-foreground" onClick={() => setIsEditing(false)}>
-            취소
-          </Button>
-        )}
+        <h4 className="text-sm font-semibold text-foreground">리뷰 남기기</h4>
       </div>
 
       {/* 별점 */}
@@ -271,7 +186,7 @@ const ReviewForm = memo(({ restaurantId }: ReviewFormProps) => {
         className="w-full"
       >
         {submitting && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
-        {myReview ? "수정 완료" : "리뷰 등록"}
+        리뷰 등록
       </Button>
     </div>
   );
