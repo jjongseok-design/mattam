@@ -1,6 +1,7 @@
-import { useRef, useState, useCallback, useEffect, memo } from "react";
+import { useRef, useState, useCallback, useEffect, useLayoutEffect, memo } from "react";
 
 const MOBILE_SCROLL_KEY = "citymap_mobile_scrolltop";
+const MOBILE_VISIBLE_COUNT_KEY = "citymap_mobile_visiblecount";
 const SHEET_STATE_KEY = "citymap_sheet_state";
 import { motion, PanInfo } from "framer-motion";
 import { ChevronUp } from "lucide-react";
@@ -84,33 +85,66 @@ const MobileBottomSheet = memo(({
   const savedSheetState = (() => { try { return sessionStorage.getItem(SHEET_STATE_KEY) as SheetState | null; } catch { return null; } })();
   const [state, setState] = useState<SheetState>(savedSheetState ?? "half");
   const [isDraggable, setIsDraggable] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(15);
+  const [visibleCount, setVisibleCount] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(MOBILE_VISIBLE_COUNT_KEY);
+      return saved && Number(saved) > 15 ? Number(saved) : 15;
+    } catch { return 15; }
+  });
   const listRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef(0);
 
-  const isFirstRestaurantLoad = useRef(true);
+  const prevCategoryRef = useRef(category);
+  const prevFilterRef = useRef(filter);
+  const prevSortRef = useRef(sort);
+  const prevQueryRef = useRef(query);
 
   useEffect(() => {
     try { sessionStorage.setItem(SHEET_STATE_KEY, state); } catch {}
   }, [state]);
 
-  // 카테고리/필터 변경 시 visible count 초기화 (첫 로드 시 스크롤 복원)
+  // visibleCount가 늘어날 때 sessionStorage에 저장
   useEffect(() => {
+    try { sessionStorage.setItem(MOBILE_VISIBLE_COUNT_KEY, String(visibleCount)); } catch {}
+  }, [visibleCount]);
+
+  // 마운트 시 브라우저 페인트 전 즉시 스크롤 복원 (애니메이션 없음)
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    try {
+      const saved = sessionStorage.getItem(MOBILE_SCROLL_KEY);
+      const savedTop = saved ? Number(saved) : 0;
+      if (savedTop > 0) {
+        el.style.scrollBehavior = "auto";
+        el.scrollTop = savedTop;
+        requestAnimationFrame(() => {
+          el.scrollTop = savedTop;
+          el.style.scrollBehavior = "";
+        });
+      }
+    } catch {}
+  }, []); // 마운트 시 1회만
+
+  // 카테고리 / 필터 / 정렬 / 검색어 변경 시 스크롤+visibleCount 초기화
+  useEffect(() => {
+    const changed =
+      prevCategoryRef.current !== category ||
+      prevFilterRef.current !== filter ||
+      prevSortRef.current !== sort ||
+      prevQueryRef.current !== query;
+    if (!changed) return;
+    prevCategoryRef.current = category;
+    prevFilterRef.current = filter;
+    prevSortRef.current = sort;
+    prevQueryRef.current = query;
     setVisibleCount(15);
-    if (!listRef.current) return;
-    if (isFirstRestaurantLoad.current) {
-      isFirstRestaurantLoad.current = false;
-      try {
-        const saved = sessionStorage.getItem(MOBILE_SCROLL_KEY);
-        if (saved && Number(saved) > 0) {
-          const scrollTop = Number(saved);
-          setTimeout(() => { if (listRef.current) listRef.current.scrollTop = scrollTop; }, 150);
-          return;
-        }
-      } catch {}
-    }
-    listRef.current.scrollTop = 0;
-  }, [restaurants]);
+    if (listRef.current) listRef.current.scrollTop = 0;
+    try {
+      sessionStorage.setItem(MOBILE_SCROLL_KEY, "0");
+      sessionStorage.setItem(MOBILE_VISIBLE_COUNT_KEY, "15");
+    } catch {}
+  }, [category, filter, sort, query]);
 
   const handleDragStart = useCallback((_: unknown, info: PanInfo) => {
     dragStartY.current = info.point.y;
@@ -184,6 +218,7 @@ const MobileBottomSheet = memo(({
     <div className="absolute inset-x-0 bottom-[64px] z-[1400] pointer-events-none">
       <motion.div
         className="pointer-events-auto bg-card rounded-t-3xl shadow-panel border-t border-border/40 pb-[env(safe-area-inset-bottom)] flex flex-col will-change-transform"
+        initial={false}
         animate={{ height: HEIGHTS[state] }}
         transition={{ type: "spring", stiffness: 300, damping: 32 }}
         drag={isDraggable ? "y" : false}

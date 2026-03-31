@@ -135,7 +135,10 @@ const CityMap = () => {
 
   useEffect(() => {
     return () => {
-      saveState({ categories, showList, scrollTop: 0, query, sort, filter });
+      saveState({ categories, showList, scrollTop: listRef.current?.scrollTop ?? 0, query, sort, filter });
+      try {
+        sessionStorage.setItem(SCROLL_TOP_KEY, String(listRef.current?.scrollTop ?? 0));
+      } catch {}
     };
   }, [categories, showList, query, sort, filter]);
 
@@ -146,9 +149,7 @@ const CityMap = () => {
         const raw = sessionStorage.getItem(SCROLL_TOP_KEY);
         const savedScrollTop = raw ? Number(raw) : 0;
         if (savedScrollTop > 0) {
-          setTimeout(() => {
-            if (listRef.current) listRef.current.scrollTop = savedScrollTop;
-          }, 150);
+          listRef.current.scrollTop = savedScrollTop;
         }
       } catch {}
     }
@@ -189,7 +190,7 @@ const CityMap = () => {
   useEffect(() => {
     if (!selectedId || !listRef.current) return;
     const el = listRef.current.querySelector(`[data-restaurant-id="${selectedId}"]`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (el) el.scrollIntoView({ behavior: "instant", block: "nearest" });
   }, [selectedId]);
 
   const categoryCounts = useMemo(() => {
@@ -326,7 +327,8 @@ const CityMap = () => {
             <div className="absolute inset-0 z-0">
               <MapView restaurants={filtered} selectedId={selectedId} onSelect={handleSelect} visitedIds={visited} isDarkMode={isDarkMode} city={city} />
             </div>
-            {showList && (
+            {/* MobileBottomSheet는 항상 마운트 유지 (CSS로 숨김) — 지도↔목록 탭 전환 시 스크롤 위치 보존 */}
+            <div style={{ display: showList ? undefined : "none" }}>
               <MobileBottomSheet
                 restaurants={filtered} selectedId={selectedId} onSelect={handleSelect}
                 query={query} onQueryChange={setQuery} totalCount={categoryRestaurants.filter(r => !r.is_hidden).length}
@@ -339,7 +341,7 @@ const CityMap = () => {
                 recentRestaurants={recentRestaurants} allRestaurants={restaurants} visited={visited}
                 onShare={() => setShareOpen(true)}
               />
-            )}
+            </div>
           </div>
           <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
           <AnimatePresence>
