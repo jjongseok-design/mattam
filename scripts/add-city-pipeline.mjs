@@ -11,7 +11,8 @@
  *   Phase 4. Google Places로 영업시간 수집
  *   Phase 5. Google Places / 카카오 이미지 수집 (최대 5장)
  *   Phase 6. Claude Vision으로 음식 사진만 필터링
- *   Phase 7. Supabase DB 삽입 (춘천과 동일한 스키마)
+ *   Phase 7. 카테고리 복사 (춘천 → 새 도시)
+ *   Phase 8. Supabase DB 삽입 (춘천과 동일한 스키마)
  *
  * ── 사용법 ──────────────────────────────────────────────────────────────────
  *   CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
@@ -817,10 +818,50 @@ async function phase6_filterFoodImages(restaurants) {
   return restaurants;
 }
 
-// ── Phase 7: Supabase DB 삽입 ────────────────────────────────────────────────
+// ── Phase 7: 카테고리 복사 ───────────────────────────────────────────────────
 
-async function phase7_insert(restaurants, existingIds) {
-  console.log("\n━━━ Phase 7: DB 삽입 ━━━");
+async function phase7_copyCategories() {
+  console.log("\n━━━ Phase 7: 카테고리 복사 (춘천 → 새 도시) ━━━");
+
+  // 이미 해당 도시 카테고리가 있으면 건너뜀
+  const existing = await sbGet("categories", { city_id: `eq.${CITY}` });
+  if (existing.length > 0) {
+    console.log(`  이미 ${existing.length}개 카테고리 존재 → 건너뜀`);
+    return;
+  }
+
+  // 춘천 카테고리 조회
+  const chuncheonCats = await sbGet("categories", { city_id: "eq.chuncheon" });
+  if (chuncheonCats.length === 0) {
+    console.log("  ⚠️  춘천 카테고리를 찾을 수 없습니다");
+    return;
+  }
+
+  if (DRY_RUN) {
+    console.log(`  [DRY RUN] ${chuncheonCats.length}개 카테고리 복사 예정`);
+    chuncheonCats.forEach(c => console.log(`    - ${c.label} (${c.id})`));
+    return;
+  }
+
+  // city_id만 새 도시로 바꿔서 insert
+  const newCats = chuncheonCats.map(c => ({ ...c, city_id: CITY }));
+
+  const url = `${SUPABASE_URL}/rest/v1/categories`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { ...SB_HEADERS, Prefer: "return=minimal" },
+    body: JSON.stringify(newCats),
+  });
+  if (!res.ok) throw new Error(`카테고리 복사 실패: ${await res.text()}`);
+
+  console.log(`  ✅ ${newCats.length}개 카테고리 복사 완료`);
+  newCats.forEach(c => console.log(`    - ${c.label} (${c.id})`));
+}
+
+// ── Phase 8: Supabase DB 삽입 ────────────────────────────────────────────────
+
+async function phase8_insert(restaurants, existingIds) {
+  console.log("\n━━━ Phase 8: DB 삽입 ━━━");
 
   // 이미 DB에 있는 항목 제외 (재실행 안전)
   const toInsert = restaurants.filter((r) => !existingIds.has(r.id));
@@ -877,7 +918,7 @@ async function phase7_insert(restaurants, existingIds) {
     console.log(`  ✅ ${inserted}/${rows.length}개 삽입 완료`);
   }
 
-  console.log(`\n  🎉 Phase 7 완료: ${inserted}개 삽입`);
+  console.log(`\n  🎉 Phase 8 완료: ${inserted}개 삽입`);
 }
 
 // ── 메인 ─────────────────────────────────────────────────────────────────────
@@ -971,11 +1012,18 @@ async function main() {
     console.log("\n━━━ Phase 6: 건너뜀 ━━━");
   }
 
-  // ── Phase 7: DB 삽입 ───────────────────────────────────────────────────────
+  // ── Phase 7: 카테고리 복사 ────────────────────────────────────────────────
   if (!SKIP_PHASES.has("7")) {
-    await phase7_insert(targets, existingIds);
+    await phase7_copyCategories();
   } else {
     console.log("\n━━━ Phase 7: 건너뜀 ━━━");
+  }
+
+  // ── Phase 8: DB 삽입 ───────────────────────────────────────────────────────
+  if (!SKIP_PHASES.has("8")) {
+    await phase8_insert(targets, existingIds);
+  } else {
+    console.log("\n━━━ Phase 8: 건너뜀 ━━━");
   }
 
   // ── 최종 요약 ──────────────────────────────────────────────────────────────
