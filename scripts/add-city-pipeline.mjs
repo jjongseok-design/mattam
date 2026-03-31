@@ -154,6 +154,30 @@ function generateId(name, address) {
   return `${base}-${rand}`;
 }
 
+// ⚠️  절대 금지: city_id='chuncheon' 데이터 INSERT/UPDATE/DELETE 금지
+//              춘천 restaurants, categories 테이블 데이터 수정 금지
+//              아래 함수는 읽기(SELECT) 전용 — 절대 수정하지 말 것
+async function generateRestaurantId(category) {
+  // 카테고리 prefix 가져오기 (춘천 기준 — 읽기만 함, 수정 없음)
+  const cats = await sbGet("categories", {
+    city_id: `eq.chuncheon`,
+    id: `eq.${category}`,
+  });
+  const prefix = cats[0]?.id_prefix ?? "xx";
+
+  // 전체 DB에서 해당 prefix 최대 번호 조회 (도시 무관, 읽기만)
+  const existing = await sbGet("restaurants", {
+    select: "id",
+    id: `like.${prefix}*`,
+  });
+  const maxNum = (existing ?? []).reduce((max, r) => {
+    const m = r.id.match(new RegExp(`^${prefix}(\\d+)$`));
+    return m ? Math.max(max, parseInt(m[1])) : max;
+  }, 0);
+
+  return `${prefix}${String(maxNum + 1).padStart(2, "0")}`;
+}
+
 function nameSimilar(a, b) {
   const clean = (s) => s.toLowerCase().replace(/\s/g, "");
   const ca = clean(a), cb = clean(b);
@@ -452,6 +476,39 @@ async function loadExistingIds() {
     city_id: `eq.${CITY}`,
   });
   return new Set(rows.map((r) => r.id));
+}
+
+// ── Phase 0: 도시 확인 및 등록 ────────────────────────────────────────────────
+
+async function phase0_ensureCity(center) {
+  console.log("\n━━━ Phase 0: 도시 확인 및 등록 ━━━");
+  const existing = await sbGet("cities", { id: `eq.${CITY}` });
+  if (existing.length > 0) {
+    console.log(`  이미 등록된 도시: ${existing[0].name} (is_active: ${existing[0].is_active})`);
+    return;
+  }
+  if (DRY_RUN) {
+    console.log(`  [DRY RUN] cities 테이블에 ${CITY_NAME} 추가 예정`);
+    return;
+  }
+  const cityRow = {
+    id: CITY, name: CITY_NAME,
+    description: `${CITY_NAME} 맛집 지도`,
+    lat: center.lat, lng: center.lng, zoom: 13,
+    bounds_sw_lat: center.lat - 0.15, bounds_sw_lng: center.lng - 0.2,
+    bounds_ne_lat: center.lat + 0.15, bounds_ne_lng: center.lng + 0.2,
+    is_active: false, coming_soon: true, sort_order: 99,
+  };
+  const url = `${SUPABASE_URL}/rest/v1/cities`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { ...SB_HEADERS, Prefer: "return=minimal" },
+    body: JSON.stringify(cityRow),
+  });
+  if (!res.ok) throw new Error(`cities insert 실패: ${await res.text()}`);
+  console.log(`  ✅ ${CITY_NAME} (${CITY}) 도시 등록 완료`);
+  console.log(`  ℹ️  is_active=false, coming_soon=true 로 설정됨`);
+  console.log(`  ℹ️  파이프라인 완료 후 어드민에서 is_active=true 로 변경하세요`);
 }
 
 // ── Phase 1: 카카오 수집 ──────────────────────────────────────────────────────
@@ -901,9 +958,9 @@ async function phase8_insert(restaurants, existingIds) {
     return;
   }
 
-  // restaurants 테이블 스키마에 맞춰 정제
-  const rows = toInsert.map((r) => ({
-    id:             r.id,
+  // restaurants 테이블 스키마에 맞춰 정제 (ID는 카테고리 prefix 기반 생성)
+  const rows = await Promise.all(toInsert.map(async (r) => ({
+    id:             r.id ?? await generateRestaurantId(r.category),
     name:           r.name,
     category:       r.category ?? "기타",
     address:        r.address ?? "",
@@ -927,7 +984,7 @@ async function phase8_insert(restaurants, existingIds) {
     menu_items:     null,
     created_at:     new Date().toISOString(),
     updated_at:     new Date().toISOString(),
-  }));
+  })));
 
   if (DRY_RUN) {
     console.log(`  [DRY RUN] ${rows.length}개 삽입 예정`);
@@ -973,6 +1030,13 @@ async function main() {
     console.log(`중심 좌표: ${center.lat}, ${center.lng}`);
   }
 
+  // ── Phase 0: 도시 등록 ─────────────────────────────────────────────────────
+  if (!SKIP_PHASES.has("0")) {
+    await phase0_ensureCity(center);
+  } else {
+    console.log("\n━━━ Phase 0: 건너뜀 ━━━");
+  }
+
   // 기존 DB 항목 로드
   const existingIds = await loadExistingIds();
   console.log(`\n기존 DB: ${CITY} 도시 ${existingIds.size}개 항목`);
@@ -991,10 +1055,9 @@ async function main() {
     return;
   }
 
-  // ID 및 slug 생성
+  // slug 생성 (ID는 Phase 8에서 카테고리 prefix 기반으로 생성)
   restaurants = restaurants.map((r) => ({
     ...r,
-    id:   r.id ?? generateId(r.name, r.address),
     slug: r.slug ?? slugify(r.name),
   }));
 
@@ -1067,6 +1130,7 @@ async function main() {
   console.log("\n다음 단계:");
   console.log(`  CITY=${CITY} node scripts/fetch-menus.mjs        # 메뉴 태그`);
   console.log(`  CITY=${CITY} node scripts/auto-sort-images.mjs   # 간판→대표 이미지 정렬`);
+  console.log(`  어드민에서 ${CITY} 도시를 is_active=true 로 변경하면 앱에 표시됩니다.`);
 }
 
 main().catch((err) => {
