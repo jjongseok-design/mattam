@@ -42,6 +42,46 @@ const CityCard = ({ city, index }: { city: City; index: number }) => {
     );
   }
 
+  if (city.imageUrl) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.08 }}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+      >
+        <Link to={`/${city.id}`} className="block group">
+          <div className="relative rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.2)]">
+            <div className="h-36 relative overflow-hidden">
+              <img
+                src={city.imageUrl}
+                alt={city.name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+              {city.restaurantCount > 0 && (
+                <div className="absolute top-3 right-3">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-full border border-white/20">
+                    <Utensils className="h-3 w-3" />
+                    {city.restaurantCount}개 맛집
+                  </span>
+                </div>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
+                <div>
+                  <h3 className="font-black text-white text-2xl leading-tight">{city.name}</h3>
+                  <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{city.description}</p>
+                </div>
+                <ChevronRight className="h-6 w-6 text-white/70 flex-shrink-0 mb-0.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -52,18 +92,6 @@ const CityCard = ({ city, index }: { city: City; index: number }) => {
     >
       <Link to={`/${city.id}`} className="block">
         <div className="relative rounded-2xl border border-border/50 bg-card overflow-hidden hover:border-primary/30 hover:shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.15)] transition-all duration-200">
-          {/* City image */}
-          {city.imageUrl ? (
-            <div className="h-36 overflow-hidden relative">
-              <img
-                src={city.imageUrl}
-                alt={city.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-            </div>
-          ) : null}
-
           <div className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
