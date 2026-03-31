@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MapPin, Utensils, ChevronRight, Loader2, Send, Users, Star } from "lucide-react";
+import { Utensils, ChevronRight, Loader2, Send, Users, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCities } from "@/hooks/useCities";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -62,29 +62,7 @@ const CityCard = ({ city, index }: { city: City; index: number }) => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
             </div>
-          ) : (
-            <div className="h-36 bg-gradient-to-br from-sky-100/80 to-emerald-100/50 dark:from-sky-900/30 dark:to-emerald-900/20 relative overflow-hidden">
-              <svg className="absolute inset-0 w-full h-full opacity-25 text-foreground" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id={`grid-${city.id}`} width="20" height="20" patternUnits="userSpaceOnUse">
-                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="0.5" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill={`url(#grid-${city.id})`} />
-                <line x1="0" y1="55%" x2="100%" y2="42%" stroke="currentColor" strokeWidth="3" opacity="0.4" />
-                <line x1="22%" y1="0" x2="30%" y2="100%" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-                <line x1="68%" y1="0" x2="75%" y2="100%" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-                <line x1="0" y1="75%" x2="100%" y2="70%" stroke="currentColor" strokeWidth="1.5" opacity="0.25" />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-primary/85 shadow-md flex items-center justify-center">
-                  <MapPin className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-foreground/50">{city.name}</span>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            </div>
-          )}
+          ) : null}
 
           <div className="p-4">
             <div className="flex items-center justify-between">
