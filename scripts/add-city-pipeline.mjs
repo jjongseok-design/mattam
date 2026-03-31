@@ -160,6 +160,24 @@ function nameSimilar(a, b) {
   return ca.includes(cb) || cb.includes(ca) || ca.slice(0, 3) === cb.slice(0, 3);
 }
 
+function nameMatch(a, b) {
+  const clean = s => s.toLowerCase().replace(/\s/g, "").replace(/[()（）]/g, "");
+  const ca = clean(a), cb = clean(b);
+  return ca === cb ||
+    ca.includes(cb) ||
+    cb.includes(ca) ||
+    ca.slice(0, 4) === cb.slice(0, 4);
+}
+
+function addressMatch(a, b) {
+  const extractCore = addr => {
+    const match = addr?.match(/(\S+(?:로|길|동|읍|면)\s*\d+(?:-\d+)?)/);
+    return match ? match[1].replace(/\s/g, "") : addr?.slice(-10) ?? "";
+  };
+  const ca = extractCore(a), cb = extractCore(b);
+  return ca && cb && (ca.includes(cb) || cb.includes(ca));
+}
+
 // ── Supabase 헬퍼 ────────────────────────────────────────────────────────────
 
 const SB_HEADERS = {
@@ -493,77 +511,86 @@ async function phase1_collect(center) {
 // ── Phase 2: 식당명 + 주소 일치 검증 ─────────────────────────────────────────
 
 async function phase2_verify(restaurants) {
-  console.log("\n━━━ Phase 2: 식당명·주소 일치 검증 ━━━");
+  console.log("\n━━━ Phase 2: 식당명·주소 일치 검증 (강화) ━━━");
 
-  const verified   = [];  // 정상
-  const renamed    = [];  // 명칭 변경 확인 필요
-  const closed     = [];  // 폐업 의심
-  const flagged    = [];  // 기타 이슈
+  const verified = [];
+  const failed = [];
 
   for (let i = 0; i < restaurants.length; i++) {
     const r = restaurants[i];
     const prefix = `  [${String(i+1).padStart(3," ")}/${restaurants.length}] ${r.name}`;
 
-    // 좌표 기반으로 카카오 재확인
-    const nearby = await kakaoVerifyByCoords(r.name, r.lat, r.lng);
-    await sleep(200);
+    try {
+      // 카카오 로컬 검색: 식당명 + 도시명
+      const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
+      url.searchParams.set("query", `${r.name} ${CITY_NAME}`);
+      url.searchParams.set("category_group_code", "FD6");
+      url.searchParams.set("x", String(r.lng));
+      url.searchParams.set("y", String(r.lat));
+      url.searchParams.set("radius", "500");
+      url.searchParams.set("size", "5");
 
-    if (!nearby || nearby.length === 0) {
-      // 주소로 재검색 시도
-      const byAddr = await kakaoSearchByAddress(r.address, r.lat, r.lng);
-      await sleep(200);
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `KakaoAK ${KAKAO_KEY}` }
+      });
+      const data = await res.json();
+      const docs = data.documents ?? [];
 
-      if (!byAddr) {
-        console.log(`${prefix} → ⚠️  주소 검색도 실패 (폐업 의심)`);
-        closed.push({ ...r, _issue: "주소 검색 실패" });
+      if (docs.length === 0) {
+        console.log(`${prefix} → ⛔ 검색 결과 없음 (폐업 의심) 제외`);
+        failed.push({ ...r, _reason: "검색 결과 없음" });
+        await sleep(200);
         continue;
       }
 
-      // 주소에 다른 식당 있음 → 명칭 변경 의심
-      const foundName = byAddr.place_name ?? byAddr.address_name ?? "";
-      if (foundName && !nameSimilar(r.name, foundName)) {
-        console.log(`${prefix} → 🔄 명칭 변경 의심: "${foundName}"`);
-        renamed.push({ ...r, _newName: foundName, _issue: "명칭 변경 의심" });
-        continue;
-      }
-    }
+      // 이름 + 주소 둘 다 일치하는 결과 찾기
+      const match = docs.find(doc =>
+        nameMatch(r.name, doc.place_name) &&
+        addressMatch(r.address, doc.road_address_name || doc.address_name)
+      );
 
-    const hit = nearby?.[0];
-    if (hit && !nameSimilar(r.name, hit.place_name)) {
-      console.log(`${prefix} → 🔄 이름 불일치: 카카오="${hit.place_name}"`);
-      // 카카오 공식명으로 업데이트
-      r.name = hit.place_name;
-      r.phone = hit.phone || r.phone;
-      r.lat   = parseFloat(hit.y) || r.lat;
-      r.lng   = parseFloat(hit.x) || r.lng;
-      flagged.push({ ...r, _issue: "이름 카카오 공식명으로 수정" });
-    } else {
-      // 좌표·전화번호 최신화
-      if (hit) {
-        r.phone = hit.phone || r.phone;
-        r.lat   = parseFloat(hit.y) || r.lat;
-        r.lng   = parseFloat(hit.x) || r.lng;
-        r.address = hit.road_address_name || hit.address_name || r.address;
+      if (!match) {
+        // 이름만 일치하는 결과 찾기 (주소 변경 가능성)
+        const nameOnly = docs.find(doc => nameMatch(r.name, doc.place_name));
+        if (nameOnly) {
+          // 이름은 맞는데 주소가 다름 → 이전했을 가능성, 카카오 데이터로 업데이트
+          console.log(`${prefix} → ⚠️  주소 불일치, 카카오 주소로 업데이트: ${nameOnly.road_address_name}`);
+          r.address = nameOnly.road_address_name || nameOnly.address_name || r.address;
+          r.lat = parseFloat(nameOnly.y) || r.lat;
+          r.lng = parseFloat(nameOnly.x) || r.lng;
+          r.phone = nameOnly.phone || r.phone;
+          verified.push(r);
+        } else {
+          console.log(`${prefix} → ⛔ 이름+주소 불일치 제외 (카카오: ${docs[0]?.place_name})`);
+          failed.push({ ...r, _reason: `불일치: 카카오=${docs[0]?.place_name}` });
+        }
+      } else {
+        // 완전 일치 → 카카오 데이터로 최신화
+        r.name = match.place_name;
+        r.address = match.road_address_name || match.address_name || r.address;
+        r.lat = parseFloat(match.y) || r.lat;
+        r.lng = parseFloat(match.x) || r.lng;
+        r.phone = match.phone || r.phone;
+        console.log(`${prefix} → ✅ 일치`);
+        verified.push(r);
       }
+    } catch (err) {
+      console.log(`${prefix} → ⚠️  검증 오류: ${err.message} (통과)`);
       verified.push(r);
     }
+
+    await sleep(200);
   }
 
   console.log(`\n  ✅ Phase 2 완료`);
-  console.log(`    정상: ${verified.length}개 / 공식명 수정: ${flagged.length}개`);
-  console.log(`    명칭변경 의심: ${renamed.length}개 / 폐업 의심: ${closed.length}개`);
+  console.log(`    통과: ${verified.length}개 / 제외: ${failed.length}개`);
 
-  if (closed.length) {
-    console.log(`\n  ⛔  폐업 의심 목록:`);
-    closed.forEach(r => console.log(`    - ${r.name} (${r.address})`));
-  }
-  if (renamed.length) {
-    console.log(`\n  🔄  명칭 변경 의심 목록 (수동 확인 권장):`);
-    renamed.forEach(r => console.log(`    - ${r.name} → ${r._newName} (${r.address})`));
+  if (failed.length > 0) {
+    console.log(`\n  ⛔ 제외된 식당 목록:`);
+    failed.forEach(r => console.log(`    - ${r.name} (${r.address}) → ${r._reason}`));
   }
 
-  // flagged는 수정된 이름으로 verified에 포함
-  return [...verified, ...flagged];
+  return verified;
 }
 
 // ── Phase 3: 전화번호·좌표·주소 정합성 검증 ──────────────────────────────────
