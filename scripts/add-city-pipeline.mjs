@@ -980,6 +980,19 @@ async function phase7_copyCategories() {
 
   console.log(`  ✅ ${newCats.length}개 카테고리 복사 완료`);
   newCats.forEach(c => console.log(`    - ${c.label} (${c.id})`));
+
+  // 도시 코드 prefix (예: daejeon → dj, wonju → wj)
+  const cityPrefix = CITY.slice(0, 2);
+
+  // 개별 업데이트
+  for (const cat of newCats) {
+    await fetch(`${SUPABASE_URL}/rest/v1/categories?city_id=eq.${CITY}&id=eq.${encodeURIComponent(cat.id)}`, {
+      method: "PATCH",
+      headers: { ...SB_HEADERS, Prefer: "return=minimal" },
+      body: JSON.stringify({ id_prefix: `${cityPrefix}${cat.id_prefix}` }),
+    });
+  }
+  console.log(`  ✅ id_prefix에 도시코드 '${cityPrefix}' 추가 완료`);
 }
 
 // ── Phase 8: Supabase DB 삽입 ────────────────────────────────────────────────
