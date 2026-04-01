@@ -6,117 +6,57 @@ import ThemeToggle from "@/components/ThemeToggle";
 import type { City } from "@/types/city";
 
 const CityCard = ({ city, index }: { city: City; index: number }) => {
-  if (city.comingSoon) {
-    return (
-      <Link to={`/${city.id}`}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.08 }}
-        className="relative rounded-2xl border border-border/40 bg-muted/20 overflow-hidden"
-      >
-        {city.imageUrl ? (
-          <div className="h-28 overflow-hidden relative">
-            <img
-              src={city.imageUrl}
-              alt={city.name}
-              className="w-full h-full object-cover opacity-50"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-          </div>
-        ) : null}
-        <div className={`p-5 flex items-center gap-4 opacity-40 ${city.imageUrl ? "py-4" : ""}`}>
-          <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl flex-shrink-0">
-            🏙️
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-foreground text-lg">{city.name}</h3>
-            <p className="text-sm text-muted-foreground">{city.description}</p>
-          </div>
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl">
-          <span className="text-lg font-bold text-white bg-black/60 backdrop-blur-sm px-5 py-2 rounded-full border border-white/20">
-            🔜 곧 오픈
-          </span>
-        </div>
-      </motion.div>
-      </Link>
-    );
-  }
-
-  if (city.imageUrl) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.08 }}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <Link to={`/${city.id}`} className="block group">
-          <div className="relative rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.2)]">
-            <div className="h-36 relative overflow-hidden">
-              <img
-                src={city.imageUrl}
-                alt={city.name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-              {city.restaurantCount > 0 && (
-                <div className="absolute top-3 right-3">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-full border border-white/20">
-                    <Utensils className="h-3 w-3" />
-                    {city.restaurantCount}개 맛집
-                  </span>
-                </div>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-                <div>
-                  <h3 className="font-black text-white text-2xl leading-tight">{city.name}</h3>
-                  <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{city.description}</p>
-                </div>
-                <ChevronRight className="h-6 w-6 text-white/70 flex-shrink-0 mb-0.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          </div>
-        </Link>
-      </motion.div>
-    );
-  }
+  const isComingSoon = city.comingSoon;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08 }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
+      whileHover={isComingSoon ? undefined : { scale: 1.01 }}
+      whileTap={isComingSoon ? undefined : { scale: 0.99 }}
     >
-      <Link to={`/${city.id}`} className="block">
-        <div className="relative rounded-2xl border border-border/50 bg-card overflow-hidden hover:border-primary/30 hover:shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.15)] transition-all duration-200">
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Utensils className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-foreground text-lg leading-tight">{city.name}</h3>
-                  <p className="text-xs text-muted-foreground">{city.description}</p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-primary/50" />
+      <Link to={`/${city.id}`} className="block group">
+        <div className="relative h-36 rounded-2xl overflow-hidden border border-border/50 transition-all duration-300 hover:border-primary/30 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.2)]">
+          {city.imageUrl ? (
+            <img
+              src={city.imageUrl}
+              alt={city.name}
+              className={`w-full h-full object-cover transition-transform duration-500 ${isComingSoon ? "opacity-50" : "group-hover:scale-105"}`}
+            />
+          ) : (
+            <div className="w-full h-full bg-muted/40 flex items-center justify-center">
+              <Utensils className="h-10 w-10 text-muted-foreground/30" />
             </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
-            {city.restaurantCount > 0 && (
-              <div className="mt-3 flex items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-                  <Utensils className="h-3 w-3" />
-                  {city.restaurantCount}개 맛집
-                </span>
-              </div>
+          {!isComingSoon && city.restaurantCount > 0 && (
+            <div className="absolute top-3 right-3">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-full border border-white/20">
+                <Utensils className="h-3 w-3" />
+                {city.restaurantCount}개 맛집
+              </span>
+            </div>
+          )}
+
+          <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
+            <div>
+              <h3 className="font-black text-white text-2xl leading-tight">{city.name}</h3>
+              <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{city.description}</p>
+            </div>
+            {!isComingSoon && (
+              <ChevronRight className="h-6 w-6 text-white/70 flex-shrink-0 mb-0.5 group-hover:translate-x-1 transition-transform" />
             )}
           </div>
+
+          {isComingSoon && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <span className="text-lg font-bold text-white bg-black/60 backdrop-blur-sm px-5 py-2 rounded-full border border-white/20">
+                🔜 곧 오픈
+              </span>
+            </div>
+          )}
         </div>
       </Link>
     </motion.div>
