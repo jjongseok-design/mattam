@@ -272,7 +272,7 @@ const Admin = () => {
       r.name.includes(search) ||
       r.address.includes(search) ||
       (r.tags ?? []).some((t) => t.includes(search));
-    const matchCategory = search ? true : showNeedsReview ? r.needs_review === true : showNoImage ? !r.image_url : (!validCategory || r.category === adminCategory);
+    const matchCategory = search ? true : showNeedsReview ? (r.needs_review === true || r.opening_hours == null) : showNoImage ? !r.image_url : (!validCategory || r.category === adminCategory);
     return matchCategory && matchSearch;
   });
 
@@ -830,9 +830,9 @@ const Admin = () => {
             onClick={() => { setShowNeedsReview((v) => !v); setShowNoImage(false); setSearch(""); }}
             className={`border rounded-lg p-3 text-center transition-colors w-full ${showNeedsReview ? "bg-yellow-50 border-yellow-300 dark:bg-yellow-950/30 dark:border-yellow-700" : "bg-card border-border hover:border-yellow-300"}`}
           >
-            <p className="text-2xl font-bold text-yellow-500">{restaurants.filter(r => r.needs_review).length}</p>
+            <p className="text-2xl font-bold text-yellow-500">{restaurants.filter(r => r.needs_review === true || r.opening_hours == null).length}</p>
             <p className={`text-[11px] mt-0.5 ${showNeedsReview ? "text-yellow-600 font-semibold" : "text-muted-foreground"}`}>
-              {showNeedsReview ? "▼ 검토필요" : "검토필요"}
+              {showNeedsReview ? "▼ 검토필요 (영업시간 없음 포함)" : "검토필요 (영업시간 없음 포함)"}
             </p>
           </button>
           <div className="bg-card border border-border rounded-lg p-3 text-center">
