@@ -9,7 +9,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image, MapPin, Users, Star, MessageSquare } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
-import { useCities } from "@/hooks/useCities";
 import { useAllVisitCounts } from "@/hooks/useVisitCount";
 import { motion } from "framer-motion";
 
@@ -72,9 +71,8 @@ const Admin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: cities = [] } = useCities();
+  const [cities, setCities] = useState<{ id: string; name: string; lat?: number; lng?: number }[]>([]);
   const [adminCityId, setAdminCityId] = useState(() => {
-    // URL에 cityId 파라미터가 있으면 우선 사용
     const params = new URLSearchParams(window.location.search);
     return params.get("city") ?? "chuncheon";
   });
@@ -148,15 +146,20 @@ const Admin = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // cities 로드 후 기본 도시가 유효하지 않으면 첫 번째 활성 도시로 설정
+  // 모든 도시 직접 조회 (필터 없음)
   useEffect(() => {
-    if (cities.length === 0) return;
-    const valid = cities.find(c => c.id === adminCityId);
-    if (!valid) {
-      const first = cities[0];
-      if (first) setAdminCityId(first.id);
-    }
-  }, [cities]);
+    supabase
+      .from("cities" as any)
+      .select("id, name, lat, lng")
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setCities(data as { id: string; name: string; lat?: number; lng?: number }[]);
+        } else {
+          setCities([{ id: "chuncheon", name: "춘천" }]);
+        }
+      });
+  }, []);
 
   // 카테고리 로드 후 초기 선택 (adminCategory가 비어있거나 유효하지 않으면 첫 번째 카테고리 선택)
   useEffect(() => {
