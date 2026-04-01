@@ -618,20 +618,29 @@ async function phase2_verify(restaurants) {
     const prefix = `  [${String(i+1).padStart(3," ")}/${restaurants.length}] ${r.name}`;
 
     try {
-      // 카카오 로컬 검색: 식당명 + 도시명
-      const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
-      url.searchParams.set("query", `${r.name} ${CITY_NAME}`);
-      url.searchParams.set("category_group_code", "FD6");
-      url.searchParams.set("x", String(r.lng));
-      url.searchParams.set("y", String(r.lat));
-      url.searchParams.set("radius", "500");
-      url.searchParams.set("size", "5");
+      const hasCoords = r.lat && r.lng && r.lat !== 0 && r.lng !== 0;
+      let docs = [];
 
-      const res = await fetch(url.toString(), {
-        headers: { Authorization: `KakaoAK ${KAKAO_KEY}` }
-      });
-      const data = await res.json();
-      const docs = data.documents ?? [];
+      if (hasCoords) {
+        // 좌표 기반 반경 200m 검색
+        docs = await kakaoVerifyByCoords(r.name, r.lat, r.lng);
+      } else {
+        // 좌표 없음: 도시 전체 범위 키워드 검색
+        const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
+        url.searchParams.set("query", `${r.name} ${CITY_NAME}`);
+        url.searchParams.set("category_group_code", "FD6");
+        url.searchParams.set("size", "5");
+        const res = await fetch(url.toString(), { headers: { Authorization: `KakaoAK ${KAKAO_KEY}` } });
+        const data = await res.json();
+        docs = data.documents ?? [];
+        // 검색 성공 시 좌표 업데이트
+        if (docs.length > 0) {
+          r.lat = parseFloat(docs[0].y);
+          r.lng = parseFloat(docs[0].x);
+          r.address = docs[0].road_address_name || docs[0].address_name || r.address;
+          r.phone = docs[0].phone || r.phone;
+        }
+      }
 
       if (docs.length === 0) {
         console.log(`${prefix} → ⛔ 검색 결과 없음 (폐업 의심) 제외`);
