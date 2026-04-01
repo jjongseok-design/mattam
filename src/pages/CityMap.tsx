@@ -30,8 +30,9 @@ import { CATEGORY_EMOJI } from "@/data/categoryEmoji";
 import { CityContext } from "@/contexts/CityContext";
 import { useFirstVisitorCounts } from "@/hooks/useVisitCount";
 
-const INDEX_STATE_KEY = "index_scroll_state";
 const SCROLL_TOP_KEY = "citymap_list_scrolltop";
+
+const getStateKey = (cityId?: string) => `index_scroll_state_${cityId ?? "default"}`;
 
 interface SavedState {
   categories: string[];
@@ -43,13 +44,13 @@ interface SavedState {
   selectedId?: string | null;
 }
 
-const saveState = (state: SavedState) => {
-  try { sessionStorage.setItem(INDEX_STATE_KEY, JSON.stringify(state)); } catch {}
+const saveState = (state: SavedState, cityId?: string) => {
+  try { sessionStorage.setItem(getStateKey(cityId), JSON.stringify(state)); } catch {}
 };
 
-const loadState = (): SavedState | null => {
+const loadState = (cityId?: string): SavedState | null => {
   try {
-    const s = sessionStorage.getItem(INDEX_STATE_KEY);
+    const s = sessionStorage.getItem(getStateKey(cityId));
     return s ? JSON.parse(s) : null;
   } catch { return null; }
 };
@@ -64,7 +65,7 @@ const CityMap = () => {
     ? initialCatParam.split(",").filter(Boolean)
     : [];
 
-  const saved = useRef(loadState());
+  const saved = useRef(loadState(cityId));
   const isRestored = useRef(false);
   const skipScrollIntoView = useRef(saved.current?.selectedId != null);
 
@@ -143,7 +144,7 @@ const CityMap = () => {
 
   // 상태 변경 시마다 즉시 저장 (navigation 전에 항상 최신 상태 보장)
   useEffect(() => {
-    saveState({ categories, showList, scrollTop: listRef.current?.scrollTop ?? 0, query, sort, filter, selectedId });
+    saveState({ categories, showList, scrollTop: listRef.current?.scrollTop ?? 0, query, sort, filter, selectedId }, cityId);
   }, [categories, showList, query, sort, filter, selectedId]);
 
   useEffect(() => {
