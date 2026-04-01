@@ -29,7 +29,7 @@
  *     CATEGORIES        수집할 카테고리 (기본값 아래 참고)
  *     KEYWORDS          추가 키워드 (쉼표 구분, 예: "막국수,닭갈비")
  *     MAX_PER_QUERY     카테고리당 최대 수집 수 (기본 45)
- *     SKIP_PHASES       건너뛸 Phase 번호 (쉼표 구분, 예: "4,6")
+ *     SKIP_PHASES       건너뛸 Phase 번호 (기본: "5,6" — 이미지는 어드민에서 수동 작업)
  *     DRY_RUN=1         DB·Storage 변경 없이 미리보기
  *     DELAY_MS=1500     요청 간 딜레이 ms (기본 1500)
  *     LAT               도시 중심 위도 (기본: 카카오 geocode 자동)
@@ -37,14 +37,14 @@
  *     RADIUS            검색 반경 m (기본 15000)
  *
  * ── 실행 예시 ────────────────────────────────────────────────────────────────
- *   # 기본 실행
+ *   # 기본 실행 (이미지 스킵 — 이미지는 어드민에서 수동 작업)
  *   CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
+ *
+ *   # 이미지까지 포함해서 실행하려면
+ *   SKIP_PHASES="" CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
  *
  *   # 미리보기
  *   DRY_RUN=1 CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
- *
- *   # 이미지·필터링만 건너뛰고 빠르게 DB 삽입
- *   SKIP_PHASES=5,6 CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
  *
  *   # 추가 키워드 포함
  *   KEYWORDS=막국수,닭갈비 CITY=chuncheon CITY_NAME=춘천 node scripts/add-city-pipeline.mjs
@@ -92,7 +92,7 @@ const DRY_RUN         = env.DRY_RUN === "1";
 const DELAY_MS        = parseInt(env.DELAY_MS || "1500");
 const MAX_PER_QUERY   = parseInt(env.MAX_PER_QUERY || "45");
 const RADIUS          = parseInt(env.RADIUS || "15000");
-const SKIP_PHASES     = new Set((env.SKIP_PHASES || "").split(",").map(s => s.trim()).filter(Boolean));
+const SKIP_PHASES     = new Set((env.SKIP_PHASES ?? "5,6").split(",").map(s => s.trim()).filter(Boolean));
 
 // 필수값 체크
 const missing = [];
