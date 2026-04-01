@@ -90,11 +90,11 @@ const CityMap = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(() => {
-    try { return !localStorage.getItem("mattam_onboarding_done"); } catch { return true; }
+    try { return !localStorage.getItem(`mattam_onboarding_done_${cityId}`); } catch { return true; }
   });
 
   const handleOnboardingClose = () => {
-    try { localStorage.setItem("mattam_onboarding_done", "1"); } catch {}
+    try { localStorage.setItem(`mattam_onboarding_done_${cityId}`, "1"); } catch {}
     setShowOnboarding(false);
   };
   const [activeTab, setActiveTab] = useState<"map" | "list" | "favorites">("map");
