@@ -550,7 +550,7 @@ async function phase1_collect(center) {
       phone:        null,
       lat:          center.lat,
       lng:          center.lng,
-      category:     null,
+      category:     item.category ?? null,
       category_raw: "",
       url:          null,
     }));
