@@ -165,12 +165,20 @@ function generateId(name, address) {
 //              춘천 restaurants, categories 테이블 데이터 수정 금지
 //              아래 함수는 읽기(SELECT) 전용 — 절대 수정하지 말 것
 async function generateRestaurantId(category) {
-  // 카테고리 prefix 가져오기 (춘천 기준 — 읽기만 함, 수정 없음)
-  const cats = await sbGet("categories", {
-    city_id: `eq.chuncheon`,
+  // 카테고리 prefix 가져오기 (현재 도시 기준, 없으면 춘천 기준)
+  let cats = await sbGet("categories", {
+    city_id: `eq.${CITY}`,
     id: `eq.${category}`,
   });
-  const prefix = cats[0]?.id_prefix ?? "xx";
+  if (!cats?.length) {
+    cats = await sbGet("categories", {
+      city_id: `eq.chuncheon`,
+      id: `eq.${category}`,
+    });
+  }
+  // 폴백: 도시 ID 앞 두 글자 기반 prefix (충돌 방지)
+  const fallbackPrefix = CITY.replace(/[^a-z]/gi, "").slice(0, 2).toLowerCase();
+  const prefix = cats[0]?.id_prefix ?? fallbackPrefix ?? "xx";
 
   // 전체 DB에서 해당 prefix 최대 번호 조회 (도시 무관, 읽기만)
   const existing = await sbGet("restaurants", {
@@ -1020,9 +1028,33 @@ async function phase8_insert(restaurants, existingIds) {
     return;
   }
 
-  // restaurants 테이블 스키마에 맞춰 정제 (ID는 카테고리 prefix 기반 생성)
-  const rows = await Promise.all(toInsert.map(async (r) => ({
-    id:             r.id ?? await generateRestaurantId(r.category),
+  // ID 생성: 순차 처리 + 로컬 카운터로 중복 방지
+  const localIdCounters = {}; // prefix → 현재까지 할당한 최대 번호 (로컬)
+  async function assignId(r) {
+    if (r.id) return r.id;
+    // prefix 조회
+    let cats = await sbGet("categories", { city_id: `eq.${CITY}`, id: `eq.${r.category}` });
+    if (!cats?.length) cats = await sbGet("categories", { city_id: `eq.chuncheon`, id: `eq.${r.category}` });
+    const fallbackPrefix = CITY.replace(/[^a-z]/gi, "").slice(0, 2).toLowerCase();
+    const prefix = cats[0]?.id_prefix ?? fallbackPrefix ?? "xx";
+    // DB 최대번호 (아직 조회 안 한 prefix만)
+    if (localIdCounters[prefix] === undefined) {
+      const existing = await sbGet("restaurants", { select: "id", id: `like.${prefix}*` });
+      const max = (existing ?? []).reduce((m, x) => {
+        const match = x.id.match(new RegExp(`^${prefix}(\\d+)$`));
+        return match ? Math.max(m, parseInt(match[1])) : m;
+      }, 0);
+      localIdCounters[prefix] = max;
+    }
+    localIdCounters[prefix] += 1;
+    return `${prefix}${String(localIdCounters[prefix]).padStart(2, "0")}`;
+  }
+
+  // restaurants 테이블 스키마에 맞춰 정제 (ID 순차 생성)
+  const rows = [];
+  for (const r of toInsert) {
+    rows.push({
+    id:             await assignId(r),
     name:           r.name,
     category:       r.category ?? "기타",
     address:        r.address ?? "",
@@ -1046,7 +1078,8 @@ async function phase8_insert(restaurants, existingIds) {
     menu_items:     null,
     created_at:     new Date().toISOString(),
     updated_at:     new Date().toISOString(),
-  })));
+    });
+  }
 
   if (DRY_RUN) {
     console.log(`  [DRY RUN] ${rows.length}개 삽입 예정`);
