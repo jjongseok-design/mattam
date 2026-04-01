@@ -8,6 +8,7 @@ import type { City } from "@/types/city";
 const CityCard = ({ city, index }: { city: City; index: number }) => {
   if (city.comingSoon) {
     return (
+      <Link to={`/${city.id}`}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -24,7 +25,7 @@ const CityCard = ({ city, index }: { city: City; index: number }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
           </div>
         ) : null}
-        <div className={`p-5 flex items-center gap-4 opacity-50 ${city.imageUrl ? "py-4" : ""}`}>
+        <div className={`p-5 flex items-center gap-4 opacity-40 ${city.imageUrl ? "py-4" : ""}`}>
           <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl flex-shrink-0">
             🏙️
           </div>
@@ -33,12 +34,13 @@ const CityCard = ({ city, index }: { city: City; index: number }) => {
             <p className="text-sm text-muted-foreground">{city.description}</p>
           </div>
         </div>
-        <div className="absolute top-3 right-3">
-          <span className="text-[10px] font-semibold bg-muted text-muted-foreground px-2 py-1 rounded-full">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl">
+          <span className="text-lg font-bold text-white bg-black/60 backdrop-blur-sm px-5 py-2 rounded-full border border-white/20">
             🔜 곧 오픈
           </span>
         </div>
       </motion.div>
+      </Link>
     );
   }
 

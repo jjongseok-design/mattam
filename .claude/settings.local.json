@@ -57,7 +57,11 @@
       "Bash(ls -la /c/Users/DELL/mattam/.env*)",
       "Bash(DRY_RUN=1 node scripts/remove-url-duplicates.mjs)",
       "Bash(git pull:*)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=20a253e4 npx supabase functions deploy admin-api --project-ref cblckdcrsotqynngblyb 2>&1)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts|jsx|js\\)$\")",
+      "Bash(ls -la /c/Users/yasiris/mattam/scripts/*.json)",
+      "Bash(ls -la /c/Users/yasiris/mattam/*.json)"
     ]
   }
 }
