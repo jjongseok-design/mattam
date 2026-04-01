@@ -29,6 +29,9 @@
  *     CATEGORIES        수집할 카테고리 (기본값 아래 참고)
  *     KEYWORDS          추가 키워드 (쉼표 구분, 예: "막국수,닭갈비")
  *     MAX_PER_QUERY     카테고리당 최대 수집 수 (기본 45)
+ *     RESTAURANT_LIST   맛집 목록 JSON 파일 경로 (권장)
+ *                       형식: [{ "name": "식당명", "address": "주소" }, ...]
+ *                       미지정 시 카카오 전체 수집 모드로 전환 (API 비용 주의)
  *     SKIP_PHASES       건너뛸 Phase 번호 (기본: "5,6" — 이미지는 어드민에서 수동 작업)
  *     DRY_RUN=1         DB·Storage 변경 없이 미리보기
  *     DELAY_MS=1500     요청 간 딜레이 ms (기본 1500)
@@ -37,16 +40,19 @@
  *     RADIUS            검색 반경 m (기본 15000)
  *
  * ── 실행 예시 ────────────────────────────────────────────────────────────────
- *   # 기본 실행 (이미지 스킵 — 이미지는 어드민에서 수동 작업)
+ *   # 권장: 맛집 목록 파일로 실행 (이미지 스킵 — 어드민에서 수동 작업)
+ *   RESTAURANT_LIST=./restaurants-wonju.json CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
+ *
+ *   # 비권장: 카카오 전체 수집 (API 비용 주의)
  *   CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
  *
  *   # 이미지까지 포함해서 실행하려면
- *   SKIP_PHASES="" CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
+ *   SKIP_PHASES="" RESTAURANT_LIST=./restaurants-wonju.json CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
  *
  *   # 미리보기
- *   DRY_RUN=1 CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
+ *   DRY_RUN=1 RESTAURANT_LIST=./restaurants-wonju.json CITY=wonju CITY_NAME=원주 node scripts/add-city-pipeline.mjs
  *
- *   # 추가 키워드 포함
+ *   # 추가 키워드 포함 (카카오 전체 수집 모드)
  *   KEYWORDS=막국수,닭갈비 CITY=chuncheon CITY_NAME=춘천 node scripts/add-city-pipeline.mjs
  */
 
@@ -92,7 +98,8 @@ const DRY_RUN         = env.DRY_RUN === "1";
 const DELAY_MS        = parseInt(env.DELAY_MS || "1500");
 const MAX_PER_QUERY   = parseInt(env.MAX_PER_QUERY || "45");
 const RADIUS          = parseInt(env.RADIUS || "15000");
-const SKIP_PHASES     = new Set((env.SKIP_PHASES ?? "5,6").split(",").map(s => s.trim()).filter(Boolean));
+const SKIP_PHASES       = new Set((env.SKIP_PHASES ?? "5,6").split(",").map(s => s.trim()).filter(Boolean));
+const RESTAURANT_LIST   = env.RESTAURANT_LIST ?? null;
 
 // 필수값 체크
 const missing = [];
@@ -511,9 +518,42 @@ async function phase0_ensureCity(center) {
   console.log(`  ℹ️  파이프라인 완료 후 어드민에서 is_active=true 로 변경하세요`);
 }
 
-// ── Phase 1: 카카오 수집 ──────────────────────────────────────────────────────
+// ── Phase 1: 수집 (파일 입력 모드 / 카카오 전체 수집 모드) ───────────────────
 
 async function phase1_collect(center) {
+  // ── 모드 1: 파일 입력 ──────────────────────────────────────────────────────
+  if (RESTAURANT_LIST) {
+    console.log(`\n━━━ Phase 1: 파일 입력 모드 (${RESTAURANT_LIST}) ━━━`);
+    let rawList;
+    try {
+      rawList = JSON.parse(readFileSync(resolve(ROOT, RESTAURANT_LIST), "utf8"));
+    } catch (e) {
+      console.error(`❌ RESTAURANT_LIST 파일 읽기 실패: ${e.message}`);
+      process.exit(1);
+    }
+    if (!Array.isArray(rawList) || rawList.length === 0) {
+      console.error("❌ RESTAURANT_LIST 파일 형식 오류: [{ name, address }, ...] 배열이어야 합니다.");
+      process.exit(1);
+    }
+    const result = rawList.map((item) => ({
+      kakao_id:     null,
+      name:         item.name,
+      address:      item.address ?? "",
+      phone:        null,
+      lat:          center.lat,
+      lng:          center.lng,
+      category:     null,
+      category_raw: "",
+      url:          null,
+    }));
+    console.log(`  ✅ Phase 1 완료: 총 ${result.length}개 로드`);
+    return result;
+  }
+
+  // ── 모드 2: 카카오 전체 수집 ───────────────────────────────────────────────
+  console.log("\n⚠️  RESTAURANT_LIST 파일이 없습니다. 카카오 전체 수집 모드로 실행합니다.");
+  console.log("⚠️  이 모드는 맛집이 아닌 일반 식당도 포함될 수 있고 Google API 비용이 많이 발생합니다.");
+  console.log("⚠️  맛집 목록 파일을 준비하고 RESTAURANT_LIST=./파일명.json 으로 실행하는 것을 권장합니다.");
   console.log("\n━━━ Phase 1: 카카오 수집 ━━━");
 
   const collected = new Map(); // place_id → raw 데이터
