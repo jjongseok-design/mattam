@@ -353,7 +353,7 @@ const CityMap = () => {
                     </button>
                   )}
                   <div className="glass rounded-lg w-8 h-8 flex items-center justify-center"><ThemeToggle /></div>
-                  <Link to="/admin" className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform">
+                  <Link to={`/admin?city=${cityId}`} className="glass rounded-lg w-8 h-8 flex items-center justify-center active:scale-95 transition-transform">
                     <Settings className="h-3.5 w-3.5 text-muted-foreground/50" />
                   </Link>
                 </div>
@@ -462,7 +462,7 @@ const CityMap = () => {
                   <button onClick={() => setTipOpen(true)} className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="맛집 제보">
                     <MessageSquarePlus className="h-5 w-5 text-muted-foreground/50" />
                   </button>
-                  <Link to="/admin">
+                  <Link to={`/admin?city=${cityId}`}>
                     <button className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center transition-colors" title="관리자">
                       <Settings className="h-5 w-5 text-muted-foreground/40" />
                     </button>

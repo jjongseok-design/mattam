@@ -151,9 +151,9 @@ const Admin = () => {
   // cities 로드 후 기본 도시가 유효하지 않으면 첫 번째 활성 도시로 설정
   useEffect(() => {
     if (cities.length === 0) return;
-    const valid = cities.find(c => c.id === adminCityId && c.isActive && !c.comingSoon);
+    const valid = cities.find(c => c.id === adminCityId && c.isActive);
     if (!valid) {
-      const first = cities.find(c => c.isActive && !c.comingSoon);
+      const first = cities.find(c => c.isActive);
       if (first) setAdminCityId(first.id);
     }
   }, [cities]);
@@ -721,7 +721,7 @@ const Admin = () => {
               }}
               className="h-8 rounded-md border border-input bg-background px-2 text-xs ml-1 shrink-0"
             >
-              {cities.filter(c => !c.comingSoon).map((c) => (
+              {cities.filter(c => c.isActive).map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
