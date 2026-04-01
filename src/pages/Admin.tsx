@@ -47,6 +47,8 @@ const getEmptyForm = (category: string, lat = 37.8813, lng = 127.7298) => ({
   tags: [] as string[],
   description: "",
   is_recommended: false,
+  opening_hours: "",
+  closed_days: "",
 });
 
 const adminApi = async (action: string, data?: any) => {
@@ -315,6 +317,8 @@ const Admin = () => {
       tags: r.tags ?? [],
       description: r.description ?? "",
       is_recommended: r.is_recommended ?? false,
+      opening_hours: r.opening_hours ?? "",
+      closed_days: r.closed_days ?? "",
     });
     setEditing(r);
     setShowForm(true);
@@ -347,6 +351,8 @@ const Admin = () => {
       description: form.description || null,
       city_id: adminCityId,
       is_recommended: form.is_recommended ?? false,
+      opening_hours: (form as any).opening_hours || null,
+      closed_days: (form as any).closed_days || null,
       ...(showNeedsReview ? { needs_review: false } : {}),
     };
 
@@ -1223,6 +1229,22 @@ const Admin = () => {
                 <div className="col-span-2">
                   <label className="text-sm font-medium">가격대</label>
                   <Input value={form.price_range ?? ""} onChange={(e) => setForm({ ...form, price_range: e.target.value })} placeholder="₩ ~ ₩₩₩" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium">영업시간</label>
+                  <Input
+                    value={(form as any).opening_hours ?? ""}
+                    onChange={(e) => setForm({ ...form, opening_hours: e.target.value } as any)}
+                    placeholder="예: 11:00~21:00"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium">휴무일</label>
+                  <Input
+                    value={(form as any).closed_days ?? ""}
+                    onChange={(e) => setForm({ ...form, closed_days: e.target.value } as any)}
+                    placeholder="예: 월요일, 주말"
+                  />
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium">태그 (쉼표 구분)</label>

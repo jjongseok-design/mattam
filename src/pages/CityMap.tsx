@@ -40,6 +40,7 @@ interface SavedState {
   query: string;
   sort: SortOption;
   filter: FilterOption;
+  selectedId?: string | null;
 }
 
 const saveState = (state: SavedState) => {
@@ -65,9 +66,10 @@ const CityMap = () => {
 
   const saved = useRef(loadState());
   const isRestored = useRef(false);
+  const skipScrollIntoView = useRef(saved.current?.selectedId != null);
 
   const [query, setQuery] = useState(saved.current?.query || "");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(saved.current?.selectedId ?? null);
   const { data: dbCategories = [] } = useCategories(cityId);
   const [categories, setCategories] = useState<string[]>(
     initialCats.length > 0 ? initialCats : (saved.current?.categories ?? [])
@@ -139,14 +141,10 @@ const CityMap = () => {
     setSearchParams(categories.length > 0 ? { category: categories.join(",") } : {}, { replace: true });
   }, [categories, setSearchParams]);
 
+  // 상태 변경 시마다 즉시 저장 (navigation 전에 항상 최신 상태 보장)
   useEffect(() => {
-    return () => {
-      saveState({ categories, showList, scrollTop: listRef.current?.scrollTop ?? 0, query, sort, filter });
-      try {
-        sessionStorage.setItem(SCROLL_TOP_KEY, String(listRef.current?.scrollTop ?? 0));
-      } catch {}
-    };
-  }, [categories, showList, query, sort, filter]);
+    saveState({ categories, showList, scrollTop: listRef.current?.scrollTop ?? 0, query, sort, filter, selectedId });
+  }, [categories, showList, query, sort, filter, selectedId]);
 
   useEffect(() => {
     if (!isRestored.current && listRef.current && restaurants.length > 0) {
@@ -226,6 +224,8 @@ const CityMap = () => {
   }, [position, restaurants, handleSelect, toast]);
 
   useEffect(() => {
+    // 복원된 selectedId로 인한 첫 실행은 건너뜀 (scroll 복원과 충돌 방지)
+    if (skipScrollIntoView.current) { skipScrollIntoView.current = false; return; }
     if (!selectedId || !listRef.current) return;
     const el = listRef.current.querySelector(`[data-restaurant-id="${selectedId}"]`);
     if (el) el.scrollIntoView({ behavior: "instant", block: "nearest" });
