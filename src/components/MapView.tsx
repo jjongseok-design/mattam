@@ -133,6 +133,11 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     });
     kakaoMapRef.current = map;
 
+    // 생성 시점에 city 데이터가 이미 있으면 즉시 해당 도시 중심으로 이동
+    if (mapCenterRef.current.lat !== DEFAULT_CENTER.lat || mapCenterRef.current.lng !== DEFAULT_CENTER.lng) {
+      map.setCenter(new kakao.maps.LatLng(mapCenterRef.current.lat, mapCenterRef.current.lng));
+    }
+
     // 도시 경계 이탈 방지 (중심 좌표 클램프)
     const clamp = () => {
       const c = map.getCenter();
@@ -182,7 +187,7 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
       leafMap.setView([city.lat, city.lng], city.zoom ?? 12, { animate: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cityId]);
+  }, [cityId, city?.lat, city?.lng]);
 
   // ── 카카오 마커 전체 재생성 ───────────────────────────────────────────────
   // restaurants 또는 selectedId 가 바뀔 때마다 마커를 완전히 지우고 다시 그린다.
