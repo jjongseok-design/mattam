@@ -1,18 +1,16 @@
 /**
- * insert-jeonju-new.mjs
+ * stage2-insert.mjs
  *
- * 전주 신규 식당을 한 번에 처리합니다:
- *   1. 카카오 키워드 검색 → 좌표/주소/전화번호 확인
- *   2. Google Places → 영업시간/가격대
- *   3. Claude Haiku → 메뉴 태그 + 한 줄 설명
- *   4. Supabase DB 삽입
+ * stage1-verify.mjs 로 검증된 식당의 영업정보를 수집하고 DB에 삽입합니다.
+ *   1. Google Places → 영업시간 / 가격대 / 전화번호
+ *   2. Claude Haiku → 메뉴 태그 / 한 줄 설명
+ *   3. Supabase DB 삽입
  *
  * 사용법:
- *   node scripts/insert-jeonju-new.mjs
- *   DRY_RUN=1 node scripts/insert-jeonju-new.mjs   (DB 변경 없이 미리보기)
+ *   node scripts/stage2-insert.mjs
+ *   DRY_RUN=1 node scripts/stage2-insert.mjs
  *
- * 입력 파일: restaurants-jeonju-new.json
- *   형식: [{ "name": "식당명", "address": "주소", "category": "카테고리" }, ...]
+ * 입력: restaurants-verified.json (stage1 출력)
  */
 
 import { readFileSync } from "fs";
@@ -26,39 +24,21 @@ const env = Object.fromEntries(
     .map(l => { const i = l.indexOf("="); return [l.slice(0, i).trim(), l.slice(i + 1).trim()]; })
 );
 
-const KAKAO         = env.KAKAO_REST_API_KEY;
 const GOOGLE_KEY    = env.GOOGLE_PLACES_API_KEY;
 const ANTHROPIC_KEY = env.ANTHROPIC_API_KEY;
 const SB_URL        = env.VITE_SUPABASE_URL;
 const SK            = env.SUPABASE_SERVICE_ROLE_KEY;
 const DRY_RUN       = process.env.DRY_RUN === "1";
+const CITY_ID       = process.env.CITY ?? "jeonju";
 const CLAUDE_MODEL  = "claude-haiku-4-5-20251001";
+
+const INPUT_FILE = process.env.INPUT ?? "restaurants-verified.json";
 
 const SB_H = { apikey: SK, Authorization: `Bearer ${SK}`, "Content-Type": "application/json" };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const slugify = n => n.toLowerCase().replace(/[^가-힣a-z0-9\s]/g, "").trim().replace(/\s+/g, "-").slice(0, 60);
 
-const RESTAURANTS = JSON.parse(readFileSync(resolve(ROOT, "restaurants-jeonju-new.json"), "utf8"));
-
-// ── 카카오 키워드 검색 ────────────────────────────────────────────────────────
-async function kakaoSearch(name) {
-  for (const categoryCode of ["FD6", ""]) {
-    const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
-    url.searchParams.set("query", `${name} 전주`);
-    if (categoryCode) url.searchParams.set("category_group_code", categoryCode);
-    url.searchParams.set("size", "5");
-    const r = await fetch(url.toString(), { headers: { Authorization: `KakaoAK ${KAKAO}` } });
-    const d = await r.json();
-    if (d.documents?.length) return d.documents;
-  }
-  return [];
-}
-
-function nameMatch(a, b) {
-  const clean = s => s.toLowerCase().replace(/\s/g, "").replace(/[()（）]/g, "");
-  const ca = clean(a), cb = clean(b);
-  return ca === cb || ca.includes(cb) || cb.includes(ca) || ca.slice(0, 4) === cb.slice(0, 4);
-}
+const RESTAURANTS = JSON.parse(readFileSync(resolve(ROOT, INPUT_FILE), "utf8"));
 
 // ── Google Places ─────────────────────────────────────────────────────────────
 const DAY_KO = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
@@ -130,18 +110,14 @@ ${googleDesc ? `Google 설명: ${googleDesc}` : ""}
 }
 
 규칙:
-- menus: 이 식당에서 실제로 파는 대표 메뉴 3~5개, 한국어, 10자 이내
-- description: 식당의 핵심 특징 한 줄 (예: "전주 한옥마을 대표 비빔밥 노포")
+- menus: 실제 대표 메뉴 3~5개, 한국어, 10자 이내
+- description: 핵심 특징 한 줄 (예: "전주 한옥마을 대표 비빔밥 노포")
 - 모르면 카테고리 기반으로 추정`;
 
   for (let attempt = 1; attempt <= 3; attempt++) {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
+      headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 200, messages: [{ role: "user", content: prompt }] }),
     });
     if (res.status === 429) {
@@ -168,7 +144,7 @@ ${googleDesc ? `Google 설명: ${googleDesc}` : ""}
 
 // ── ID 생성 ───────────────────────────────────────────────────────────────────
 async function getPrefix(category) {
-  for (const cityId of ["jeonju", "chuncheon"]) {
+  for (const cityId of [CITY_ID, "chuncheon"]) {
     const r = await fetch(`${SB_URL}/rest/v1/categories?city_id=eq.${cityId}&id=eq.${encodeURIComponent(category)}&select=id_prefix`, { headers: SB_H });
     const d = await r.json();
     if (d[0]?.id_prefix) return d[0].id_prefix;
@@ -191,81 +167,64 @@ async function nextId(idPrefix) {
 }
 
 // ── 메인 ─────────────────────────────────────────────────────────────────────
-console.log(`전주 신규 식당 ${RESTAURANTS.length}개 처리 시작...\n${DRY_RUN ? "(DRY RUN — DB 변경 없음)\n" : ""}`);
+console.log(`━━━ Stage 2: 영업정보 수집 + DB 삽입 (${RESTAURANTS.length}개) ━━━\n${DRY_RUN ? "(DRY RUN — DB 변경 없음)\n" : ""}\n`);
 
 let inserted = 0, failed = 0;
 
 for (let i = 0; i < RESTAURANTS.length; i++) {
   const item = RESTAURANTS[i];
   const prefix = `  [${String(i + 1).padStart(2)}/${RESTAURANTS.length}] ${item.name}`;
+  console.log(prefix);
 
-  // 1. 카카오 검색
-  const docs = await kakaoSearch(item.name);
-  const doc = docs.find(d => nameMatch(item.name, d.place_name)) ?? docs[0];
-  if (!doc || !nameMatch(item.name, doc.place_name)) {
-    console.log(`${prefix} → ❌ 카카오 불일치 (${doc?.place_name ?? "결과없음"})`);
-    failed++;
-    await sleep(300);
-    continue;
-  }
+  try {
+    // 1. Google Places
+    const gInfo = await googlePlaces(item.name, item.lat, item.lng);
+    if (gInfo.opening_hours) process.stdout.write(`    🕐 ${gInfo.opening_hours}${gInfo.closed_days ? " · 휴무: " + gInfo.closed_days : ""}\n`);
+    if (gInfo.phone || item.phone) process.stdout.write(`    📞 ${gInfo.phone || item.phone}\n`);
+    if (gInfo.price_range) process.stdout.write(`    💰 ${gInfo.price_range}\n`);
 
-  const lat = parseFloat(doc.y);
-  const lng = parseFloat(doc.x);
-  const address = doc.road_address_name || doc.address_name;
-  const kakaoPhone = doc.phone || null;
-  console.log(`${prefix} → ✅ ${doc.place_name}`);
+    // 2. Claude
+    await sleep(500);
+    const aiInfo = await claudeFetch(item.name, item.category, item.address, gInfo.google_description);
+    if (aiInfo.tags?.length) process.stdout.write(`    🍽️  ${aiInfo.tags.join(", ")}\n`);
+    if (aiInfo.description) process.stdout.write(`    📝 ${aiInfo.description}\n`);
 
-  // 2. Google Places (영업시간/가격대)
-  await sleep(300);
-  const gInfo = await googlePlaces(doc.place_name, lat, lng);
-  if (gInfo.opening_hours) process.stdout.write(`    🕐 ${gInfo.opening_hours}${gInfo.closed_days ? " · 휴무: " + gInfo.closed_days : ""}\n`);
-  if (gInfo.phone || kakaoPhone) process.stdout.write(`    📞 ${gInfo.phone || kakaoPhone}\n`);
-  if (gInfo.price_range) process.stdout.write(`    💰 ${gInfo.price_range}\n`);
+    // 3. ID 생성 + 삽입
+    const idPrefix = await getPrefix(item.category);
+    const id = await nextId(idPrefix);
 
-  // 3. Claude (메뉴 + 설명)
-  await sleep(500);
-  const aiInfo = await claudeFetch(doc.place_name, item.category, address, gInfo.google_description);
-  if (aiInfo.tags?.length) process.stdout.write(`    🍽️  ${aiInfo.tags.join(", ")}\n`);
-  if (aiInfo.description) process.stdout.write(`    📝 ${aiInfo.description}\n`);
+    const row = {
+      id,
+      city_id: CITY_ID,
+      name: item.name,
+      slug: slugify(item.name),
+      address: item.address,
+      lat: item.lat,
+      lng: item.lng,
+      phone: gInfo.phone || item.phone || null,
+      category: item.category,
+      price_range: gInfo.price_range ?? null,
+      opening_hours: gInfo.opening_hours ?? null,
+      closed_days: gInfo.closed_days ?? null,
+      tags: aiInfo.tags ?? null,
+      description: aiInfo.description ?? null,
+    };
 
-  // 4. ID 생성
-  const idPrefix = await getPrefix(item.category);
-  const id = await nextId(idPrefix);
-
-  const row = {
-    id,
-    city_id: "jeonju",
-    name: doc.place_name,
-    slug: slugify(doc.place_name),
-    address,
-    lat,
-    lng,
-    phone: gInfo.phone || kakaoPhone,
-    category: item.category,
-    price_range: gInfo.price_range ?? null,
-    opening_hours: gInfo.opening_hours ?? null,
-    closed_days: gInfo.closed_days ?? null,
-    tags: aiInfo.tags ?? null,
-    description: aiInfo.description ?? null,
-  };
-
-  if (!DRY_RUN) {
-    const res = await fetch(`${SB_URL}/rest/v1/restaurants`, {
-      method: "POST",
-      headers: { ...SB_H, Prefer: "return=minimal" },
-      body: JSON.stringify(row),
-    });
-    if (res.ok) {
-      process.stdout.write(`    💾 삽입 완료 (id: ${id})\n`);
-      inserted++;
+    if (!DRY_RUN) {
+      const res = await fetch(`${SB_URL}/rest/v1/restaurants`, {
+        method: "POST",
+        headers: { ...SB_H, Prefer: "return=minimal" },
+        body: JSON.stringify(row),
+      });
+      if (res.ok) { process.stdout.write(`    💾 삽입 완료 (id: ${id})\n`); inserted++; }
+      else { const t = await res.text(); process.stdout.write(`    ⚠️  삽입 실패: ${t}\n`); failed++; }
     } else {
-      const t = await res.text();
-      process.stdout.write(`    ⚠️  삽입 실패: ${t}\n`);
-      failed++;
+      process.stdout.write(`    [DRY RUN] id: ${id}\n`);
+      inserted++;
     }
-  } else {
-    process.stdout.write(`    [DRY RUN] id: ${id}\n`);
-    inserted++;
+  } catch (err) {
+    process.stdout.write(`    ❌ 오류: ${err.message}\n`);
+    failed++;
   }
 
   await sleep(8000); // Claude rate limit 대응
