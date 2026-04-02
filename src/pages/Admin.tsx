@@ -139,6 +139,8 @@ const Admin = () => {
   const dragItem = useRef<string | null>(null);
   const dragOverItem = useRef<string | null>(null);
   const [dragOrder, setDragOrder] = useState<typeof categories | null>(null);
+  const dragOrderRef = useRef<typeof categories | null>(null); // touch용 최신 순서 참조
+  const touchMovedRef = useRef(false); // tap vs drag 구분
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -990,28 +992,32 @@ const Admin = () => {
               return (
                 <div
                   key={cat.id}
+                  data-cat-id={cat.id}
                   draggable={editMode}
+                  style={editMode ? { touchAction: 'none' } : undefined}
                   onDragStart={() => {
                     dragItem.current = cat.id;
-                    setDragOrder([...categories].sort((a, b) => a.sort_order - b.sort_order));
+                    const ordered = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+                    dragOrderRef.current = ordered;
+                    setDragOrder(ordered);
                   }}
                   onDragEnter={() => {
                     if (!dragItem.current || dragItem.current === cat.id) return;
                     dragOverItem.current = cat.id;
-                    setDragOrder(prev => {
-                      const base = prev ?? [...categories].sort((a, b) => a.sort_order - b.sort_order);
-                      const fromIdx = base.findIndex(c => c.id === dragItem.current);
-                      const toIdx = base.findIndex(c => c.id === cat.id);
-                      if (fromIdx < 0 || toIdx < 0) return prev;
-                      const next = [...base];
-                      const [moved] = next.splice(fromIdx, 1);
-                      next.splice(toIdx, 0, moved);
-                      return next;
-                    });
+                    const base = dragOrderRef.current ?? [...categories].sort((a, b) => a.sort_order - b.sort_order);
+                    const fromIdx = base.findIndex(c => c.id === dragItem.current);
+                    const toIdx = base.findIndex(c => c.id === cat.id);
+                    if (fromIdx < 0 || toIdx < 0) return;
+                    const next = [...base];
+                    const [moved] = next.splice(fromIdx, 1);
+                    next.splice(toIdx, 0, moved);
+                    dragOrderRef.current = next;
+                    setDragOrder(next);
                   }}
                   onDragOver={(e) => e.preventDefault()}
                   onDragEnd={async () => {
-                    const finalOrder = dragOrder;
+                    const finalOrder = dragOrderRef.current;
+                    dragOrderRef.current = null;
                     setDragOrder(null);
                     dragItem.current = null;
                     dragOverItem.current = null;
@@ -1027,8 +1033,60 @@ const Admin = () => {
                       toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
                     }
                   }}
+                  onTouchStart={editMode ? (e) => {
+                    dragItem.current = cat.id;
+                    touchMovedRef.current = false;
+                    const ordered = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+                    dragOrderRef.current = ordered;
+                    setDragOrder(ordered);
+                  } : undefined}
+                  onTouchMove={editMode ? (e) => {
+                    if (!dragItem.current) return;
+                    touchMovedRef.current = true;
+                    const touch = e.touches[0];
+                    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const catEl = el?.closest('[data-cat-id]') as HTMLElement | null;
+                    const overId = catEl?.dataset?.catId;
+                    if (!overId || overId === dragItem.current || dragOverItem.current === overId) return;
+                    dragOverItem.current = overId;
+                    const base = dragOrderRef.current ?? [...categories].sort((a, b) => a.sort_order - b.sort_order);
+                    const fromIdx = base.findIndex(c => c.id === dragItem.current);
+                    const toIdx = base.findIndex(c => c.id === overId);
+                    if (fromIdx < 0 || toIdx < 0) return;
+                    const next = [...base];
+                    const [moved] = next.splice(fromIdx, 1);
+                    next.splice(toIdx, 0, moved);
+                    dragOrderRef.current = next;
+                    setDragOrder(next);
+                  } : undefined}
+                  onTouchEnd={editMode ? async (e) => {
+                    e.preventDefault();
+                    const moved = touchMovedRef.current;
+                    const finalOrder = dragOrderRef.current;
+                    dragItem.current = null;
+                    dragOverItem.current = null;
+                    touchMovedRef.current = false;
+                    dragOrderRef.current = null;
+                    setDragOrder(null);
+                    if (!moved) {
+                      openEditCategory(cat);
+                      return;
+                    }
+                    if (!finalOrder) return;
+                    const updates = finalOrder.map((c, i) => ({ id: c.id, sort_order: i + 1, city_id: adminCityId }));
+                    const queryKey = adminCityId ? ["categories", adminCityId] : ["categories"];
+                    queryClient.setQueryData(queryKey, finalOrder.map((c, i) => ({ ...c, sort_order: i + 1 })));
+                    try {
+                      await adminApi("category_reorder", { updates });
+                      toast({ title: "순서 변경 완료 ✅" });
+                    } catch (err: any) {
+                      invalidateCategories();
+                      toast({ title: "순서 변경 실패", description: err.message, variant: "destructive" });
+                    }
+                  } : undefined}
                   onClick={() => {
                     if (editMode) {
+                      if (touchMovedRef.current) return;
                       openEditCategory(cat);
                     } else {
                       setAdminCategory(cat.id);
