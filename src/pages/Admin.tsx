@@ -2226,6 +2226,14 @@ const Admin = () => {
                                             address: tip.address,
                                             reason: tip.reason,
                                           });
+                                          // 제보자에게 알림 생성
+                                          if (tip.device_id) {
+                                            await supabase.from("notifications" as any).insert({
+                                              device_id: tip.device_id,
+                                              message: `'${tip.restaurant_name}' 제보가 승인됐어요! 🎉`,
+                                              tip_id: tip.id,
+                                            });
+                                          }
                                           setTips(tips.map(t => t.id === tip.id ? { ...t, status: "approved" } : t));
                                           silentRefresh();
                                           toast({

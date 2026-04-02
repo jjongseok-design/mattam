@@ -10,6 +10,7 @@ import { useCategories } from "@/hooks/useCategories";
 import TipForm from "@/components/TipForm";
 import OnboardingSlide from "@/components/OnboardingSlide";
 import FeedbackForm from "@/components/FeedbackForm";
+import TipNotificationPopup from "@/components/TipNotificationPopup";
 import ThemeToggle from "@/components/ThemeToggle";
 import ErrorState from "@/components/ErrorState";
 import JsonLd from "@/components/JsonLd";
@@ -383,6 +384,7 @@ const CityMap = () => {
             </div>
           </div>
           <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
+          <TipNotificationPopup />
           <AnimatePresence>
             {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} />}
           </AnimatePresence>
@@ -578,6 +580,7 @@ const CityMap = () => {
             <MapView restaurants={filtered} selectedId={selectedId} onSelect={handleSelect} visitedIds={visited} city={city} />
           </div>
           <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
+          <TipNotificationPopup />
           <AnimatePresence>
             {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} centered />}
           </AnimatePresence>
