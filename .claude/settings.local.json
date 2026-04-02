@@ -58,18 +58,7 @@
       "Bash(DRY_RUN=1 node scripts/remove-url-duplicates.mjs)",
       "Bash(git pull:*)",
       "Bash(xargs grep:*)",
-      "Bash(SUPABASE_ACCESS_TOKEN=20a253e4 npx supabase functions deploy admin-api --project-ref cblckdcrsotqynngblyb 2>&1)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts|jsx|js\\)$\")",
-      "Bash(ls -la /c/Users/yasiris/mattam/scripts/*.json)",
-      "Bash(ls -la /c/Users/yasiris/mattam/*.json)",
-      "Bash(node scripts/search-jeonju.mjs)",
-      "Bash(RESTAURANT_LIST=\"./restaurants-jeonju.json\" CITY=\"jeonju\" CITY_NAME=\"전주\" SKIP_PHASES=\"2,3,4,5,6\" node scripts/add-city-pipeline.mjs)",
-      "Bash(node -e ':*)",
-      "Bash(node:*)",
-      "Bash(CITY=jeonju node:*)",
-      "Bash(CITY=jeonju SKIP_IMAGES=1 node:*)",
-      "Bash(RESTAURANT_LIST=./restaurants-jeonju-new.json CITY=jeonju CITY_NAME=전주 node:*)",
-      "Bash(CITY=jeonju SKIP_EXISTING=true node:*)"
+      "Bash(DRY_RUN=1 RESTAURANT_LIST=./restaurants-daejeon.json CITY=daejeon CITY_NAME=대전 SKIP_PHASES=4,5,6 node scripts/add-city-pipeline.mjs)"
     ]
   }
 }

@@ -38,7 +38,10 @@ const SB_H = { apikey: SK, Authorization: `Bearer ${SK}`, "Content-Type": "appli
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const slugify = n => n.toLowerCase().replace(/[^가-힣a-z0-9\s]/g, "").trim().replace(/\s+/g, "-").slice(0, 60);
 
-const RESTAURANTS = JSON.parse(readFileSync(resolve(ROOT, INPUT_FILE), "utf8"));
+const LIMIT    = process.env.LIMIT    ? parseInt(process.env.LIMIT)    : null;
+const DELAY_MS = process.env.DELAY_MS ? parseInt(process.env.DELAY_MS) : 2000;
+const _all = JSON.parse(readFileSync(resolve(ROOT, INPUT_FILE), "utf8"));
+const RESTAURANTS = LIMIT ? _all.slice(0, LIMIT) : _all;
 
 // ── Google Places ─────────────────────────────────────────────────────────────
 const DAY_KO = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
@@ -169,11 +172,26 @@ async function nextId(idPrefix) {
 // ── 메인 ─────────────────────────────────────────────────────────────────────
 console.log(`━━━ Stage 2: 영업정보 수집 + DB 삽입 (${RESTAURANTS.length}개) ━━━\n${DRY_RUN ? "(DRY RUN — DB 변경 없음)\n" : ""}\n`);
 
-let inserted = 0, failed = 0;
+// 기존 DB 항목 조회 (slug 기준)
+const existingRes = await fetch(`${SB_URL}/rest/v1/restaurants?city_id=eq.${CITY_ID}&select=slug`, { headers: SB_H });
+const existingRows = await existingRes.json();
+const existingSlugs = new Set(existingRows.map(r => r.slug));
+console.log(`기존 DB: ${existingSlugs.size}개 → 중복 건너뜀\n`);
+
+let inserted = 0, skipped = 0, failed = 0;
 
 for (let i = 0; i < RESTAURANTS.length; i++) {
   const item = RESTAURANTS[i];
+  const slug = slugify(item.name);
   const prefix = `  [${String(i + 1).padStart(2)}/${RESTAURANTS.length}] ${item.name}`;
+
+  if (existingSlugs.has(slug)) {
+    console.log(`${prefix} → ⏭️  이미 존재, 건너뜀`);
+    skipped++;
+    continue;
+  }
+  existingSlugs.add(slug); // 이번 실행 중 삽입된 것도 중복 방지
+
   console.log(prefix);
 
   try {
@@ -227,8 +245,8 @@ for (let i = 0; i < RESTAURANTS.length; i++) {
     failed++;
   }
 
-  await sleep(8000); // Claude rate limit 대응
+  await sleep(DELAY_MS);
 }
 
 console.log(`\n${"─".repeat(50)}`);
-console.log(`완료! 삽입: ${inserted}개 / 실패: ${failed}개`);
+console.log(`완료! 삽입: ${inserted}개 / 건너뜀: ${skipped}개 / 실패: ${failed}개`);

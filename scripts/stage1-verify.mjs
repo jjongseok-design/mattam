@@ -31,8 +31,9 @@ const env = Object.fromEntries(
 const KAKAO = env.KAKAO_REST_API_KEY;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const INPUT_FILE  = process.env.INPUT  ?? "restaurants-jeonju-new.json";
-const OUTPUT_FILE = process.env.OUTPUT ?? "restaurants-verified.json";
+const INPUT_FILE   = process.env.INPUT   ?? "restaurants-jeonju-new.json";
+const OUTPUT_FILE  = process.env.OUTPUT  ?? "restaurants-verified.json";
+const FAILED_FILE  = process.env.FAILED  ?? "restaurants-failed.json";
 
 const RESTAURANTS = JSON.parse(readFileSync(resolve(ROOT, INPUT_FILE), "utf8"));
 
@@ -40,6 +41,13 @@ function nameMatch(a, b) {
   const clean = s => s.toLowerCase().replace(/\s/g, "").replace(/[()（）]/g, "");
   const ca = clean(a), cb = clean(b);
   return ca === cb || ca.includes(cb) || cb.includes(ca) || ca.slice(0, 4) === cb.slice(0, 4);
+}
+
+// 지점명 제거 (본점/전주점/OO점 등)
+function stripBranch(name) {
+  return name
+    .replace(/\s*(전주\S*본점|전주\S*점|\S*본점|\S+점)$/, "")
+    .trim();
 }
 
 // 1차: 이름+전주 키워드 검색
@@ -54,6 +62,30 @@ async function kakaoKeyword(name) {
     if (d.documents?.length) return d.documents;
   }
   return [];
+}
+
+// 주소로 검색 (이름 검색 실패 시 재시도)
+async function kakaoByAddress(address) {
+  if (!address) return [];
+  const url = new URL("https://dapi.kakao.com/v2/local/search/address.json");
+  url.searchParams.set("query", address);
+  url.searchParams.set("size", "1");
+  const r = await fetch(url.toString(), { headers: { Authorization: `KakaoAK ${KAKAO}` } });
+  const d = await r.json();
+  return d.documents ?? [];
+}
+
+// 주소 좌표로 근처 식당 검색
+async function kakaoNearAddress(name, lat, lng) {
+  const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
+  url.searchParams.set("query", name);
+  url.searchParams.set("x", String(lng));
+  url.searchParams.set("y", String(lat));
+  url.searchParams.set("radius", "300");
+  url.searchParams.set("size", "5");
+  const r = await fetch(url.toString(), { headers: { Authorization: `KakaoAK ${KAKAO}` } });
+  const d = await r.json();
+  return d.documents ?? [];
 }
 
 // 2차: 좌표 반경 200m 재검색 (위치 교차검증)
@@ -83,6 +115,45 @@ for (let i = 0; i < RESTAURANTS.length; i++) {
   const doc = docs.find(d => nameMatch(item.name, d.place_name));
 
   if (!doc) {
+    // 2차: 지점명 제거 후 재시도
+    const baseName = stripBranch(item.name);
+    if (baseName && baseName !== item.name) {
+      await sleep(200);
+      const baseDocs = await kakaoKeyword(baseName);
+      const baseDoc = baseDocs.find(d => nameMatch(baseName, d.place_name));
+      if (baseDoc) {
+        const lat2 = parseFloat(baseDoc.y), lng2 = parseFloat(baseDoc.x);
+        const address2 = baseDoc.road_address_name || baseDoc.address_name;
+        console.log(`${prefix} → ✅ 지점명 제거 후 성공: ${baseDoc.place_name}`);
+        verified.push({ name: baseDoc.place_name, address: address2, lat: lat2, lng: lng2, phone: baseDoc.phone || null, category: item.category, _coordVerified: true });
+        await sleep(300);
+        continue;
+      }
+    }
+
+    // 4차: 주소로 재시도
+    if (item.address) {
+      await sleep(200);
+      const addrDocs = await kakaoByAddress(item.address);
+      if (addrDocs.length > 0) {
+        const addrDoc = addrDocs[0];
+        const addrLat = parseFloat(addrDoc.y ?? addrDoc.address?.y);
+        const addrLng = parseFloat(addrDoc.x ?? addrDoc.address?.x);
+        if (addrLat && addrLng) {
+          await sleep(200);
+          const nearDocs = await kakaoNearAddress(item.name, addrLat, addrLng);
+          const nearDoc = nearDocs.find(d => nameMatch(item.name, d.place_name));
+          if (nearDoc) {
+            const lat2 = parseFloat(nearDoc.y), lng2 = parseFloat(nearDoc.x);
+            const address2 = nearDoc.road_address_name || nearDoc.address_name;
+            console.log(`${prefix} → ✅ 주소 재검증 성공: ${nearDoc.place_name}`);
+            verified.push({ name: nearDoc.place_name, address: address2, lat: lat2, lng: lng2, phone: nearDoc.phone || null, category: item.category, _coordVerified: true });
+            await sleep(300);
+            continue;
+          }
+        }
+      }
+    }
     console.log(`${prefix} → ❌ 검색 결과 없음`);
     failed.push({ ...item, _reason: "검색 결과 없음" });
     await sleep(200);
@@ -150,4 +221,10 @@ if (unverified.length > 0) {
 const output = verified.map(({ _coordVerified, ...r }) => r);
 writeFileSync(resolve(ROOT, OUTPUT_FILE), JSON.stringify(output, null, 2), "utf8");
 console.log(`\n💾 ${OUTPUT_FILE} 저장 완료 (${output.length}개)`);
+
+// 실패 목록 저장
+const failedOutput = failed.map(({ _reason, ...r }) => ({ ...r, _reason }));
+writeFileSync(resolve(ROOT, FAILED_FILE), JSON.stringify(failedOutput, null, 2), "utf8");
+console.log(`💾 ${FAILED_FILE} 저장 완료 (${failedOutput.length}개)`);
+
 console.log(`\n다음 단계: node scripts/stage2-insert.mjs`);

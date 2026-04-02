@@ -295,7 +295,7 @@
     "category": "돈까스"
   },
   {
-    "name": "The담다",
+    "name": "더담다",
     "address": "전북특별자치도 전주시 덕진구 덕진동1가 664-6 원플러스빌딩 1층",
     "category": "돈까스"
   },
@@ -473,5 +473,1523 @@
     "name": "미토",
     "address": "전북특별자치도 전주시 완산구 다가동4가 57-3 미토",
     "category": "술집"
+  },
+  {
+    "name": "슈페너",
+    "address": "전북 전주시 덕진구 명륜4길 21-4",
+    "category": "카페"
+  },
+  {
+    "name": "한양소불고기",
+    "address": "전북 전주시 완산구 전라감영4길 10",
+    "category": "기타"
+  },
+  {
+    "name": "전주면가",
+    "address": "전북 전주시 완산구 삼천동1가 285-1",
+    "category": "분식"
+  },
+  {
+    "name": "라쿠다",
+    "address": "전북 전주시 완산구 전주객사1길 80",
+    "category": "일식"
+  },
+  {
+    "name": "두지번입구",
+    "address": "전북 전주시 덕진구 권삼득로 305",
+    "category": "조개구이"
+  },
+  {
+    "name": "빈타이",
+    "address": "전북 전주시 완산구 전주객사3길 37-12",
+    "category": "카페"
+  },
+  {
+    "name": "사랑오리",
+    "address": "전북특별자치도 전주시 완산구 성지산로 5",
+    "category": "기타",
+    "description": "가족 모임하기 좋은 오리요리 전문점"
+  },
+  {
+    "name": "참치일번가 중화산본점",
+    "address": "전북특별자치도 전주시 완산구 신중계로 40",
+    "category": "일식",
+    "description": "전주 현지인 추천 고급 참치 전문점"
+  },
+  {
+    "name": "진미집 본점",
+    "address": "전북특별자치도 전주시 완산구 노송여울2길 36",
+    "category": "기타",
+    "description": "상추에 김밥과 고기를 싸 먹는 독특한 노포"
+  },
+  {
+    "name": "전라도음식이야기",
+    "address": "전북특별자치도 전주시 덕진구 아중6길 14-6",
+    "category": "한정식",
+    "description": "전통 전라남도/북도의 맛을 담은 한정식"
+  },
+  {
+    "name": "두거리우신탕",
+    "address": "전북특별자치도 전주시 덕진구 아중중앙로 21",
+    "category": "국밥/탕류",
+    "description": "얼큰하고 진한 소고기 보양탕"
+  },
+  {
+    "name": "아중리 육전골",
+    "address": "전북특별자치도 전주시 덕진구 아중중앙로 23",
+    "category": "기타",
+    "description": "육개장을 전골로 즐기는 칼칼한 맛"
+  },
+  {
+    "name": "엄가네시골집",
+    "address": "전북특별자치도 전주시 완산구 전주천동로 250",
+    "category": "국밥/탕류",
+    "description": "전주 대표 24시 뼈해장국 명소"
+  },
+  {
+    "name": "장수버섯마을",
+    "address": "전북특별자치도 전주시 완산구 거마평로 192",
+    "category": "기타",
+    "description": "다양한 버섯을 활용한 건강식"
+  },
+  {
+    "name": "조점례 남문 피순대",
+    "address": "전북특별자치도 전주시 완산구 전동3가 2-198",
+    "category": "분식",
+    "description": "전주 남부시장의 전국구 순대국밥 맛집"
+  },
+  {
+    "name": "하숙영 가마솥비빔밥",
+    "address": "전북특별자치도 전주시 완산구 전라감영5길 19-3",
+    "category": "비빔밥",
+    "description": "수요미식회 출연, 찰진 비빔밥의 진수"
+  },
+  {
+    "name": "해태바베큐",
+    "address": "전북특별자치도 전주시 완산구 전동 61",
+    "category": "통닭",
+    "description": "오래된 노포 느낌의 숯불 양념 바베큐"
+  },
+  {
+    "name": "구프오프",
+    "address": "전북특별자치도 전주시 완산구 한옥마을 인근",
+    "category": "이탈리안",
+    "description": "감각적인 인테리어의 양식 맛집"
+  },
+  {
+    "name": "다문",
+    "address": "전북특별자치도 전주시 완산구 은행로 74-8",
+    "category": "한정식",
+    "description": "미슐랭 가이드 언급 한정식 맛집"
+  },
+  {
+    "name": "신뱅이",
+    "address": "전북특별자치도 전주시 완산구 경기전길 153-9",
+    "category": "비빔밥",
+    "description": "김치 명인이 운영하는 깔끔한 식당"
+  },
+  {
+    "name": "한국집",
+    "address": "전북특별자치도 전주시 완산구 어진길 119",
+    "category": "비빔밥",
+    "description": "대한민국 최초의 비빔밥 명소"
+  },
+  {
+    "name": "기와",
+    "address": "전북특별자치도 전주시 완산구 기린대로 120",
+    "category": "비빔밥",
+    "description": "한옥마을 전망이 보이는 쾌적한 식당"
+  },
+  {
+    "name": "온담",
+    "address": "전북특별자치도 전주시 완산구 전주객사2길 53",
+    "category": "기타",
+    "description": "웨이팅이 필수인 객리단길 고기 맛집"
+  },
+  {
+    "name": "시골가마솥집",
+    "address": "전북특별자치도 전주시 덕진구 가리내길 52",
+    "category": "국밥/탕류",
+    "description": "진한 국물의 가마솥 국밥"
+  },
+  {
+    "name": "고궁 수라간",
+    "address": "전북특별자치도 전주시 완산구 은행로 54",
+    "category": "비빔밥",
+    "description": "고궁의 분점으로 한옥마을 내 위치"
+  },
+  {
+    "name": "자매갈비전골",
+    "address": "전북특별자치도 전주시 완산구 기린대로 121",
+    "category": "기타",
+    "description": "전주 특색 음식인 물갈비의 대명사"
+  },
+  {
+    "name": "메르밀진미집",
+    "address": "전북특별자치도 전주시 완산구 전주천동로 94",
+    "category": "분식",
+    "description": "전주 한옥마을 인근 메밀 요리 노포"
+  },
+  {
+    "name": "다우랑",
+    "address": "전북특별자치도 전주시 완산구 태조로 33",
+    "category": "분식",
+    "description": "한옥마을 먹거리 중 가장 유명한 만두집"
+  },
+  {
+    "name": "동창갈비",
+    "address": "전북특별자치도 전주시 완산구 전주객사5길 43-4",
+    "category": "기타",
+    "description": "오랜 전통을 가진 객사 갈비 맛집"
+  },
+  {
+    "name": "무국 무국적식당",
+    "address": "전북특별자치도 전주시 완산구 태조로",
+    "category": "기타",
+    "description": "장르에 구애받지 않는 독창적인 퓨전 요리"
+  },
+  {
+    "name": "완미족발",
+    "address": "전북특별자치도 전주시 완산구 신중계로 11",
+    "category": "보쌈/족발",
+    "description": "한상 가득 반찬이 나오는 족발 맛집"
+  },
+  {
+    "name": "취향회관",
+    "address": "전북특별자치도 전주시 덕진구 권삼득로 250",
+    "category": "한정식",
+    "description": "덕진공원 인근 가성비 좋은 백반집"
+  },
+  {
+    "name": "광장숯불갈비",
+    "address": "전북특별자치도 전주시 완산구 전라감영로 20",
+    "category": "기타",
+    "description": "현지인들이 많이 찾는 숯불 갈비 명소"
+  },
+  {
+    "name": "덕진헌",
+    "address": "전북특별자치도 전주시 덕진구 권삼득로 310",
+    "category": "기타",
+    "description": "품격 있는 떡갈비 전문점"
+  },
+  {
+    "name": "전라밥상",
+    "address": "전북특별자치도 전주시 덕진구 아중중앙로",
+    "category": "한정식",
+    "description": "푸짐한 반찬의 전라도식 백반"
+  },
+  {
+    "name": "에루화",
+    "address": "전북특별자치도 전주시 완산구 고사평5길 25",
+    "category": "기타",
+    "description": "구워서 나오는 부드러운 떡갈비 일품"
+  },
+  {
+    "name": "가족회관",
+    "address": "전북특별자치도 전주시 완산구 전라감영5길 17",
+    "category": "비빔밥",
+    "description": "무형문화재 제12호 비빔밥 명인의 집"
+  },
+  {
+    "name": "고궁 전주본점",
+    "address": "전북특별자치도 전주시 덕진구 송천중앙로 33",
+    "category": "비빔밥",
+    "description": "가장 표준적인 고급 전주비빔밥의 맛"
+  },
+  {
+    "name": "반야돌솥밥",
+    "address": "전북특별자치도 전주시 완산구 효자로 194",
+    "category": "기타",
+    "description": "대한민국 최초 돌솥비빔밥 개발점"
+  },
+  {
+    "name": "중앙식당",
+    "address": "전북특별자치도 전주시 완산구 전라감영로",
+    "category": "한정식",
+    "description": "현지인 노포 백반집"
+  },
+  {
+    "name": "용진집막걸리",
+    "address": "전북특별자치도 전주시 완산구 거마산로 14",
+    "category": "기타",
+    "description": "삼천동 막걸리 골목의 대표 주자"
+  },
+  {
+    "name": "옛촌막걸리",
+    "address": "전북특별자치도 전주시 완산구 서신로 48",
+    "category": "기타",
+    "description": "안주가 끊임없이 나오는 막걸리 맛집"
+  },
+  {
+    "name": "교동석갈비",
+    "address": "전북특별자치도 전주시 완산구 태조로 26",
+    "category": "기타",
+    "description": "달궈진 돌 위에서 지글거리는 갈비"
+  },
+  {
+    "name": "전주왱이집",
+    "address": "전북특별자치도 전주시 완산구 동문길 88",
+    "category": "콩나물국밥",
+    "description": "모주 한 잔과 찰떡궁합인 국밥"
+  },
+  {
+    "name": "백번집",
+    "address": "전북특별자치도 전주시 완산구 전라감영길 80-21",
+    "category": "한정식",
+    "description": "전라감영로의 명성 있는 한정식집"
+  },
+  {
+    "name": "교동집",
+    "address": "전북특별자치도 전주시 완산구 경기전길",
+    "category": "중화요리",
+    "description": "한옥마을 내 위치한 중식당"
+  },
+  {
+    "name": "남노갈비 본점",
+    "address": "전북특별자치도 전주시 완산구 한지길 24",
+    "category": "기타",
+    "description": "콩나물이 듬뿍 올라간 전주식 물갈비"
+  },
+  {
+    "name": "삼백집 전주본점",
+    "address": "전북특별자치도 전주시 완산구 전주객사2길 22",
+    "category": "콩나물국밥",
+    "description": "하루 삼백 그릇만 팔았다는 역사적 명소"
+  },
+  {
+    "name": "외할머니솜씨",
+    "address": "전북특별자치도 전주시 완산구 은행로 87",
+    "category": "카페",
+    "description": "한옥마을 대표 디저트, 흑임자가 고소함"
+  },
+  {
+    "name": "전망",
+    "address": "전북특별자치도 전주시 완산구 한지길 89",
+    "category": "카페",
+    "description": "한옥마을 전체 뷰를 조망할 수 있는 카페"
+  },
+  {
+    "name": "길거리야",
+    "address": "전북특별자치도 전주시 완산구 경기전길 124",
+    "category": "분식",
+    "description": "매콤한 바게트 버거로 유명한 간식 명소"
+  },
+  {
+    "name": "교동고로케",
+    "address": "전북특별자치도 전주시 완산구 경기전길 126",
+    "category": "베이커리",
+    "description": "비빔밥을 고로케 속에 넣은 이색 간식"
+  },
+  {
+    "name": "벽계가든",
+    "address": "전북특별자치도 전주시 덕진구 백제대로 504",
+    "category": "기타",
+    "description": "전주인들이 최고로 꼽는 고기 전문 식당"
+  },
+  {
+    "name": "대보장",
+    "address": "전북특별자치도 전주시 완산구 전라감영로 68",
+    "category": "중화요리",
+    "description": "전국적으로 유명한 오래된 화상 중식당"
+  },
+  {
+    "name": "이소떡",
+    "address": "전북특별자치도 전주시 완산구 효자동",
+    "category": "분식",
+    "description": "분식 명소"
+  },
+  {
+    "name": "원조범암골강진포구",
+    "address": "전북특별자치도 전주시 완산구 춘향로",
+    "category": "조개구이",
+    "description": "장어구이 전문점"
+  },
+  {
+    "name": "한벽집",
+    "address": "전북특별자치도 전주시 완산구 전주천동로 4",
+    "category": "조개구이",
+    "description": "전주천변 오모가리탕(민물매운탕) 골목"
+  },
+  {
+    "name": "화순가든",
+    "address": "전북특별자치도 전주시 완산구 천경로",
+    "category": "조개구이",
+    "description": "깊은 맛의 민물고기 매운탕"
+  },
+  {
+    "name": "동문원",
+    "address": "전북특별자치도 전주시 완산구 동문길 103",
+    "category": "한정식",
+    "description": "깔끔하고 정갈한 동문거리 고전 맛집"
+  },
+  {
+    "name": "경아네구이",
+    "address": "전북특별자치도 전주시 완산구 한옥마을 인근",
+    "category": "기타",
+    "description": "연탄불 구이의 정석"
+  },
+  {
+    "name": "진북동 김밥",
+    "address": "전북특별자치도 전주시 덕진구 소리로",
+    "category": "분식",
+    "description": "줄 서서 먹는 현지인 김밥집"
+  },
+  {
+    "name": "오로지",
+    "address": "전북특별자치도 전주시 덕진구",
+    "category": "분식",
+    "description": "국수 전문점"
+  },
+  {
+    "name": "임실치즈피자 본점",
+    "address": "전북특별자치도 전주시 완산구",
+    "category": "기타",
+    "description": "전북 지역 특산 임실치즈를 사용한 피자"
+  },
+  {
+    "name": "노랑토마토",
+    "address": "전북특별자치도 전주시 완산구 중화산동",
+    "category": "이탈리안",
+    "description": "수제 돈가스 맛집"
+  },
+  {
+    "name": "쏭스핫도그",
+    "address": "전북특별자치도 전주시 완산구 고사동",
+    "category": "분식",
+    "description": "수제 쌀 핫도그"
+  },
+  {
+    "name": "전주비빔빵",
+    "address": "전북특별자치도 전주시 완산구 효자로 161",
+    "category": "베이커리",
+    "description": "사회적 기업이 운영하는 이색 빵집"
+  },
+  {
+    "name": "삼번집",
+    "address": "전북특별자치도 전주시 완산구 전라감영5길 15",
+    "category": "콩나물국밥",
+    "description": "삼백집, 현대옥과 어깨를 나란히 함"
+  },
+  {
+    "name": "전라남도",
+    "address": "전북특별자치도 전주시 완산구",
+    "category": "한정식",
+    "description": "풍성한 상차림"
+  },
+  {
+    "name": "전주식당",
+    "address": "전북특별자치도 전주시 완산구 전동",
+    "category": "한정식",
+    "description": "남부시장 내 가성비 식당"
+  },
+  {
+    "name": "교동떡갈비",
+    "address": "전북특별자치도 전주시 완산구 은행로 52",
+    "category": "기타",
+    "description": "한옥의 정취와 함께 즐기는 떡갈비"
+  },
+  {
+    "name": "오원집",
+    "address": "전북특별자치도 전주시 완산구 공북로 82",
+    "category": "기타",
+    "description": "진미집과 더불어 전주 야식의 전설"
+  },
+  {
+    "name": "한양소바",
+    "address": "전북특별자치도 전주시 완산구 전라감영로 75",
+    "category": "일식",
+    "description": "일본식 소바 매니아들의 성지"
+  },
+  {
+    "name": "금암소바",
+    "address": "전북특별자치도 전주시 덕진구 기린대로 400-75",
+    "category": "일식",
+    "description": "설탕을 넣어 먹는 전주식 콩국수가 별미"
+  },
+  {
+    "name": "태평집",
+    "address": "전북특별자치도 전주시 덕진구 조경단로 3-6",
+    "category": "일식",
+    "description": "여름철 웨이팅이 매우 긴 소바 맛집"
+  },
+  {
+    "name": "객리단길 카페 브리꼴라주",
+    "address": "전북특별자치도 전주시 완산구 객사길",
+    "category": "카페",
+    "description": "객리단길의 힙한 대형 카페"
+  },
+  {
+    "name": "전주비빔밥 고궁수라간",
+    "address": "전북특별자치도 전주시 완산구 은행로",
+    "category": "비빔밥",
+    "description": "개인 트레이에 깔끔하게 제공"
+  },
+  {
+    "name": "정우식당",
+    "address": "전북특별자치도 전주시 완산구 전라감영로",
+    "category": "국밥/탕류",
+    "description": "현지 공무원들이 찾는 북어탕 맛집"
+  },
+  {
+    "name": "두지리매운탕",
+    "address": "전북특별자치도 전주시 덕진구",
+    "category": "조개구이",
+    "description": "진한 민물 매운탕"
+  },
+  {
+    "name": "엄마손김치찌개",
+    "address": "전북특별자치도 전주시 완산구 평화동",
+    "category": "기타",
+    "description": "진한 국물의 현지인 김치찌개"
+  },
+  {
+    "name": "달팽이슈퍼",
+    "address": "전북특별자치도 전주시 완산구 현무2길 14-1",
+    "category": "기타",
+    "description": "전주 가맥 문화를 즐기기 좋은 곳"
+  },
+  {
+    "name": "전일갑오",
+    "address": "전북특별자치도 전주시 완산구 현무2길 13-1",
+    "category": "기타",
+    "description": "전국에서 가장 유명한 가맥집"
+  },
+  {
+    "name": "그린피그갈비",
+    "address": "전북특별자치도 전주시 덕진구",
+    "category": "기타",
+    "description": "오랜 전통의 갈비집"
+  },
+  {
+    "name": "전주 명물 콩국수",
+    "address": "전북특별자치도 전주시 덕진구",
+    "category": "분식",
+    "description": "고소한 콩물이 일품"
+  },
+  {
+    "name": "산은가비",
+    "address": "전북특별자치도 전주시 완산구 한옥마을",
+    "category": "카페",
+    "description": "전통의 미가 살아있는 찻집"
+  },
+  {
+    "name": "이목대",
+    "address": "전북특별자치도 전주시 완산구 기린대로",
+    "category": "기타",
+    "description": "품질 좋은 소고기 전문"
+  },
+  {
+    "name": "진까",
+    "address": "전북특별자치도 전주시 완산구 최명희길 26-3",
+    "category": "일식",
+    "description": "한옥 스타일 일식당"
+  },
+  {
+    "name": "두부키친",
+    "address": "전북특별자치도 전주시 완산구 전주객사2길 74",
+    "category": "기타",
+    "description": "객리단길 대창나베 맛집"
+  },
+  {
+    "name": "함씨네밥상",
+    "address": "전북 전주시 완산구 모악산길 78",
+    "category": "한정식",
+    "description": "건강한 두부 요리 전문점"
+  },
+  {
+    "name": "그랑비아또",
+    "address": "전북 전주시 완산구 유연로 170",
+    "category": "이탈리안",
+    "description": "전주 노포 이탈리안 레스토랑"
+  },
+  {
+    "name": "라보테",
+    "address": "전북 전주시 덕진구 만성중앙로 54-21",
+    "category": "이탈리안",
+    "description": "혁신도시 분위기 맛집"
+  },
+  {
+    "name": "전주왱이콩나물국밥본점",
+    "address": "전북 전주시 완산구 동문길 88",
+    "category": "콩나물국밥",
+    "description": "수란과 별미 밑반찬"
+  },
+  {
+    "name": "옴가리",
+    "address": "전북 전주시 완산구 팔달로 142",
+    "category": "기타",
+    "description": "객리단길 김치찌개 노포"
+  },
+  {
+    "name": "옛옛날국수",
+    "address": "전북 전주시 덕진구 태진로 125-1",
+    "category": "분식",
+    "description": "인후동 국수 노포"
+  },
+  {
+    "name": "송천동 진흥국밥",
+    "address": "전북 전주시 덕진구 송천4길 2",
+    "category": "국밥/탕류",
+    "description": "푸짐한 양의 국밥 맛집"
+  },
+  {
+    "name": "오목대사랑채",
+    "address": "전북 전주시 완산구 어진길 101",
+    "category": "한정식",
+    "description": "정갈한 한옥 식당"
+  },
+  {
+    "name": "객리단길 미도리",
+    "address": "전북 전주시 완산구 전주객사1길 46-7",
+    "category": "일식",
+    "description": "일본 가정식 전문점"
+  },
+  {
+    "name": "일품양평해장국",
+    "address": "전북 전주시 덕진구 쪽구름로 109",
+    "category": "국밥/탕류",
+    "description": "팔복동 해장 명소"
+  },
+  {
+    "name": "명천슈퍼",
+    "address": "전북 전주시 완산구 정언신로 167",
+    "category": "한정식",
+    "description": "현지인만 아는 백반 맛집"
+  },
+  {
+    "name": "소담촌",
+    "address": "전북 전주시 완산구 온고을로 120",
+    "category": "기타",
+    "description": "깔끔한 샤브샤브 뷔페"
+  },
+  {
+    "name": "진북초밥",
+    "address": "전북 전주시 덕진구 벚꽃로 32",
+    "category": "일식",
+    "description": "가성비 훌륭한 동네 초밥집"
+  },
+  {
+    "name": "장가네제주생고기",
+    "address": "전북 전주시 덕진구 가리내로 56",
+    "category": "기타",
+    "description": "하가지구 제주 고기 맛집"
+  },
+  {
+    "name": "땡땡땡",
+    "address": "전북 전주시 완산구 서학로 43-4",
+    "category": "기타",
+    "description": "교대 근처 짜글이 맛집"
+  },
+  {
+    "name": "호성순대",
+    "address": "전북 전주시 덕진구 소양로 192",
+    "category": "분식",
+    "description": "현지인들이 줄 서는 순대국집"
+  },
+  {
+    "name": "전주빵수레",
+    "address": "전북 전주시 완산구 선너머로 16",
+    "category": "베이커리",
+    "description": "로컬 쌀빵 전문점"
+  },
+  {
+    "name": "원평지평선청보리한우",
+    "address": "전북 전주시 덕진구 덕진연못3길 7",
+    "category": "기타",
+    "description": "신선한 한우 암소 전문"
+  },
+  {
+    "name": "풍남집",
+    "address": "전북 전주시 완산구 풍남문2길 43",
+    "category": "국밥/탕류",
+    "description": "남부시장 내 노포 순대국"
+  },
+  {
+    "name": "PNB풍년제과",
+    "address": "전북 전주시 완산구 팔달로 180",
+    "category": "베이커리",
+    "description": "오리지널 수제초코파이 본점"
+  },
+  {
+    "name": "중앙본가",
+    "address": "전북 전주시 완산구 태조로 20",
+    "category": "한정식",
+    "description": "한옥마을 골목 숨은 백반집"
+  },
+  {
+    "name": "효자문식당",
+    "address": "전북 전주시 완산구 전주객사4길 43-30",
+    "category": "기타",
+    "description": "정통 불갈비와 갈비탕"
+  },
+  {
+    "name": "아줌마국수",
+    "address": "전북 전주시 덕진구 안덕원로 179",
+    "category": "분식",
+    "description": "진한 멸치 육수의 시장 국수"
+  },
+  {
+    "name": "마이산피순대",
+    "address": "전북 전주시 덕진구 솔내로 156",
+    "category": "분식",
+    "description": "송천동 푸짐한 막창순대"
+  },
+  {
+    "name": "고기장인백정",
+    "address": "전북 전주시 완산구 홍산중앙로 45",
+    "category": "기타",
+    "description": "신시가지 고기 구워주는 집"
+  },
+  {
+    "name": "전주돌솥밥",
+    "address": "전북 전주시 완산구 백제대로 233",
+    "category": "비빔밥",
+    "description": "중화산동 영양 돌솥밥 전문"
+  },
+  {
+    "name": "청와정",
+    "address": "전북 전주시 완산구 춘향로 5195",
+    "category": "기타",
+    "description": "보양식 누룽지 닭백숙"
+  },
+  {
+    "name": "가본집",
+    "address": "전북 전주시 덕진구 금암1길 2",
+    "category": "분식",
+    "description": "금암동 가성비 중식당"
+  },
+  {
+    "name": "삼백집 본점",
+    "address": "전북 전주시 완산구 고사동 454-1",
+    "category": "콩나물국밥",
+    "description": "백반기행 및 수요미식회 출연"
+  },
+  {
+    "name": "옴스",
+    "address": "전북 전주시 완산구 팔달로 202-4",
+    "category": "카페",
+    "description": "객리단길 분위기 좋은 카페"
+  },
+  {
+    "name": "화심두부 전주점",
+    "address": "전북 전주시 덕진구 기린대로 1039",
+    "category": "기타",
+    "description": "화심두부의 전주 분점"
+  },
+  {
+    "name": "함께라면",
+    "address": "전북 전주시 덕진구 백제대로 567",
+    "category": "분식",
+    "description": "전북대생 인기 혼밥 식당"
+  },
+  {
+    "name": "기찻길옆오막살이",
+    "address": "전북 전주시 완산구 아중길 75",
+    "category": "기타",
+    "description": "아중리 마늘 닭볶음탕 맛집"
+  },
+  {
+    "name": "소신",
+    "address": "전북 전주시 완산구 전주객사2길 45-4",
+    "category": "일식",
+    "description": "신선한 해산물 덮밥"
+  },
+  {
+    "name": "자유식당",
+    "address": "전북 전주시 완산구 전라감영로 44-1",
+    "category": "한정식",
+    "description": "웨딩거리 근처 집밥 백반"
+  },
+  {
+    "name": "더반",
+    "address": "전북 전주시 덕진구 정언신로 175",
+    "category": "이탈리안",
+    "description": "인후동 고급 스테이크 하우스"
+  },
+  {
+    "name": "전주소바",
+    "address": "전북 전주시 완산구 전라감영로 36-1",
+    "category": "분식",
+    "description": "시원한 판모밀 소바"
+  },
+  {
+    "name": "원조화심두부",
+    "address": "전북 전주시 덕진구 동부대로 1058",
+    "category": "기타",
+    "description": "진한 순두부 국물"
+  },
+  {
+    "name": "교동함흥냉면",
+    "address": "전북 전주시 완산구 한지길 100",
+    "category": "분식",
+    "description": "쫄깃한 함흥냉면 면발"
+  },
+  {
+    "name": "조가네갑오징어",
+    "address": "전북 전주시 완산구 석산복로 15",
+    "category": "조개구이",
+    "description": "중화산동 매콤한 오징어볶음"
+  },
+  {
+    "name": "라멘81번옥",
+    "address": "전북 전주시 완산구 전주객사3길 12-28",
+    "category": "일식",
+    "description": "전주 객사 정통 라멘"
+  },
+  {
+    "name": "서신동 옛촌막걸리",
+    "address": "전북 전주시 완산구 서신로 77",
+    "category": "기타",
+    "description": "전국적으로 유명한 막걸리집"
+  },
+  {
+    "name": "진가진",
+    "address": "전북 전주시 덕진구 만성동 440",
+    "category": "국밥/탕류",
+    "description": "진하게 우려낸 곰탕 국물"
+  },
+  {
+    "name": "모두순대",
+    "address": "전북 전주시 완산구 거마산로 10",
+    "category": "분식",
+    "description": "삼천동 현지인 순대 명당"
+  },
+  {
+    "name": "우진네해장국",
+    "address": "전북 전주시 완산구 전주객사4길 44",
+    "category": "국밥/탕류",
+    "description": "칼칼한 고사동 해장국"
+  },
+  {
+    "name": "명랑핫도그 전주본점",
+    "address": "전북 전주시 완산구 전주객사4길 73",
+    "category": "분식",
+    "description": "간편하게 즐기는 간식 맛집"
+  },
+  {
+    "name": "진짜돈까스",
+    "address": "전북 전주시 덕진구 가련산로 22",
+    "category": "분식",
+    "description": "덕진동 숨겨진 돈까스 달인"
+  },
+  {
+    "name": "장터국밥",
+    "address": "전북 전주시 완산구 어은로 54",
+    "category": "국밥/탕류",
+    "description": "서신동 시장 골목 국밥집"
+  },
+  {
+    "name": "전라어시장",
+    "address": "전북 전주시 완산구 효자로 290",
+    "category": "조개구이",
+    "description": "신시가지 대형 활어 횟집"
+  },
+  {
+    "name": "마시랑게",
+    "address": "전북 전주시 완산구 전주천동로 58",
+    "category": "카페",
+    "description": "한옥 전망 리얼 한옥 카페"
+  },
+  {
+    "name": "카페 브리즈",
+    "address": "전북 전주시 덕진구 송천중앙로 225",
+    "category": "카페",
+    "description": "송천동 대형 브런치 카페"
+  },
+  {
+    "name": "천년누리 전주빵",
+    "address": "전북 전주시 완산구 현무2길 67",
+    "category": "베이커리",
+    "description": "사회적 기업의 전주비빔빵"
+  },
+  {
+    "name": "태평진미집",
+    "address": "전북 전주시 완산구 공북로 94",
+    "category": "기타",
+    "description": "연탄불향 가득한 불고기"
+  },
+  {
+    "name": "서신동 두배로참치",
+    "address": "전북 전주시 완산구 새터로 20",
+    "category": "일식",
+    "description": "가성비 좋은 참치 코스"
+  },
+  {
+    "name": "백령성",
+    "address": "전북 전주시 완산구 평화로 150",
+    "category": "중화요리",
+    "description": "해물이 가득한 짬뽕 전문"
+  },
+  {
+    "name": "원조엄마손김치찌개",
+    "address": "전북 전주시 완산구 전룡로 44",
+    "category": "기타",
+    "description": "서신동 묵은지 김치찌개"
+  },
+  {
+    "name": "평화동 이모네식당",
+    "address": "전북 전주시 완산구 평화로 130",
+    "category": "한정식",
+    "description": "노릇하게 구운 생선구이 백반"
+  },
+  {
+    "name": "용소짬뽕",
+    "address": "전북 전주시 덕진구 용소로 92",
+    "category": "중화요리",
+    "description": "전북대 근처 진한 고기 짬뽕"
+  },
+  {
+    "name": "꿀소담",
+    "address": "전북 전주시 완산구 홍산남로 50",
+    "category": "베이커리",
+    "description": "신시가지 베이커리 맛집"
+  },
+  {
+    "name": "남노길갈비",
+    "address": "전북 전주시 덕진구 인후8길 12",
+    "category": "기타",
+    "description": "아중리 물갈비 전문점"
+  },
+  {
+    "name": "호남문",
+    "address": "전북 전주시 완산구 전라감영길 12",
+    "category": "한정식",
+    "description": "전라감영 근처 정통 한식"
+  },
+  {
+    "name": "전주팔미",
+    "address": "전북 전주시 완산구 태조로 25",
+    "category": "비빔밥",
+    "description": "한옥마을 조용한 비빔밥집"
+  },
+  {
+    "name": "고기마루",
+    "address": "전북 전주시 덕진구 정언신로 160",
+    "category": "기타",
+    "description": "인후동 참숯 고기구이"
+  },
+  {
+    "name": "다래콩나물국밥",
+    "address": "전북 전주시 완산구 전주객사2길 79",
+    "category": "콩나물국밥",
+    "description": "깔끔한 멸치육수 국밥"
+  },
+  {
+    "name": "동네국수",
+    "address": "전북 전주시 완산구 평화로 100",
+    "category": "분식",
+    "description": "부담 없는 가격의 국집"
+  },
+  {
+    "name": "한울정",
+    "address": "전북 전주시 완산구 팔복길 15",
+    "category": "한정식",
+    "description": "팔복동 공단 근처 가성비 백반"
+  },
+  {
+    "name": "달이네국밥",
+    "address": "전북 전주시 덕진구 호성3길 15",
+    "category": "국밥/탕류",
+    "description": "호성동 소머리국밥 현지 맛집"
+  },
+  {
+    "name": "산정호수오리",
+    "address": "전북 전주시 덕진구 산정로 50",
+    "category": "기타",
+    "description": "아중리 오리고기 단체 회식 장소"
+  },
+  {
+    "name": "한소끔",
+    "address": "전북 전주시 완산구 미산길 30",
+    "category": "기타",
+    "description": "푸짐한 해물 뚝배기 전골"
+  },
+  {
+    "name": "송천동 장군회집",
+    "address": "전북 전주시 덕진구 솔내로 140",
+    "category": "조개구이",
+    "description": "송천동 스끼다시 잘 나오는 횟집"
+  },
+  {
+    "name": "피자파넷",
+    "address": "전북 전주시 덕진구 권삼득로 300",
+    "category": "이탈리안",
+    "description": "전북대 앞 추억의 피자집"
+  },
+  {
+    "name": "할머니손맛집",
+    "address": "전북 전주시 완산구 풍남문길 12",
+    "category": "한정식",
+    "description": "남부시장 골목 원조 청국장"
+  },
+  {
+    "name": "모악산소야",
+    "address": "전북 전주시 완산구 모악산길 80",
+    "category": "기타",
+    "description": "정육식당 형태의 저렴한 한우"
+  },
+  {
+    "name": "원조함흥냉면",
+    "address": "전북 전주시 완산구 전주객사로 20",
+    "category": "분식",
+    "description": "30년 전통의 함흥냉면"
+  },
+  {
+    "name": "인후동 고기랑채소랑",
+    "address": "전북 전주시 덕진구 안덕원로 220",
+    "category": "기타",
+    "description": "채소가 무한리필되는 고기집"
+  },
+  {
+    "name": "일층",
+    "address": "전북 전주시 완산구 전주객사4길 43-4",
+    "category": "카페",
+    "description": "객리단길 케이크 맛집"
+  },
+  {
+    "name": "전주비빔밥가족",
+    "address": "전북 전주시 완산구 어진길 15",
+    "category": "비빔밥",
+    "description": "깔끔한 실내의 관광객 추천 비빔밥"
+  },
+  {
+    "name": "다가분식",
+    "address": "전북특별자치도 전주시 완산구 전주객사1길 80",
+    "category": "분식",
+    "description": "객리단길 가성비 분식 맛집"
+  },
+  {
+    "name": "이본가",
+    "address": "전북특별자치도 전주시 완산구 거마산1길 7",
+    "category": "기타",
+    "description": "삼천동 현지인 고기 맛집"
+  },
+  {
+    "name": "만성집",
+    "address": "전북특별자치도 전주시 덕진구 만성중앙로 54",
+    "category": "국밥/탕류",
+    "description": "만성동 깔끔한 국밥 전문점"
+  },
+  {
+    "name": "평화동짬뽕",
+    "address": "전북특별자치도 전주시 완산구 모악로 4676",
+    "category": "중화요리",
+    "description": "평화동 줄 서서 먹는 짬뽕집"
+  },
+  {
+    "name": "아스쿠아",
+    "address": "전북특별자치도 전주시 덕진구 세병로 22",
+    "category": "이탈리안",
+    "description": "에코시티 세련된 양식 레스토랑"
+  },
+  {
+    "name": "본앤미",
+    "address": "전북특별자치도 전주시 덕진구 만성로 124",
+    "category": "카페",
+    "description": "만성지구 디저트 전문 카페"
+  },
+  {
+    "name": "다가동떡볶이",
+    "address": "전북특별자치도 전주시 완산구 전주객사1길 46-12",
+    "category": "분식",
+    "description": "객리단길 즉석떡볶이 핫플레이스"
+  },
+  {
+    "name": "소복",
+    "address": "전북특별자치도 전주시 완산구 은행로 72",
+    "category": "카페",
+    "description": "한옥마을 한지 느낌 인테리어 카페"
+  },
+  {
+    "name": "서문국수",
+    "address": "전북특별자치도 전주시 완산구 전주객사5길 92",
+    "category": "분식",
+    "description": "객사 인근 가성비 국수 전문점"
+  },
+  {
+    "name": "어랑",
+    "address": "전북특별자치도 전주시 덕진구 만성로 156",
+    "category": "일식",
+    "description": "만성동 고품격 참치 맛집"
+  },
+  {
+    "name": "고궁전주비빔밥",
+    "address": "전북특별자치도 전주시 덕진구 송천중앙로 33",
+    "category": "비빔밥",
+    "description": "비빔밥 대중화의 명소"
+  },
+  {
+    "name": "우아한칼국수",
+    "address": "전북특별자치도 전주시 덕진구 아중로 142",
+    "category": "분식",
+    "description": "우아동 현지인 칼국수 맛집"
+  },
+  {
+    "name": "카페 올드릭",
+    "address": "전북특별자치도 전주시 덕진구 에코시티2길 12",
+    "category": "카페",
+    "description": "에코시티 분위기 좋은 카페"
+  },
+  {
+    "name": "송천동다사랑",
+    "address": "전북특별자치도 전주시 덕진구 송천중앙로 194",
+    "category": "통닭",
+    "description": "전북 로컬 치킨 브랜드"
+  },
+  {
+    "name": "맘스브레드",
+    "address": "전북특별자치도 전주시 완산구 호암로 81",
+    "category": "베이커리",
+    "description": "효자동 베이커리 맛집"
+  },
+  {
+    "name": "기와당",
+    "address": "전북특별자치도 전주시 완산구 은행로 31",
+    "category": "기타",
+    "description": "한옥 정취에서 즐기는 떡갈비"
+  },
+  {
+    "name": "객리단양조장",
+    "address": "전북특별자치도 전주시 완산구 전주객사1길 84",
+    "category": "기타",
+    "description": "전통주와 안주가 맛있는 곳"
+  },
+  {
+    "name": "백수간부",
+    "address": "전북특별자치도 전주시 완산구 팔달로 149",
+    "category": "조개구이",
+    "description": "전주 원조 골목 해산물 포차"
+  },
+  {
+    "name": "만성동양과점",
+    "address": "전북특별자치도 전주시 덕진구 만성중앙로 52",
+    "category": "카페",
+    "description": "만성동 수제 마카롱 전문점"
+  },
+  {
+    "name": "라포차",
+    "address": "전북특별자치도 전주시 완산구 효자로 194",
+    "category": "기타",
+    "description": "효자동 야식 술집 맛집"
+  },
+  {
+    "name": "오선모옛날김밥",
+    "address": "전북특별자치도 전주시 완산구 송정1길 1",
+    "category": "분식",
+    "description": "전국구 당근김밥 명소"
+  },
+  {
+    "name": "아중장어",
+    "address": "전북특별자치도 전주시 덕진구 아중로 200",
+    "category": "조개구이",
+    "description": "아중저수지 근처 보양식"
+  },
+  {
+    "name": "전라식당",
+    "address": "전북특별자치도 전주시 덕진구 정언신로 77",
+    "category": "한정식",
+    "description": "우아동 푸짐한 한식 백반"
+  },
+  {
+    "name": "우디원",
+    "address": "전북특별자치도 전주시 완산구 서학로 21",
+    "category": "카페",
+    "description": "서학동 예술인마을 카페"
+  },
+  {
+    "name": "성가든",
+    "address": "전북특별자치도 전주시 덕진구 신복로 33",
+    "category": "기타",
+    "description": "팔복동 단체 모임 오리 전문점"
+  },
+  {
+    "name": "고기꾼김춘배",
+    "address": "전북특별자치도 전주시 완산구 객사2길 36",
+    "category": "기타",
+    "description": "객리단길 고기 구워주는 집"
+  },
+  {
+    "name": "메종드쁘띠푸르",
+    "address": "전북특별자치도 전주시 덕진구 세병로 10",
+    "category": "베이커리",
+    "description": "에코시티 프리미엄 빵집"
+  },
+  {
+    "name": "김가네해물짬뽕",
+    "address": "전북특별자치도 전주시 덕진구 정언신로 162",
+    "category": "중화요리",
+    "description": "우아동 매콤한 중식 명소"
+  },
+  {
+    "name": "마시마니",
+    "address": "전북특별자치도 전주시 완산구 거마산로 11",
+    "category": "기타",
+    "description": "삼천동 얼큰한 찌개 맛집"
+  },
+  {
+    "name": "미르키친",
+    "address": "전북특별자치도 전주시 완산구 전주객사1길 45",
+    "category": "이탈리안",
+    "description": "객리단길 분위기 맛집"
+  },
+  {
+    "name": "서서학동순대국밥",
+    "address": "전북특별자치도 전주시 완산구 서학로 45",
+    "category": "분식",
+    "description": "서학동 노포 순대국밥"
+  },
+  {
+    "name": "폴스베이커리",
+    "address": "전북특별자치도 전주시 완산구 전주객사1길 81",
+    "category": "베이커리",
+    "description": "객리단길 시그니처 베이커리"
+  },
+  {
+    "name": "진미집",
+    "address": "전북특별자치도 전주시 완산구 노송여울2길 100",
+    "category": "기타",
+    "description": "김밥과 고기를 싸 먹는 원조"
+  },
+  {
+    "name": "화심순두부",
+    "address": "전북특별자치도 전주시 완산구 전주로 542",
+    "category": "기타",
+    "description": "중화산동 순두부 명가"
+  },
+  {
+    "name": "옴니버스",
+    "address": "전북특별자치도 전주시 완산구 풍남문4길 15-7",
+    "category": "카페",
+    "description": "전주 구도심 감성 카페"
+  },
+  {
+    "name": "영순네회관",
+    "address": "전북특별자치도 전주시 덕진구 여의길 22",
+    "category": "조개구이",
+    "description": "여의동 해물 요리 전문점"
+  },
+  {
+    "name": "그날의온도",
+    "address": "전북특별자치도 전주시 덕진구 원동로 82",
+    "category": "카페",
+    "description": "전주 외곽 대형 정원 카페"
+  },
+  {
+    "name": "마담에뽀끄",
+    "address": "전북특별자치도 전주시 완산구 전주객사2길 45-4",
+    "category": "이탈리안",
+    "description": "객리단길 럭셔리 다이닝"
+  },
+  {
+    "name": "비요리",
+    "address": "전북특별자치도 전주시 완산구 전주객사1길 46-5",
+    "category": "일식",
+    "description": "전주에서 유명한 꼬치구이 전문"
+  },
+  {
+    "name": "전통찻집 교동",
+    "address": "전북특별자치도 전주시 완산구 은행로 65-5",
+    "category": "카페",
+    "description": "한옥마을 내 전통 분위기 찻집"
+  },
+  {
+    "name": "어울림",
+    "address": "전북특별자치도 전주시 덕진구 건산중로 45",
+    "category": "한정식",
+    "description": "우아동 백반 맛집"
+  },
+  {
+    "name": "숯불닭갈비계륵",
+    "address": "전북특별자치도 전주시 완산구 중화산로 76",
+    "category": "기타",
+    "description": "중화산동 닭갈비 맛집"
+  },
+  {
+    "name": "만남",
+    "address": "전북특별자치도 전주시 덕진구 만성로 150",
+    "category": "중화요리",
+    "description": "만성동 깔끔한 중화요리"
+  },
+  {
+    "name": "다가미",
+    "address": "전북특별자치도 전주시 완산구 전주객사1길 100",
+    "category": "분식",
+    "description": "제주 3대 김밥 전주점"
+  },
+  {
+    "name": "신돈조선별관",
+    "address": "전북특별자치도 전주시 완산구 거마평로 112",
+    "category": "기타",
+    "description": "당면 사리 무한리필 갈비찜"
+  },
+  {
+    "name": "올드레시피",
+    "address": "전북특별자치도 전주시 완산구 팔달로 212",
+    "category": "이탈리안",
+    "description": "전주 시청 인근 브런치 맛집"
+  },
+  {
+    "name": "황태포포차",
+    "address": "전북특별자치도 전주시 완산구 전주천서로 77",
+    "category": "기타",
+    "description": "서학동 가맥 분위기 포차"
+  },
+  {
+    "name": "노루궁뎅이",
+    "address": "전북특별자치도 전주시 덕진구 연봉길 55",
+    "category": "기타",
+    "description": "여의동 버섯 요리 전문점"
+  },
+  {
+    "name": "해물천지",
+    "address": "전북특별자치도 전주시 완산구 우전로 255",
+    "category": "조개구이",
+    "description": "효자동 푸짐한 해물 전문점"
+  },
+  {
+    "name": "연어당",
+    "address": "전북특별자치도 전주시 완산구 전주객사1길 100",
+    "category": "일식",
+    "description": "연어 매니아들의 성지"
+  },
+  {
+    "name": "평화동대들보",
+    "address": "전북특별자치도 전주시 완산구 평화18길 23",
+    "category": "기타",
+    "description": "수제 함박 맛집"
+  },
+  {
+    "name": "고기먹는날",
+    "address": "전북특별자치도 전주시 덕진구 아중로 132",
+    "category": "기타",
+    "description": "아중리 생고기 구이 전문"
+  },
+  {
+    "name": "카레팩토리",
+    "address": "전북특별자치도 전주시 완산구 전주객사3길 34",
+    "category": "기타",
+    "description": "객사 골목 카레 맛집"
+  },
+  {
+    "name": "에코카페",
+    "address": "전북특별자치도 전주시 덕진구 세병서로 9",
+    "category": "카페",
+    "description": "에코시티 조용한 카페"
+  },
+  {
+    "name": "아중각",
+    "address": "전북특별자치도 전주시 덕진구 아중2길 12",
+    "category": "중화요리",
+    "description": "아중리 로컬 중식 맛집"
+  },
+  {
+    "name": "김가네",
+    "address": "전북특별자치도 전주시 덕진구 정언신로 42",
+    "category": "보쌈/족발",
+    "description": "우아동 족발 보쌈 맛집"
+  },
+  {
+    "name": "카페나비",
+    "address": "전북특별자치도 전주시 완산구 팔달로 180",
+    "category": "카페",
+    "description": "전주 영화의거리 전망 카페"
+  },
+  {
+    "name": "무명삼계탕",
+    "address": "전북특별자치도 전주시 덕진구 송천중앙로 225",
+    "category": "기타",
+    "description": "송천동 몸보신 삼계탕"
+  },
+  {
+    "name": "포레스트",
+    "address": "전북특별자치도 전주시 완산구 전주객사2길 46-10",
+    "category": "이탈리안",
+    "description": "객리단길 분위기 좋은 다이닝"
+  },
+  {
+    "name": "장가네왕족발",
+    "address": "전북특별자치도 전주시 완산구 효자로 178",
+    "category": "보쌈/족발",
+    "description": "효자동 오랫동안 사랑받는 족발집"
+  },
+  {
+    "name": "정성카츠",
+    "address": "전북특별자치도 전주시 덕진구 세병로 88",
+    "category": "일식",
+    "description": "에코시티 돈까스 전문점"
+  },
+  {
+    "name": "달빛소리",
+    "address": "전북특별자치도 전주시 완산구 전유길 20",
+    "category": "카페",
+    "description": "서학동 조용한 한옥 카페"
+  },
+  {
+    "name": "이모네집",
+    "address": "전북특별자치도 전주시 덕진구 백제대로 712",
+    "category": "국밥/탕류",
+    "description": "모래내시장 활기 넘치는 국밥집"
+  },
+  {
+    "name": "송천동돈까스",
+    "address": "전북특별자치도 전주시 덕진구 송천로 1",
+    "category": "일식",
+    "description": "송천동 가성비 최고 돈까스"
+  },
+  {
+    "name": "비숑",
+    "address": "전북특별자치도 전주시 완산구 문학대4길 28",
+    "category": "베이커리",
+    "description": "효자동 디저트 베이커리 맛집"
+  },
+  {
+    "name": "오유미당",
+    "address": "전북특별자치도 전주시 덕진구 만성중앙로 54",
+    "category": "일식",
+    "description": "이색 돈카츠 만성동 맛집"
+  },
+  {
+    "name": "베스킨로빈스전주한옥마을",
+    "address": "전북특별자치도 전주시 완산구 태조로 20",
+    "category": "카페",
+    "description": "한옥 외관이 매력적인 매장"
+  },
+  {
+    "name": "조촌떡갈비",
+    "address": "전북특별자치도 전주시 덕진구 쪽구름로 124",
+    "category": "기타",
+    "description": "여의동 가성비 떡갈비"
+  },
+  {
+    "name": "교동고치",
+    "address": "전북특별자치도 전주시 완산구 태조로 24",
+    "category": "기타",
+    "description": "한옥마을 대표 길거리 음식"
+  },
+  {
+    "name": "우아동풍천장어",
+    "address": "전북특별자치도 전주시 덕진구 아중로 210",
+    "category": "조개구이",
+    "description": "아중리 원조 장어구이"
+  },
+  {
+    "name": "그린필",
+    "address": "전북특별자치도 전주시 완산구 홍산중앙로 41",
+    "category": "이탈리안",
+    "description": "전북도청 근처 신선한 양식"
+  },
+  {
+    "name": "노들강변",
+    "address": "전북특별자치도 전주시 덕진구 원휘로 30",
+    "category": "조개구이",
+    "description": "여의동 인근 민물고기 매운탕"
+  },
+  {
+    "name": "카페 한올",
+    "address": "전북특별자치도 전주시 완산구 서학로 16",
+    "category": "카페",
+    "description": "예술마을 골목 숨겨진 감성"
+  },
+  {
+    "name": "전주초콜릿",
+    "address": "전북특별자치도 전주시 완산구 은행로 48",
+    "category": "카페",
+    "description": "한옥마을 달콤한 기념품 숍"
+  },
+  {
+    "name": "장모님멸치국수",
+    "address": "전북특별자치도 전주시 덕진구 세병로 12",
+    "category": "분식",
+    "description": "에코시티 시원한 국수 전문"
+  },
+  {
+    "name": "동래삼계탕",
+    "address": "전북특별자치도 전주시 완산구 전라감영3길 13",
+    "category": "기타",
+    "description": "중앙동 보양식 노포 맛집"
+  },
+  {
+    "name": "성미당",
+    "address": "전북 전주시 완산구 전라감영5길 19-9",
+    "category": "기타",
+    "description": "대통령들이 방문한 것으로 유명한 비빔밥 명소"
+  },
+  {
+    "name": "현대옥 본점",
+    "address": "전북 전주시 완산구 화산천변2길 7-4",
+    "category": "기타",
+    "description": "수란과 함께 먹는 전주식 콩나물국밥의 대표"
+  },
+  {
+    "name": "베테랑칼국수",
+    "address": "전북 전주시 완산구 경기전길 135",
+    "category": "분식",
+    "description": "한옥마을 내 위치한 들깨가루 가득한 걸쭉한 칼국수"
+  },
+  {
+    "name": "전주옘순찰",
+    "address": "전북 전주시 완산구 전주객사1길 46-7",
+    "category": "카페",
+    "description": "객리단길의 감성적인 분위기 카페"
+  },
+  {
+    "name": "옛촌막걸리 본점",
+    "address": "전북 전주시 완산구 거마공원로 8",
+    "category": "술집",
+    "description": "안주가 계속해서 나오는 전주 막걸리 골목의 강자"
+  },
+  {
+    "name": "영동슈퍼",
+    "address": "전북 전주시 완산구 현무1길 14",
+    "category": "술집",
+    "description": "고추통닭과 닭발튀김이 유명한 가맥집"
+  },
+  {
+    "name": "다가양조장",
+    "address": "전북 전주시 완산구 전주객사1길 40-7",
+    "category": "술집",
+    "description": "서비스 안주가 끝없이 나오는 객리단길 핫플레이스"
+  },
+  {
+    "name": "노매딕 브루잉 컴퍼니",
+    "address": "전북 전주시 완산구 전주객사3길 12-58",
+    "category": "술집",
+    "description": "전주에서 직접 양조하는 수제 맥주 전문점"
+  },
+  {
+    "name": "평화동 인생횟집",
+    "address": "전북 전주시 완산구 평화18길 23",
+    "category": "조개구이",
+    "description": "가성비가 뛰어나 현지인들이 많이 찾는 횟집"
+  },
+  {
+    "name": "어가",
+    "address": "전북 전주시 완산구 바우배기2길 22",
+    "category": "조개구이",
+    "description": "푸짐한 해물 양으로 유명한 신시가지 맛집"
+  },
+  {
+    "name": "솜리치킨",
+    "address": "전북 전주시 완산구 전라감영로 4",
+    "category": "통닭",
+    "description": "가마솥에 튀겨낸 바삭하고 고소한 깨치킨"
+  },
+  {
+    "name": "메트로폴리스",
+    "address": "전북 전주시 완산구 전주객사4길 74",
+    "category": "이탈리안",
+    "description": "뉴욕 스타일의 피자를 즐길 수 있는 곳"
+  },
+  {
+    "name": "카페 차공간",
+    "address": "전북 전주시 완산구 경기전길 165",
+    "category": "카페",
+    "description": "차분한 분위기에서 차를 즐길 수 있는 한옥 카페"
+  },
+  {
+    "name": "어느날의오후",
+    "address": "전북 전주시 덕진구 명륜4길 21-4",
+    "category": "카페",
+    "description": "전북대학교 근처 디저트가 맛있는 감성 카페"
   }
 ]
