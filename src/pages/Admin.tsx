@@ -433,7 +433,8 @@ const Admin = () => {
     if (!confirm(`"${adminCategory}" 카테고리에서 이미지가 없는 식당의 사진을 네이버 블로그에서 가져옵니다. 계속하시겠습니까?`)) return;
     setFetchingAllNaverImages(true);
     try {
-      const res = await adminApi("fetch_naver_images", { category: adminCategory });
+      const currentCity = cities.find(c => c.id === adminCityId);
+      const res = await adminApi("fetch_naver_images", { category: adminCategory, city_id: adminCityId, city_name: currentCity?.name });
       const ok = res.results?.filter((r: any) => r.success).length ?? 0;
       const fail = res.results?.filter((r: any) => !r.success).length ?? 0;
       toast({ title: `완료: ${ok}개 성공, ${fail}개 실패` });

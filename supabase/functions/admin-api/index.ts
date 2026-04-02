@@ -266,6 +266,8 @@ Deno.serve(async (req) => {
         }
 
         // Determine targets: specific ID, category, or all without images
+        const cityId = data?.city_id;
+        const cityName = data?.city_name ?? "";
         let targets: { id: string; name: string; address: string }[] = [];
         if (data?.id) {
           const { data: rests } = await supabase
@@ -274,15 +276,17 @@ Deno.serve(async (req) => {
             .eq("id", data.id);
           targets = rests ?? [];
         } else if (data?.category) {
-          const { data: rests } = await supabase
+          let q = supabase
             .from("restaurants")
             .select("id,name,address")
             .eq("category", data.category);
+          if (cityId) q = (q as any).eq("city_id", cityId);
+          const { data: rests } = await q;
           targets = rests ?? [];
         } else {
-          const { data: rests } = await supabase
-            .from("restaurants")
-            .select("id,name,address");
+          let q = supabase.from("restaurants").select("id,name,address");
+          if (cityId) q = (q as any).eq("city_id", cityId);
+          const { data: rests } = await q;
           targets = rests ?? [];
         }
 
@@ -323,7 +327,8 @@ Deno.serve(async (req) => {
             const chosenNaverPhotos: { buf: ArrayBuffer; ct: string }[] = [];
 
             // Step 1: 간판 이미지 우선 검색 → 대표 이미지
-            const signageItems = await naverSearch(`${restaurant.name} 간판`);
+            const nameWithCity = cityName ? `${cityName} ${restaurant.name}` : restaurant.name;
+            const signageItems = await naverSearch(`${nameWithCity} 간판`);
             for (const item of signageItems) {
               if (chosenNaverPhotos.length >= 1) break;
               const candidate = item.link || item.thumbnail;
@@ -333,7 +338,7 @@ Deno.serve(async (req) => {
             }
 
             // Step 2: 맛집 검색 → 나머지 4장
-            const foodItems = await naverSearch(`${restaurant.name} 맛집`, 8);
+            const foodItems = await naverSearch(`${nameWithCity} 맛집`, 8);
             for (const item of foodItems) {
               if (chosenNaverPhotos.length >= 5) break;
               const candidate = item.link || item.thumbnail;
