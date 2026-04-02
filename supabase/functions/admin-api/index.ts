@@ -105,10 +105,9 @@ Deno.serve(async (req) => {
 
 
       case "list_tips": {
-        const { data: tips, error } = await supabase
-          .from("tips")
-          .select("*")
-          .order("created_at", { ascending: false });
+        let q = supabase.from("tips").select("*").order("created_at", { ascending: false });
+        if (data?.city_id) q = (q as any).eq("city_id", data.city_id);
+        const { data: tips, error } = await q;
         if (error) throw error;
         result = { success: true, tips };
         break;

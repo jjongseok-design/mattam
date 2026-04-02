@@ -199,13 +199,19 @@ const Admin = () => {
 
   const fetchReviews = useCallback(async () => {
     setReviewsLoading(true);
+    const { data: cityRestaurants } = await supabase
+      .from("restaurants")
+      .select("id")
+      .eq("city_id", adminCityId);
+    const cityRestaurantIds = (cityRestaurants ?? []).map((r: any) => r.id);
     const { data, error } = await supabase
       .from("reviews")
       .select("id, restaurant_id, device_id, rating, comment, created_at")
+      .in("restaurant_id", cityRestaurantIds.length > 0 ? cityRestaurantIds : ["__none__"])
       .order("created_at", { ascending: false });
     if (!error) setAllReviews(data ?? []);
     setReviewsLoading(false);
-  }, []);
+  }, [adminCityId]);
 
   const handleAdminDeleteReview = async (reviewId: string) => {
     const { error } = await supabase.from("reviews").delete().eq("id", reviewId);
@@ -748,7 +754,7 @@ const Admin = () => {
                 if (!showTips && tips.length === 0) {
                   setTipsLoading(true);
                   try {
-                    const res = await adminApi("list_tips");
+                    const res = await adminApi("list_tips", { city_id: adminCityId });
                     setTips(res.tips || []);
                   } catch { }
                   setTipsLoading(false);

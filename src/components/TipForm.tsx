@@ -76,6 +76,7 @@ const TipForm = ({ open, onClose }: TipFormProps) => {
         reason: form.reason.trim() || null,
         image_url,
         device_id: deviceId,
+        city_id: cityId || null,
       });
       if (error) {
         toast({ title: "제보 실패", description: error.message, variant: "destructive" });
