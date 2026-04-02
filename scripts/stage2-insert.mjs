@@ -172,6 +172,12 @@ async function nextId(idPrefix) {
 // ── 메인 ─────────────────────────────────────────────────────────────────────
 console.log(`━━━ Stage 2: 영업정보 수집 + DB 삽입 (${RESTAURANTS.length}개) — 도시: ${CITY_NAME}(${CITY_ID}) ━━━\n${DRY_RUN ? "(DRY RUN — DB 변경 없음)\n" : ""}\n`);
 
+// 해당 도시의 유효한 카테고리 목록 조회
+const catRes = await fetch(`${SB_URL}/rest/v1/categories?city_id=eq.${CITY_ID}&select=id`, { headers: SB_H });
+const catRows = await catRes.json();
+const validCategories = new Set(catRows.map(c => c.id));
+console.log(`유효 카테고리 (${CITY_ID}): ${[...validCategories].join(", ")}\n`);
+
 // 기존 DB 항목 조회 (slug 기준)
 const existingRes = await fetch(`${SB_URL}/rest/v1/restaurants?city_id=eq.${CITY_ID}&select=slug`, { headers: SB_H });
 const existingRows = await existingRes.json();
@@ -207,8 +213,14 @@ for (let i = 0; i < RESTAURANTS.length; i++) {
     if (aiInfo.tags?.length) process.stdout.write(`    🍽️  ${aiInfo.tags.join(", ")}\n`);
     if (aiInfo.description) process.stdout.write(`    📝 ${aiInfo.description}\n`);
 
-    // 3. ID 생성 + 삽입
-    const idPrefix = await getPrefix(item.category);
+    // 3. 카테고리 검증 → 없으면 기타로 fallback
+    const resolvedCategory = validCategories.has(item.category) ? item.category : "기타";
+    if (resolvedCategory !== item.category) {
+      process.stdout.write(`    ⚠️  카테고리 "${item.category}" 없음 → "기타"로 분류 (나중에 수동 재분류 필요)\n`);
+    }
+
+    // 4. ID 생성 + 삽입
+    const idPrefix = await getPrefix(resolvedCategory);
     const id = await nextId(idPrefix);
 
     const row = {
@@ -220,7 +232,7 @@ for (let i = 0; i < RESTAURANTS.length; i++) {
       lat: item.lat,
       lng: item.lng,
       phone: gInfo.phone || item.phone || null,
-      category: item.category,
+      category: resolvedCategory,
       price_range: gInfo.price_range ?? null,
       opening_hours: gInfo.opening_hours ?? null,
       closed_days: gInfo.closed_days ?? null,
