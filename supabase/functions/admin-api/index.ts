@@ -815,10 +815,12 @@ Deno.serve(async (req) => {
       }
 
       case "bulk_update_category": {
-        const { error } = await supabase
+        let q = supabase
           .from("restaurants")
           .update({ category: data.new_category })
           .eq("category", data.old_category);
+        if (data.city_id) q = (q as any).eq("city_id", data.city_id);
+        const { error } = await q;
         if (error) throw error;
         result = { success: true };
         break;
@@ -861,15 +863,19 @@ Deno.serve(async (req) => {
       }
 
       case "category_update": {
-        const { id, ...rest } = data;
-        const { error } = await supabase.from("categories").update(rest).eq("id", id);
+        const { id, city_id, ...rest } = data;
+        let q = supabase.from("categories").update(rest).eq("id", id);
+        if (city_id) q = (q as any).eq("city_id", city_id);
+        const { error } = await q;
         if (error) throw error;
         result = { success: true };
         break;
       }
 
       case "category_delete": {
-        const { error } = await supabase.from("categories").delete().eq("id", data.id);
+        let q = supabase.from("categories").delete().eq("id", data.id);
+        if (data.city_id) q = (q as any).eq("city_id", data.city_id);
+        const { error } = await q;
         if (error) throw error;
         result = { success: true };
         break;

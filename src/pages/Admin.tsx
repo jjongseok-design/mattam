@@ -607,11 +607,12 @@ const Admin = () => {
             tag_suggestions: tags,
             sort_order: editingCat.sort_order,
           });
-          await adminApi("bulk_update_category", { old_category: oldId, new_category: newId });
-          await adminApi("category_delete", { id: oldId });
+          await adminApi("bulk_update_category", { old_category: oldId, new_category: newId, city_id: adminCityId });
+          await adminApi("category_delete", { id: oldId, city_id: adminCityId });
         } else {
           await adminApi("category_update", {
             id: editingCat.id,
+            city_id: adminCityId,
             label: catForm.label,
             emoji: catForm.emoji,
             id_prefix: catForm.id_prefix,
@@ -650,7 +651,7 @@ const Admin = () => {
     }
     if (!confirm(`"${cat.label}" 카테고리를 삭제하시겠습니까?`)) return;
     try {
-      await adminApi("category_delete", { id: cat.id });
+      await adminApi("category_delete", { id: cat.id, city_id: adminCityId });
       invalidateCategories();
       toast({ title: "카테고리 삭제 완료 ✅" });
     } catch (err: any) {
