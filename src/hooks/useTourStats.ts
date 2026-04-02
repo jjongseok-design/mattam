@@ -69,7 +69,7 @@ export const useTourStats = (
       .sort((a, b) => b.percent - a.percent || b.visited - a.visited);
 
     const totalRestaurants = restaurants.length;
-    const totalVisited = visited.size;
+    const totalVisited = restaurants.filter(r => visited.has(r.id)).length;
     const overallPercent = totalRestaurants > 0 ? Math.round((totalVisited / totalRestaurants) * 100) : 0;
 
     const rankInfo = [...RANKS].reverse().find((r) => totalVisited >= r.min) || RANKS[0];
