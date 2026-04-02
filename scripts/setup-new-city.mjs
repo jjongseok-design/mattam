@@ -3,31 +3,47 @@
  *
  * 새 도시를 맛탐 플랫폼에 추가합니다.
  *   1. cities 테이블에 도시 등록
- *   2. 기본 카테고리 세팅 (다른 도시에서 복사하거나 기본값 사용)
+ *   2. 카테고리 세팅:
+ *      - 도시 특화 카테고리를 맨 앞에 삽입 (sort_order 1, 2, ...)
+ *      - 춘천 기본 카테고리를 그 뒤에 복사 (완전히 새 도시 city_id로 분리)
  *   3. 식당 데이터는 비워둠 — 나중에 stage1/stage2로 추가
  *
- * 사용법:
- *   node scripts/setup-new-city.mjs
+ * ─── 사용법 ───────────────────────────────────────────────────────────────────
  *
- * 필수 환경변수:
- *   CITY_ID       새 도시 ID (영문 소문자, 예: busan, daegu, incheon)
- *   CITY_NAME     도시 표시명 (예: 부산, 대구, 인천)
- *   CITY_LAT      도시 중심 위도 (예: 35.1796)
- *   CITY_LNG      도시 중심 경도 (예: 129.0756)
+ *   기본 (특화 카테고리 없이 춘천 복사만):
+ *     CITY_ID=busan CITY_NAME=부산 CITY_LAT=35.1796 CITY_LNG=129.0756 \
+ *       node scripts/setup-new-city.mjs
  *
- * 선택 환경변수:
- *   CITY_DESC       도시 설명 (기본: "맛탐 {도시명}")
- *   CITY_ZOOM       지도 기본 줌 레벨 (기본: 12)
- *   COPY_FROM       카테고리 복사할 기존 도시 ID (기본: chuncheon)
- *                   "none" 으로 설정하면 기본 공통 카테고리만 세팅
- *   DRY_RUN=1       DB 변경 없이 미리보기만
+ *   특화 카테고리 JSON 파일 지정:
+ *     CITY_ID=busan CITY_NAME=부산 CITY_LAT=35.1796 CITY_LNG=129.0756 \
+ *     SPECIAL_FILE=city-busan-special.json \
+ *       node scripts/setup-new-city.mjs
  *
- * 예시:
- *   CITY_ID=busan CITY_NAME=부산 CITY_LAT=35.1796 CITY_LNG=129.0756 node scripts/setup-new-city.mjs
- *   CITY_ID=daegu CITY_NAME=대구 CITY_LAT=35.8714 CITY_LNG=128.6014 COPY_FROM=jeonju node scripts/setup-new-city.mjs
+ *   DRY RUN (DB 변경 없이 미리보기):
+ *     DRY_RUN=1 CITY_ID=busan ... node scripts/setup-new-city.mjs
+ *
+ * ─── 필수 환경변수 ────────────────────────────────────────────────────────────
+ *   CITY_ID     영문 소문자 (예: busan, daegu, suwon)
+ *   CITY_NAME   표시 이름 (예: 부산, 대구, 수원)
+ *   CITY_LAT    중심 위도
+ *   CITY_LNG    중심 경도
+ *
+ * ─── 선택 환경변수 ────────────────────────────────────────────────────────────
+ *   CITY_DESC     도시 설명 (기본: "맛탐 {CITY_NAME}")
+ *   CITY_ZOOM     지도 줌 레벨 (기본: 12)
+ *   SPECIAL_FILE  도시 특화 카테고리 JSON 파일 경로 (기본: 없음)
+ *   BASE_CITY     복사할 기본 도시 (기본: chuncheon)
+ *   DRY_RUN=1     미리보기 전용
+ *
+ * ─── 특화 카테고리 JSON 형식 ─────────────────────────────────────────────────
+ *   [
+ *     { "id": "비빔밥",    "label": "비빔밥",    "emoji": "🍚", "id_prefix": "bb" },
+ *     { "id": "콩나물국밥", "label": "콩나물국밥", "emoji": "🥣", "id_prefix": "kn" }
+ *   ]
+ *   → sort_order는 자동 부여 (1, 2, ...), base 카테고리는 그 뒤로 밀림
  */
 
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -50,46 +66,28 @@ const H = {
 };
 
 // ── 필수 파라미터 검증 ────────────────────────────────────────────────────────
-const CITY_ID   = process.env.CITY_ID;
-const CITY_NAME = process.env.CITY_NAME;
-const CITY_LAT  = parseFloat(process.env.CITY_LAT ?? "");
-const CITY_LNG  = parseFloat(process.env.CITY_LNG ?? "");
+const CITY_ID    = process.env.CITY_ID;
+const CITY_NAME  = process.env.CITY_NAME;
+const CITY_LAT   = parseFloat(process.env.CITY_LAT ?? "");
+const CITY_LNG   = parseFloat(process.env.CITY_LNG ?? "");
+const CITY_DESC  = process.env.CITY_DESC ?? `맛탐 ${CITY_NAME}`;
+const CITY_ZOOM  = parseInt(process.env.CITY_ZOOM ?? "12");
+const BASE_CITY  = process.env.BASE_CITY ?? "chuncheon";
+const SPECIAL_FILE = process.env.SPECIAL_FILE ?? null;
 
 if (!CITY_ID || !CITY_NAME || isNaN(CITY_LAT) || isNaN(CITY_LNG)) {
-  console.error("❌ 필수 환경변수 누락: CITY_ID, CITY_NAME, CITY_LAT, CITY_LNG 모두 필요합니다.");
-  console.error("   예시: CITY_ID=busan CITY_NAME=부산 CITY_LAT=35.1796 CITY_LNG=129.0756 node scripts/setup-new-city.mjs");
+  console.error("❌ 필수 환경변수 누락");
+  console.error("   CITY_ID, CITY_NAME, CITY_LAT, CITY_LNG 모두 필요합니다.");
+  console.error("\n   예시:");
+  console.error("   CITY_ID=busan CITY_NAME=부산 CITY_LAT=35.1796 CITY_LNG=129.0756 node scripts/setup-new-city.mjs");
   process.exit(1);
 }
 
-const CITY_DESC  = process.env.CITY_DESC  ?? `맛탐 ${CITY_NAME}`;
-const CITY_ZOOM  = parseInt(process.env.CITY_ZOOM ?? "12");
-const COPY_FROM  = process.env.COPY_FROM  ?? "chuncheon";
-
-// ── 기본 공통 카테고리 (COPY_FROM=none 시 사용) ──────────────────────────────
-const DEFAULT_CATEGORIES = [
-  { id: "한식",     label: "한식",    emoji: "🍚", id_prefix: "hs",  sort_order: 1 },
-  { id: "중화요리", label: "중화요리", emoji: "🥡", id_prefix: "cn",  sort_order: 2 },
-  { id: "일식",     label: "일식",    emoji: "🍣", id_prefix: "jp",  sort_order: 3 },
-  { id: "이탈리안", label: "이탈리안", emoji: "🍝", id_prefix: "it",  sort_order: 4 },
-  { id: "삼겹살",   label: "삼겹살",  emoji: "🥓", id_prefix: "sp",  sort_order: 5 },
-  { id: "한우",     label: "한우",    emoji: "🥩", id_prefix: "hw",  sort_order: 6 },
-  { id: "초밥",     label: "초밥",    emoji: "🍱", id_prefix: "sb",  sort_order: 7 },
-  { id: "보쌈/족발", label: "보쌈/족발", emoji: "🐷", id_prefix: "bj", sort_order: 8 },
-  { id: "국밥/탕류", label: "국밥/탕류", emoji: "🥣", id_prefix: "gb", sort_order: 9 },
-  { id: "칼국수",   label: "칼국수",  emoji: "🍜", id_prefix: "kk",  sort_order: 10 },
-  { id: "수제버거", label: "수제버거", emoji: "🍔", id_prefix: "bg",  sort_order: 11 },
-  { id: "돈까스",   label: "돈까스",  emoji: "🍛", id_prefix: "dk",  sort_order: 12 },
-  { id: "분식",     label: "분식",    emoji: "🥚", id_prefix: "bs",  sort_order: 13 },
-  { id: "통닭",     label: "통닭",    emoji: "🍗", id_prefix: "td",  sort_order: 14 },
-  { id: "카페",     label: "카페",    emoji: "☕", id_prefix: "cf",  sort_order: 15 },
-  { id: "베이커리", label: "베이커리", emoji: "🥐", id_prefix: "bk",  sort_order: 16 },
-  { id: "술집",     label: "술집",    emoji: "🍻", id_prefix: "sj",  sort_order: 17 },
-  { id: "기타",     label: "기타",    emoji: "🍽️", id_prefix: "etc", sort_order: 18 },
-];
+console.log(`\n${"━".repeat(55)}`);
+console.log(` 새 도시 설정: ${CITY_NAME} (${CITY_ID})${DRY_RUN ? "  [DRY RUN]" : ""}`);
+console.log(`${"━".repeat(55)}\n`);
 
 // ── Step 1: 도시 중복 확인 ────────────────────────────────────────────────────
-console.log(`\n━━━ 새 도시 설정: ${CITY_NAME}(${CITY_ID}) ━━━${DRY_RUN ? " [DRY RUN]" : ""}\n`);
-
 const existRes = await fetch(`${SB_URL}/rest/v1/cities?id=eq.${CITY_ID}&select=id`, { headers: H });
 const existData = await existRes.json();
 if (existData.length > 0) {
@@ -98,68 +96,90 @@ if (existData.length > 0) {
 }
 
 // ── Step 2: cities 테이블에 삽입 ─────────────────────────────────────────────
-const cityRow = {
-  id: CITY_ID,
-  name: CITY_NAME,
-  description: CITY_DESC,
-  lat: CITY_LAT,
-  lng: CITY_LNG,
-  zoom: CITY_ZOOM,
-  is_active: true,
-  sort_order: 99,  // 마지막 순서 — Supabase 대시보드에서 직접 조정
-};
-
-console.log(`📍 도시 등록:`);
-console.log(`   ID: ${CITY_ID} | 이름: ${CITY_NAME}`);
-console.log(`   좌표: (${CITY_LAT}, ${CITY_LNG}) | 줌: ${CITY_ZOOM}`);
+console.log(`📍 도시 등록`);
+console.log(`   ID: ${CITY_ID}  |  이름: ${CITY_NAME}`);
+console.log(`   좌표: (${CITY_LAT}, ${CITY_LNG})  |  줌: ${CITY_ZOOM}`);
 console.log(`   설명: ${CITY_DESC}`);
 
 if (!DRY_RUN) {
   const r = await fetch(`${SB_URL}/rest/v1/cities`, {
     method: "POST",
     headers: H,
-    body: JSON.stringify(cityRow),
+    body: JSON.stringify({
+      id: CITY_ID,
+      name: CITY_NAME,
+      description: CITY_DESC,
+      lat: CITY_LAT,
+      lng: CITY_LNG,
+      zoom: CITY_ZOOM,
+      is_active: true,
+      sort_order: 99,
+    }),
   });
   if (!r.ok) {
-    const t = await r.text();
-    console.error(`❌ cities 삽입 실패: ${t}`);
+    console.error(`❌ cities 삽입 실패: ${await r.text()}`);
     process.exit(1);
   }
-  console.log(`   ✅ cities 테이블 삽입 완료\n`);
+  console.log(`   ✅ 완료\n`);
 } else {
-  console.log(`   [DRY RUN] 삽입 스킵\n`);
+  console.log(`   [DRY RUN] 스킵\n`);
 }
 
-// ── Step 3: 카테고리 준비 ─────────────────────────────────────────────────────
-let categories = [];
+// ── Step 3: 도시 특화 카테고리 로드 ──────────────────────────────────────────
+let specialCats = [];
 
-if (COPY_FROM === "none") {
-  console.log(`📂 기본 공통 카테고리 사용 (${DEFAULT_CATEGORIES.length}개)`);
-  categories = DEFAULT_CATEGORIES;
-} else {
-  console.log(`📂 "${COPY_FROM}" 도시 카테고리 복사 중...`);
-  const catRes = await fetch(
-    `${SB_URL}/rest/v1/categories?city_id=eq.${COPY_FROM}&select=id,label,emoji,id_prefix,tag_placeholder,tag_suggestions,sort_order&order=sort_order`,
-    { headers: H }
-  );
-  const catData = await catRes.json();
-  if (!Array.isArray(catData) || catData.length === 0) {
-    console.warn(`⚠️  "${COPY_FROM}" 카테고리를 가져오지 못했습니다. 기본 카테고리로 대체합니다.`);
-    categories = DEFAULT_CATEGORIES;
-  } else {
-    categories = catData;
-    console.log(`   ${categories.length}개 카테고리 복사`);
+if (SPECIAL_FILE) {
+  const filePath = resolve(ROOT, SPECIAL_FILE);
+  if (!existsSync(filePath)) {
+    console.error(`❌ SPECIAL_FILE 파일을 찾을 수 없습니다: ${filePath}`);
+    process.exit(1);
   }
+  specialCats = JSON.parse(readFileSync(filePath, "utf8"));
+  console.log(`🌟 도시 특화 카테고리 (${specialCats.length}개) — 맨 앞에 삽입`);
+  specialCats.forEach((c, i) => console.log(`   ${i + 1}. ${c.emoji} ${c.label}  (id: ${c.id}, prefix: ${c.id_prefix})`));
+  console.log();
+} else {
+  console.log(`ℹ️  SPECIAL_FILE 없음 — 특화 카테고리 없이 진행\n`);
 }
 
-// ── Step 4: 카테고리 삽입 ─────────────────────────────────────────────────────
-console.log(`\n📋 카테고리 삽입 (${categories.length}개):`);
-categories.forEach(c => console.log(`   ${c.sort_order}. ${c.emoji} ${c.label} (id: ${c.id}, prefix: ${c.id_prefix})`));
+// ── Step 4: 기본 도시(춘천) 카테고리 복사 ────────────────────────────────────
+console.log(`📂 "${BASE_CITY}" 카테고리 복사 중...`);
+const catRes = await fetch(
+  `${SB_URL}/rest/v1/categories?city_id=eq.${BASE_CITY}&select=id,label,emoji,id_prefix,tag_placeholder,tag_suggestions,sort_order&order=sort_order`,
+  { headers: H }
+);
+const baseCats = await catRes.json();
 
+if (!Array.isArray(baseCats) || baseCats.length === 0) {
+  console.error(`❌ "${BASE_CITY}" 카테고리를 가져오지 못했습니다.`);
+  process.exit(1);
+}
+
+// 특화 카테고리 ID 목록 — 기본 카테고리에서 중복 제거
+const specialIds = new Set(specialCats.map(c => c.id));
+const filteredBase = baseCats.filter(c => !specialIds.has(c.id));
+console.log(`   ${baseCats.length}개 중 ${filteredBase.length}개 복사 (특화 카테고리 ${specialCats.length}개 중복 제외)`);
+
+// ── Step 5: sort_order 재부여 ──────────────────────────────────────────────
+//   특화 카테고리: 1, 2, 3 ...
+//   기본 카테고리: special_count + 1, special_count + 2 ...
+const allCategories = [
+  ...specialCats.map((c, i) => ({ ...c, sort_order: i + 1 })),
+  ...filteredBase.map((c, i) => ({ ...c, sort_order: specialCats.length + i + 1 })),
+];
+
+console.log(`\n📋 최종 카테고리 순서 (${allCategories.length}개):`);
+allCategories.forEach(c => {
+  const tag = specialIds.has(c.id) ? " 🌟특화" : "";
+  console.log(`   ${String(c.sort_order).padStart(2)}. ${c.emoji} ${c.label}${tag}`);
+});
+
+// ── Step 6: DB 삽입 ───────────────────────────────────────────────────────────
+console.log();
 if (!DRY_RUN) {
-  const rows = categories.map(c => ({
+  const rows = allCategories.map(c => ({
     id: c.id,
-    city_id: CITY_ID,
+    city_id: CITY_ID,          // ← 반드시 새 도시 ID로 저장 (기존 도시와 완전 분리)
     label: c.label,
     emoji: c.emoji,
     id_prefix: c.id_prefix,
@@ -174,21 +194,22 @@ if (!DRY_RUN) {
     body: JSON.stringify(rows),
   });
   if (!r.ok) {
-    const t = await r.text();
-    console.error(`❌ 카테고리 삽입 실패: ${t}`);
+    console.error(`❌ 카테고리 삽입 실패: ${await r.text()}`);
     process.exit(1);
   }
-  console.log(`   ✅ 카테고리 삽입 완료\n`);
+  console.log(`✅ 카테고리 ${rows.length}개 삽입 완료\n`);
 } else {
-  console.log(`   [DRY RUN] 삽입 스킵\n`);
+  console.log(`[DRY RUN] 카테고리 삽입 스킵\n`);
 }
 
-// ── 완료 요약 ─────────────────────────────────────────────────────────────────
+// ── 완료 ─────────────────────────────────────────────────────────────────────
 console.log(`${"─".repeat(55)}`);
 console.log(`${DRY_RUN ? "[DRY RUN] " : ""}✅ ${CITY_NAME}(${CITY_ID}) 플랫폼 준비 완료!`);
-console.log(`\n다음 단계:`);
-console.log(`  1. 앱 접속: mattam.vercel.app/${CITY_ID}`);
-console.log(`  2. 카테고리 커스터마이즈: 관리자 모드 → 도시 선택 → 편집모드`);
-console.log(`  3. 식당 추가:`);
-console.log(`     CITY=${CITY_ID} CITY_NAME=${CITY_NAME} node scripts/stage1-verify.mjs`);
-console.log(`     CITY=${CITY_ID} CITY_NAME=${CITY_NAME} node scripts/stage2-insert.mjs`);
+console.log(`
+다음 단계:
+  1. 앱 접속 확인    : mattam.vercel.app/${CITY_ID}
+  2. 카테고리 조정   : 관리자 모드 → ${CITY_NAME} 선택 → 편집모드
+  3. 식당 추가 (나중에):
+       CITY=${CITY_ID} CITY_NAME=${CITY_NAME} node scripts/stage1-verify.mjs
+       CITY=${CITY_ID} CITY_NAME=${CITY_NAME} node scripts/stage2-insert.mjs
+`);
