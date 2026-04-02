@@ -30,6 +30,7 @@ const SB_URL        = env.VITE_SUPABASE_URL;
 const SK            = env.SUPABASE_SERVICE_ROLE_KEY;
 const DRY_RUN       = process.env.DRY_RUN === "1";
 const CITY_ID       = process.env.CITY ?? "jeonju";
+const CITY_NAME     = process.env.CITY_NAME ?? CITY_ID;  // 검색/프롬프트용 도시명 (예: 전주, 춘천)
 const CLAUDE_MODEL  = "claude-haiku-4-5-20251001";
 
 const INPUT_FILE = process.env.INPUT ?? "restaurants-verified.json";
@@ -69,7 +70,7 @@ function parseHours(openingHours) {
 
 async function googlePlaces(name, lat, lng) {
   const findUrl = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json");
-  findUrl.searchParams.set("input", `${name} 전주`);
+  findUrl.searchParams.set("input", `${name} ${CITY_NAME}`);
   findUrl.searchParams.set("inputtype", "textquery");
   findUrl.searchParams.set("fields", "name,place_id");
   findUrl.searchParams.set("locationbias", `circle:5000@${lat},${lng}`);
@@ -99,7 +100,7 @@ async function googlePlaces(name, lat, lng) {
 
 // ── Claude: 메뉴 태그 + 한 줄 설명 ────────────────────────────────────────────
 async function claudeFetch(name, category, address, googleDesc) {
-  const prompt = `전주 식당 정보를 보고 아래 두 가지를 JSON으로 답해줘.
+  const prompt = `${CITY_NAME} 식당 정보를 보고 아래 두 가지를 JSON으로 답해줘.
 
 식당명: ${name}
 카테고리: ${category}
@@ -114,7 +115,7 @@ ${googleDesc ? `Google 설명: ${googleDesc}` : ""}
 
 규칙:
 - menus: 실제 대표 메뉴 3~5개, 한국어, 10자 이내
-- description: 핵심 특징 한 줄 (예: "전주 한옥마을 대표 비빔밥 노포")
+- description: 핵심 특징 한 줄 (예: "${CITY_NAME} 대표 노포")
 - 모르면 카테고리 기반으로 추정`;
 
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -147,12 +148,11 @@ ${googleDesc ? `Google 설명: ${googleDesc}` : ""}
 
 // ── ID 생성 ───────────────────────────────────────────────────────────────────
 async function getPrefix(category) {
-  for (const cityId of [CITY_ID, "chuncheon"]) {
-    const r = await fetch(`${SB_URL}/rest/v1/categories?city_id=eq.${cityId}&id=eq.${encodeURIComponent(category)}&select=id_prefix`, { headers: SB_H });
-    const d = await r.json();
-    if (d[0]?.id_prefix) return d[0].id_prefix;
-  }
-  return "je";
+  const r = await fetch(`${SB_URL}/rest/v1/categories?city_id=eq.${CITY_ID}&id=eq.${encodeURIComponent(category)}&select=id_prefix`, { headers: SB_H });
+  const d = await r.json();
+  if (d[0]?.id_prefix) return d[0].id_prefix;
+  // 해당 도시 카테고리에서 못 찾으면 city_id 앞 2글자로 fallback (예: je, ch, su)
+  return CITY_ID.slice(0, 2);
 }
 
 const prefixCounters = {};
@@ -170,7 +170,7 @@ async function nextId(idPrefix) {
 }
 
 // ── 메인 ─────────────────────────────────────────────────────────────────────
-console.log(`━━━ Stage 2: 영업정보 수집 + DB 삽입 (${RESTAURANTS.length}개) ━━━\n${DRY_RUN ? "(DRY RUN — DB 변경 없음)\n" : ""}\n`);
+console.log(`━━━ Stage 2: 영업정보 수집 + DB 삽입 (${RESTAURANTS.length}개) — 도시: ${CITY_NAME}(${CITY_ID}) ━━━\n${DRY_RUN ? "(DRY RUN — DB 변경 없음)\n" : ""}\n`);
 
 // 기존 DB 항목 조회 (slug 기준)
 const existingRes = await fetch(`${SB_URL}/rest/v1/restaurants?city_id=eq.${CITY_ID}&select=slug`, { headers: SB_H });

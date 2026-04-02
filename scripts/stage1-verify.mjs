@@ -31,6 +31,7 @@ const env = Object.fromEntries(
 const KAKAO = env.KAKAO_REST_API_KEY;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+const CITY_NAME    = process.env.CITY_NAME ?? "전주";   // 검색 쿼리에 붙는 도시명 (예: 춘천, 전주, 수원)
 const INPUT_FILE   = process.env.INPUT   ?? "restaurants-jeonju-new.json";
 const OUTPUT_FILE  = process.env.OUTPUT  ?? "restaurants-verified.json";
 const FAILED_FILE  = process.env.FAILED  ?? "restaurants-failed.json";
@@ -43,18 +44,19 @@ function nameMatch(a, b) {
   return ca === cb || ca.includes(cb) || cb.includes(ca) || ca.slice(0, 4) === cb.slice(0, 4);
 }
 
-// 지점명 제거 (본점/전주점/OO점 등)
+// 지점명 제거 (본점/OO점 등, 도시명 동적 적용)
 function stripBranch(name) {
+  const escaped = CITY_NAME.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return name
-    .replace(/\s*(전주\S*본점|전주\S*점|\S*본점|\S+점)$/, "")
+    .replace(new RegExp(`\\s*(${escaped}\\S*본점|${escaped}\\S*점|\\S*본점|\\S+점)$`), "")
     .trim();
 }
 
-// 1차: 이름+전주 키워드 검색
+// 1차: 이름+도시명 키워드 검색
 async function kakaoKeyword(name) {
   for (const code of ["FD6", "CE7", ""]) {
     const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
-    url.searchParams.set("query", `${name} 전주`);
+    url.searchParams.set("query", `${name} ${CITY_NAME}`);
     if (code) url.searchParams.set("category_group_code", code);
     url.searchParams.set("size", "5");
     const r = await fetch(url.toString(), { headers: { Authorization: `KakaoAK ${KAKAO}` } });
@@ -101,7 +103,7 @@ async function kakaoByCoords(name, lat, lng) {
   return d.documents ?? [];
 }
 
-console.log(`━━━ Stage 1: 카카오 검증 (${RESTAURANTS.length}개) ━━━\n`);
+console.log(`━━━ Stage 1: 카카오 검증 (${RESTAURANTS.length}개) — 도시: ${CITY_NAME} ━━━\n`);
 
 const verified = [];
 const failed = [];
