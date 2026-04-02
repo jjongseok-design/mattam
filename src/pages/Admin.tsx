@@ -448,7 +448,8 @@ const Admin = () => {
   const handleFetchNaverInfo = async (id: string) => {
     setFetchingKakaoInfoId(id);
     try {
-      const res = await adminApi("fetch_kakao_info", { id });
+      const currentCity = cities.find(c => c.id === adminCityId);
+      const res = await adminApi("fetch_kakao_info", { id, city_id: adminCityId, city_name: currentCity?.name });
       if (res.success) {
         const updated = Object.keys(res.updates ?? {}).join(", ");
         toast({ title: `정보 업데이트 완료 ✅`, description: updated || "변경 없음" });
@@ -985,7 +986,7 @@ const Admin = () => {
                     dragItem.current = null;
                     dragOverItem.current = null;
                     if (!finalOrder) return;
-                    const updates = finalOrder.map((c, i) => ({ id: c.id, sort_order: i + 1 }));
+                    const updates = finalOrder.map((c, i) => ({ id: c.id, sort_order: i + 1, city_id: adminCityId }));
                     const queryKey = adminCityId ? ["categories", adminCityId] : ["categories"];
                     queryClient.setQueryData(queryKey, finalOrder.map((c, i) => ({ ...c, sort_order: i + 1 })));
                     try {
@@ -2229,6 +2230,8 @@ const Admin = () => {
                                             category: tip.category,
                                             address: tip.address,
                                             reason: tip.reason,
+                                            city_id: adminCityId,
+                                            city_name: cities.find(c => c.id === adminCityId)?.name ?? adminCityId,
                                           });
                                           // 제보자에게 알림 생성
                                           if (tip.device_id) {

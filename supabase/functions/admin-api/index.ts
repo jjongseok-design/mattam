@@ -132,6 +132,10 @@ Deno.serve(async (req) => {
       }
 
       case "approve_tip": {
+        const tipCityId = data.city_id;
+        const tipCityName = data.city_name ?? tipCityId ?? "알 수 없는 도시";
+        if (!tipCityId) throw new Error("city_id가 필요합니다");
+
         // 1. Update tip status to approved
         const { error: tipErr } = await supabase
           .from("tips")
@@ -144,15 +148,16 @@ Deno.serve(async (req) => {
           .from("categories")
           .select("id_prefix, tag_suggestions")
           .eq("id", data.category)
+          .eq("city_id", tipCityId)
           .single();
-        
+
         const prefix = catData?.id_prefix || "xx";
-        
+
         const { data: existing } = await supabase
           .from("restaurants")
           .select("id")
           .like("id", `${prefix}%`);
-        
+
         let maxNum = 0;
         if (existing) {
           for (const r of existing) {
@@ -167,17 +172,16 @@ Deno.serve(async (req) => {
         try {
           const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
           if (lovableApiKey) {
-            const aiPrompt = `너는 한국 춘천시 식당 데이터 조사원이야. 아래 식당의 실제 정보를 최대한 정확하게 알려줘.
+            const aiPrompt = `너는 한국 ${tipCityName} 식당 데이터 조사원이야. 아래 식당의 실제 정보를 최대한 정확하게 알려줘.
 
 식당명: "${data.restaurant_name}"
 카테고리: ${data.category}
-제보된 주소 힌트: ${data.address || "춘천시 퇴계동 부근"}
+제보된 주소 힌트: ${data.address || `${tipCityName} 부근`}
 제보 사유: ${data.reason || "없음"}
 
 [중요 지침]
-- 춘천시에 실제로 존재하는 식당 기준으로 답변해.
-- 프랜차이즈인 경우 춘천 지점 정보를 찾아줘.
-- 위도(lat)는 37.8~37.95, 경도(lng)는 127.65~127.8 범위 내여야 함 (춘천시 범위).
+- ${tipCityName}에 실제로 존재하는 식당 기준으로 답변해.
+- 프랜차이즈인 경우 ${tipCityName} 지점 정보를 찾아줘.
 - 확실하지 않은 정보는 null로 작성해.
 - 리뷰수는 네이버 기준 방문자리뷰+블로그리뷰 합산 추정치.
 
@@ -185,9 +189,9 @@ Deno.serve(async (req) => {
 {
   "name": "정확한 식당명 (지점명 포함)",
   "address": "정확한 도로명주소",
-  "phone": "전화번호 (033-xxx-xxxx 형식)",
-  "lat": 37.xxxx,
-  "lng": 127.xxxx,
+  "phone": "전화번호",
+  "lat": 위도(소수점),
+  "lng": 경도(소수점),
   "price_range": "₩X,000~₩XX,000",
   "tags": ["대표메뉴1", "대표메뉴2", "대표메뉴3"],
   "description": "한줄 설명 (20자 이내)",
@@ -234,14 +238,18 @@ Deno.serve(async (req) => {
         }
 
         // 4. Insert restaurant with AI-enriched data
+        const { data: cityRow } = await supabase.from("cities").select("lat,lng").eq("id", tipCityId).single();
+        const defaultLat = cityRow?.lat ?? 37.8813;
+        const defaultLng = cityRow?.lng ?? 127.7298;
         const restaurant = {
           id: newId,
+          city_id: tipCityId,
           name: aiInfo.name || data.restaurant_name,
           category: data.category,
-          address: aiInfo.address || data.address || "춘천시",
+          address: aiInfo.address || data.address || tipCityName,
           phone: aiInfo.phone || null,
-          lat: (aiInfo.lat && aiInfo.lat > 37.7 && aiInfo.lat < 38.0) ? aiInfo.lat : (data.lat || 37.8813),
-          lng: (aiInfo.lng && aiInfo.lng > 127.5 && aiInfo.lng < 127.9) ? aiInfo.lng : (data.lng || 127.7298),
+          lat: (aiInfo.lat && aiInfo.lat > 33 && aiInfo.lat < 39) ? aiInfo.lat : (data.lat || defaultLat),
+          lng: (aiInfo.lng && aiInfo.lng > 124 && aiInfo.lng < 132) ? aiInfo.lng : (data.lng || defaultLng),
           rating: aiInfo.rating || 0,
           review_count: aiInfo.review_count || 0,
           price_range: aiInfo.price_range || null,
@@ -743,7 +751,7 @@ Deno.serve(async (req) => {
         const kakaoKey = Deno.env.get("KAKAO_REST_API_KEY");
         if (!kakaoKey) throw new Error("KAKAO_REST_API_KEY가 Supabase 시크릿에 설정되지 않았습니다");
 
-        const { id: targetId } = data;
+        const { id: targetId, city_name: kakaoSearchCityName } = data;
         const { data: rest } = await supabase
           .from("restaurants")
           .select("id,name,address,phone")
@@ -762,7 +770,7 @@ Deno.serve(async (req) => {
         };
 
         const normalizeAddr = (addr: string) =>
-          (addr ?? "").replace(/^(강원특별자치도|강원도)\s*/, "").replace(/\s+/g, " ").trim().toLowerCase();
+          (addr ?? "").replace(/^(강원특별자치도|강원도|전라북도|경기도|경상남도|경상북도|충청남도|충청북도)\s*/, "").replace(/\s+/g, " ").trim().toLowerCase();
 
         const roadAddressMatches = (dbAddr: string, kakaoAddr: string) => {
           const db = normalizeAddr(dbAddr);
@@ -783,8 +791,9 @@ Deno.serve(async (req) => {
           return null;
         };
 
-        // 전략 1: 식당명 + 춘천
-        let docs = await searchKakao(`${rest.name} 춘천`);
+        // 전략 1: 식당명 + 도시명
+        const citySearchTerm = kakaoSearchCityName ?? "";
+        let docs = await searchKakao(citySearchTerm ? `${rest.name} ${citySearchTerm}` : rest.name);
         let matched = findMatch(docs);
 
         // 전략 2: 식당명만
@@ -833,26 +842,28 @@ Deno.serve(async (req) => {
 
       // === Category ID 변경 (트랜잭션) ===
       case "category_rename": {
-        const { old_id, new_id, label, emoji, id_prefix, tag_placeholder, tag_suggestions, sort_order } = data;
+        const { old_id, new_id, label, emoji, id_prefix, tag_placeholder, tag_suggestions, sort_order, city_id: renameCityId } = data;
+        if (!renameCityId) throw new Error("city_id가 필요합니다");
         // 1. 새 카테고리 insert
         const { error: insertErr } = await supabase.from("categories").insert({
-          id: new_id, label, emoji, id_prefix, tag_placeholder, tag_suggestions, sort_order,
+          id: new_id, label, emoji, id_prefix, tag_placeholder, tag_suggestions, sort_order, city_id: renameCityId,
         });
         if (insertErr) throw insertErr;
-        // 2. 식당 일괄 이동
+        // 2. 식당 일괄 이동 (해당 도시만)
         const { error: updateErr } = await supabase
           .from("restaurants")
           .update({ category: new_id })
-          .eq("category", old_id);
+          .eq("category", old_id)
+          .eq("city_id", renameCityId);
         if (updateErr) {
-          await supabase.from("categories").delete().eq("id", new_id);
+          await supabase.from("categories").delete().eq("id", new_id).eq("city_id", renameCityId);
           throw updateErr;
         }
-        // 3. 구 카테고리 삭제
-        const { error: deleteErr } = await supabase.from("categories").delete().eq("id", old_id);
+        // 3. 구 카테고리 삭제 (해당 도시만)
+        const { error: deleteErr } = await supabase.from("categories").delete().eq("id", old_id).eq("city_id", renameCityId);
         if (deleteErr) {
-          await supabase.from("restaurants").update({ category: old_id }).eq("category", new_id);
-          await supabase.from("categories").delete().eq("id", new_id);
+          await supabase.from("restaurants").update({ category: old_id }).eq("category", new_id).eq("city_id", renameCityId);
+          await supabase.from("categories").delete().eq("id", new_id).eq("city_id", renameCityId);
           throw deleteErr;
         }
         result = { success: true };
@@ -959,10 +970,9 @@ Deno.serve(async (req) => {
 
       case "category_reorder": {
         for (const u of data.updates) {
-          const { error } = await supabase
-            .from("categories")
-            .update({ sort_order: u.sort_order })
-            .eq("id", u.id);
+          let q = supabase.from("categories").update({ sort_order: u.sort_order }).eq("id", u.id);
+          if (u.city_id) q = (q as any).eq("city_id", u.city_id);
+          const { error } = await q;
           if (error) throw error;
         }
         result = { success: true };
