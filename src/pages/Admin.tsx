@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image, MapPin, Users, Star, MessageSquare } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeft, Search, Loader2, Lock, MessageSquarePlus, Check, X, Settings2, Image, MapPin, Users, Star, MessageSquare, GitMerge } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCategories, useInvalidateCategories, type CategoryRow } from "@/hooks/useCategories";
 import { useAllVisitCounts } from "@/hooks/useVisitCount";
@@ -130,6 +130,10 @@ const Admin = () => {
   const [editingCat, setEditingCat] = useState<CategoryRow | null>(null);
   const [showCatForm, setShowCatForm] = useState(false);
   const [catSaving, setCatSaving] = useState(false);
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [mergingCat, setMergingCat] = useState<CategoryRow | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState("");
+  const [mergeSaving, setMergeSaving] = useState(false);
 
   // Drag and drop state
   const dragItem = useRef<string | null>(null);
@@ -667,6 +671,26 @@ const Admin = () => {
     }
   };
 
+  const handleMergeCategory = async () => {
+    if (!mergingCat || !mergeTargetId) return;
+    const targetCat = categories.find(c => c.id === mergeTargetId);
+    const count = categoryCount(mergingCat.id);
+    if (!confirm(`"${mergingCat.label}" 카테고리의 식당 ${count}개를 "${targetCat?.label}"으로 이동하고, "${mergingCat.label}" 카테고리를 삭제합니다. 계속할까요?`)) return;
+    setMergeSaving(true);
+    try {
+      await adminApi("bulk_update_category", { old_category: mergingCat.id, new_category: mergeTargetId, city_id: adminCityId });
+      await adminApi("category_delete", { id: mergingCat.id, city_id: adminCityId });
+      invalidateCategories();
+      silentRefresh();
+      setShowMergeModal(false);
+      setMergingCat(null);
+      setMergeTargetId("");
+      toast({ title: `합병 완료 ✅ (${count}개 식당 이동)` });
+    } catch (err: any) {
+      toast({ title: "합병 실패", description: err.message, variant: "destructive" });
+    }
+    setMergeSaving(false);
+  };
 
   // --- Login Screen ---
   if (!authenticated) {
@@ -1024,12 +1048,21 @@ const Admin = () => {
                     />
                   )}
                   {editMode && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat); }}
-                      className="absolute -top-1 -right-1 z-20 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-[10px] leading-none hover:scale-110 transition-transform"
-                    >
-                      ×
-                    </button>
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat); }}
+                        className="absolute -top-1 -right-1 z-20 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-[10px] leading-none hover:scale-110 transition-transform"
+                      >
+                        ×
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setMergingCat(cat); setMergeTargetId(categories.filter(c => c.id !== cat.id)[0]?.id ?? ""); setShowMergeModal(true); }}
+                        className="absolute -top-1 -left-1 z-20 w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center hover:scale-110 transition-transform"
+                        title="합병"
+                      >
+                        <GitMerge className="w-2.5 h-2.5" />
+                      </button>
+                    </>
                   )}
                   <span className="relative z-10 text-xl sm:text-4xl">{cat.emoji}</span>
                   <span className={`relative z-10 text-[10px] sm:text-[15px] font-medium leading-tight w-full text-center truncate ${
@@ -1114,6 +1147,42 @@ const Admin = () => {
                 <Button onClick={handleSaveCategory} disabled={catSaving}>
                   {catSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
                   {editingCat ? "수정" : "추가"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Category Merge Modal */}
+        {showMergeModal && mergingCat && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-lg w-full max-w-sm p-6 space-y-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <GitMerge className="h-5 w-5 text-blue-500" /> 카테고리 합병
+              </h2>
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-muted/50 text-sm">
+                  <span className="font-medium text-destructive">"{mergingCat.label}"</span>
+                  <span className="text-muted-foreground"> 카테고리 ({categoryCount(mergingCat.id)}개 식당)를 아래 카테고리로 합칩니다. 이 카테고리는 삭제됩니다.</span>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">합칠 대상 카테고리</label>
+                  <select
+                    value={mergeTargetId}
+                    onChange={(e) => setMergeTargetId(e.target.value)}
+                    className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    {categories.filter(c => c.id !== mergingCat.id).map(c => (
+                      <option key={c.id} value={c.id}>{c.emoji} {c.label} ({categoryCount(c.id)}개)</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => { setShowMergeModal(false); setMergingCat(null); setMergeTargetId(""); }}>취소</Button>
+                <Button onClick={handleMergeCategory} disabled={mergeSaving || !mergeTargetId} className="bg-blue-500 hover:bg-blue-600">
+                  {mergeSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <GitMerge className="h-4 w-4 mr-1" />}
+                  합병하기
                 </Button>
               </div>
             </div>
