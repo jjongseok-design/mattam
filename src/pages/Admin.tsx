@@ -599,6 +599,7 @@ const Admin = () => {
           // Insert new category, update restaurants, delete old
           await adminApi("category_insert", {
             id: newId,
+            city_id: adminCityId,
             label: catForm.label,
             emoji: catForm.emoji,
             id_prefix: catForm.id_prefix,
@@ -622,6 +623,7 @@ const Admin = () => {
         const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order), 0);
         await adminApi("category_insert", {
           id: catForm.id.trim(),
+          city_id: adminCityId,
           label: catForm.label,
           emoji: catForm.emoji,
           id_prefix: catForm.id_prefix || "xx",
