@@ -1,10 +1,20 @@
 /**
  * insert-jeonju-new.mjs
- * 전주 신규 식당 직접 삽입:
- *   1. 카카오 키워드 검색으로 좌표/주소/전화번호 확인
- *   2. Google Places로 영업시간/가격대 수집
- *   3. Supabase DB 삽입
+ *
+ * 전주 신규 식당을 한 번에 처리합니다:
+ *   1. 카카오 키워드 검색 → 좌표/주소/전화번호 확인
+ *   2. Google Places → 영업시간/가격대
+ *   3. Claude Haiku → 메뉴 태그 + 한 줄 설명
+ *   4. Supabase DB 삽입
+ *
+ * 사용법:
+ *   node scripts/insert-jeonju-new.mjs
+ *   DRY_RUN=1 node scripts/insert-jeonju-new.mjs   (DB 변경 없이 미리보기)
+ *
+ * 입력 파일: restaurants-jeonju-new.json
+ *   형식: [{ "name": "식당명", "address": "주소", "category": "카테고리" }, ...]
  */
+
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -16,11 +26,13 @@ const env = Object.fromEntries(
     .map(l => { const i = l.indexOf("="); return [l.slice(0, i).trim(), l.slice(i + 1).trim()]; })
 );
 
-const KAKAO      = env.KAKAO_REST_API_KEY;
-const GOOGLE_KEY = env.GOOGLE_PLACES_API_KEY;
-const SB_URL     = env.VITE_SUPABASE_URL;
-const SK         = env.SUPABASE_SERVICE_ROLE_KEY;
-const DRY_RUN    = process.env.DRY_RUN === "1";
+const KAKAO         = env.KAKAO_REST_API_KEY;
+const GOOGLE_KEY    = env.GOOGLE_PLACES_API_KEY;
+const ANTHROPIC_KEY = env.ANTHROPIC_API_KEY;
+const SB_URL        = env.VITE_SUPABASE_URL;
+const SK            = env.SUPABASE_SERVICE_ROLE_KEY;
+const DRY_RUN       = process.env.DRY_RUN === "1";
+const CLAUDE_MODEL  = "claude-haiku-4-5-20251001";
 
 const SB_H = { apikey: SK, Authorization: `Bearer ${SK}`, "Content-Type": "application/json" };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -30,22 +42,16 @@ const RESTAURANTS = JSON.parse(readFileSync(resolve(ROOT, "restaurants-jeonju-ne
 
 // ── 카카오 키워드 검색 ────────────────────────────────────────────────────────
 async function kakaoSearch(name) {
-  const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
-  url.searchParams.set("query", `${name} 전주`);
-  url.searchParams.set("category_group_code", "FD6");
-  url.searchParams.set("size", "5");
-  const r = await fetch(url.toString(), { headers: { Authorization: `KakaoAK ${KAKAO}` } });
-  const d = await r.json();
-  // FD6 없으면 카테고리 없이 재검색 (카페/베이커리 등)
-  if (!d.documents?.length) {
-    const url2 = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
-    url2.searchParams.set("query", `${name} 전주`);
-    url2.searchParams.set("size", "5");
-    const r2 = await fetch(url2.toString(), { headers: { Authorization: `KakaoAK ${KAKAO}` } });
-    const d2 = await r2.json();
-    return d2.documents ?? [];
+  for (const categoryCode of ["FD6", ""]) {
+    const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
+    url.searchParams.set("query", `${name} 전주`);
+    if (categoryCode) url.searchParams.set("category_group_code", categoryCode);
+    url.searchParams.set("size", "5");
+    const r = await fetch(url.toString(), { headers: { Authorization: `KakaoAK ${KAKAO}` } });
+    const d = await r.json();
+    if (d.documents?.length) return d.documents;
   }
-  return d.documents ?? [];
+  return [];
 }
 
 function nameMatch(a, b) {
@@ -56,6 +62,7 @@ function nameMatch(a, b) {
 
 // ── Google Places ─────────────────────────────────────────────────────────────
 const DAY_KO = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+
 function parseHours(openingHours) {
   if (!openingHours?.periods?.length) return {};
   const periods = openingHours.periods;
@@ -92,7 +99,7 @@ async function googlePlaces(name, lat, lng) {
   await sleep(300);
   const detUrl = new URL("https://maps.googleapis.com/maps/api/place/details/json");
   detUrl.searchParams.set("place_id", placeId);
-  detUrl.searchParams.set("fields", "formatted_phone_number,price_level,opening_hours");
+  detUrl.searchParams.set("fields", "formatted_phone_number,price_level,opening_hours,editorial_summary");
   detUrl.searchParams.set("language", "ko");
   detUrl.searchParams.set("key", GOOGLE_KEY);
   const dr = await fetch(detUrl.toString());
@@ -102,75 +109,76 @@ async function googlePlaces(name, lat, lng) {
   return {
     phone: res.formatted_phone_number ?? null,
     price_range: price_map[res.price_level] ?? null,
+    google_description: res.editorial_summary?.overview ?? null,
     ...parseHours(res.opening_hours),
   };
 }
 
+// ── Claude: 메뉴 태그 + 한 줄 설명 ────────────────────────────────────────────
+async function claudeFetch(name, category, address, googleDesc) {
+  const prompt = `전주 식당 정보를 보고 아래 두 가지를 JSON으로 답해줘.
+
+식당명: ${name}
+카테고리: ${category}
+주소: ${address}
+${googleDesc ? `Google 설명: ${googleDesc}` : ""}
+
+답변 형식 (JSON만, 설명 없이):
+{
+  "menus": ["대표메뉴1", "대표메뉴2", "대표메뉴3"],
+  "description": "한 줄 설명 (20자 이내, 이 식당의 특징)"
+}
+
+규칙:
+- menus: 이 식당에서 실제로 파는 대표 메뉴 3~5개, 한국어, 10자 이내
+- description: 식당의 핵심 특징 한 줄 (예: "전주 한옥마을 대표 비빔밥 노포")
+- 모르면 카테고리 기반으로 추정`;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 200, messages: [{ role: "user", content: prompt }] }),
+    });
+    if (res.status === 429) {
+      const wait = attempt * 30;
+      process.stdout.write(`  rate limit, ${wait}초 대기...\n`);
+      await sleep(wait * 1000);
+      continue;
+    }
+    if (!res.ok) throw new Error(`Claude API ${res.status}`);
+    const data = await res.json();
+    const text = (data.content?.[0]?.text ?? "").trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return {};
+    try {
+      const parsed = JSON.parse(match[0]);
+      return {
+        tags: Array.isArray(parsed.menus) ? parsed.menus.filter(m => typeof m === "string" && m.length <= 15).slice(0, 5) : null,
+        description: typeof parsed.description === "string" ? parsed.description.slice(0, 100) : null,
+      };
+    } catch { return {}; }
+  }
+  return {};
+}
+
 // ── ID 생성 ───────────────────────────────────────────────────────────────────
-async function nextId(prefix) {
-  const r = await fetch(`${SB_URL}/rest/v1/restaurants?id=like.${prefix}*&select=id`, { headers: SB_H });
-  const rows = await r.json();
-  const max = rows.reduce((m, row) => {
-    const n = parseInt(row.id.replace(prefix, ""));
-    return isNaN(n) ? m : Math.max(m, n);
-  }, 0);
-  return `${prefix}${String(max + 1).padStart(2, "0")}`;
-}
-
-// ── 카테고리별 ID prefix 조회 ─────────────────────────────────────────────────
 async function getPrefix(category) {
-  const r = await fetch(`${SB_URL}/rest/v1/categories?city_id=eq.jeonju&id=eq.${encodeURIComponent(category)}&select=id_prefix`, { headers: SB_H });
-  const d = await r.json();
-  if (d[0]?.id_prefix) return d[0].id_prefix;
-  // 춘천 기준 폴백
-  const r2 = await fetch(`${SB_URL}/rest/v1/categories?city_id=eq.chuncheon&id=eq.${encodeURIComponent(category)}&select=id_prefix`, { headers: SB_H });
-  const d2 = await r2.json();
-  return d2[0]?.id_prefix ?? "je";
+  for (const cityId of ["jeonju", "chuncheon"]) {
+    const r = await fetch(`${SB_URL}/rest/v1/categories?city_id=eq.${cityId}&id=eq.${encodeURIComponent(category)}&select=id_prefix`, { headers: SB_H });
+    const d = await r.json();
+    if (d[0]?.id_prefix) return d[0].id_prefix;
+  }
+  return "je";
 }
 
-// ── 메인 ─────────────────────────────────────────────────────────────────────
-console.log(`전주 신규 식당 ${RESTAURANTS.length}개 삽입 시작...\n${DRY_RUN ? "(DRY RUN)\n" : ""}`);
-
-let inserted = 0, failed = 0;
 const prefixCounters = {};
-
-for (let i = 0; i < RESTAURANTS.length; i++) {
-  const item = RESTAURANTS[i];
-  const prefix_str = `  [${String(i + 1).padStart(2)}/${RESTAURANTS.length}] ${item.name}`;
-
-  // 1. 카카오 검색
-  const docs = await kakaoSearch(item.name);
-  const doc = docs.find(d => nameMatch(item.name, d.place_name)) ?? docs[0];
-  if (!doc) {
-    console.log(`${prefix_str} → ❌ 카카오 검색 실패`);
-    failed++;
-    await sleep(300);
-    continue;
-  }
-  if (!nameMatch(item.name, doc.place_name)) {
-    console.log(`${prefix_str} → ⛔ 이름 불일치 (카카오: ${doc.place_name})`);
-    failed++;
-    await sleep(300);
-    continue;
-  }
-
-  const lat = parseFloat(doc.y);
-  const lng = parseFloat(doc.x);
-  const address = doc.road_address_name || doc.address_name;
-  const phone = doc.phone || null;
-  console.log(`${prefix_str} → ✅ ${doc.place_name} (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
-
-  // 2. Google 영업정보
-  await sleep(300);
-  const gInfo = await googlePlaces(item.name, lat, lng);
-  if (gInfo.opening_hours) console.log(`    🕐 ${gInfo.opening_hours}${gInfo.closed_days ? " · 휴무: " + gInfo.closed_days : ""}`);
-  if (gInfo.phone) console.log(`    📞 ${gInfo.phone}`);
-  if (gInfo.price_range) console.log(`    💰 ${gInfo.price_range}`);
-
-  // 3. ID 생성
-  const idPrefix = await getPrefix(item.category);
+async function nextId(idPrefix) {
   if (!prefixCounters[idPrefix]) {
-    // DB에서 현재 최대값 로드 (카운터 초기화)
     const r = await fetch(`${SB_URL}/rest/v1/restaurants?id=like.${idPrefix}*&select=id`, { headers: SB_H });
     const rows = await r.json();
     prefixCounters[idPrefix] = rows.reduce((m, row) => {
@@ -179,7 +187,50 @@ for (let i = 0; i < RESTAURANTS.length; i++) {
     }, 0);
   }
   prefixCounters[idPrefix]++;
-  const id = `${idPrefix}${String(prefixCounters[idPrefix]).padStart(2, "0")}`;
+  return `${idPrefix}${String(prefixCounters[idPrefix]).padStart(2, "0")}`;
+}
+
+// ── 메인 ─────────────────────────────────────────────────────────────────────
+console.log(`전주 신규 식당 ${RESTAURANTS.length}개 처리 시작...\n${DRY_RUN ? "(DRY RUN — DB 변경 없음)\n" : ""}`);
+
+let inserted = 0, failed = 0;
+
+for (let i = 0; i < RESTAURANTS.length; i++) {
+  const item = RESTAURANTS[i];
+  const prefix = `  [${String(i + 1).padStart(2)}/${RESTAURANTS.length}] ${item.name}`;
+
+  // 1. 카카오 검색
+  const docs = await kakaoSearch(item.name);
+  const doc = docs.find(d => nameMatch(item.name, d.place_name)) ?? docs[0];
+  if (!doc || !nameMatch(item.name, doc.place_name)) {
+    console.log(`${prefix} → ❌ 카카오 불일치 (${doc?.place_name ?? "결과없음"})`);
+    failed++;
+    await sleep(300);
+    continue;
+  }
+
+  const lat = parseFloat(doc.y);
+  const lng = parseFloat(doc.x);
+  const address = doc.road_address_name || doc.address_name;
+  const kakaoPhone = doc.phone || null;
+  console.log(`${prefix} → ✅ ${doc.place_name}`);
+
+  // 2. Google Places (영업시간/가격대)
+  await sleep(300);
+  const gInfo = await googlePlaces(doc.place_name, lat, lng);
+  if (gInfo.opening_hours) process.stdout.write(`    🕐 ${gInfo.opening_hours}${gInfo.closed_days ? " · 휴무: " + gInfo.closed_days : ""}\n`);
+  if (gInfo.phone || kakaoPhone) process.stdout.write(`    📞 ${gInfo.phone || kakaoPhone}\n`);
+  if (gInfo.price_range) process.stdout.write(`    💰 ${gInfo.price_range}\n`);
+
+  // 3. Claude (메뉴 + 설명)
+  await sleep(500);
+  const aiInfo = await claudeFetch(doc.place_name, item.category, address, gInfo.google_description);
+  if (aiInfo.tags?.length) process.stdout.write(`    🍽️  ${aiInfo.tags.join(", ")}\n`);
+  if (aiInfo.description) process.stdout.write(`    📝 ${aiInfo.description}\n`);
+
+  // 4. ID 생성
+  const idPrefix = await getPrefix(item.category);
+  const id = await nextId(idPrefix);
 
   const row = {
     id,
@@ -189,11 +240,13 @@ for (let i = 0; i < RESTAURANTS.length; i++) {
     address,
     lat,
     lng,
-    phone: gInfo.phone || phone,
+    phone: gInfo.phone || kakaoPhone,
     category: item.category,
     price_range: gInfo.price_range ?? null,
     opening_hours: gInfo.opening_hours ?? null,
     closed_days: gInfo.closed_days ?? null,
+    tags: aiInfo.tags ?? null,
+    description: aiInfo.description ?? null,
   };
 
   if (!DRY_RUN) {
@@ -202,14 +255,20 @@ for (let i = 0; i < RESTAURANTS.length; i++) {
       headers: { ...SB_H, Prefer: "return=minimal" },
       body: JSON.stringify(row),
     });
-    if (res.ok) { console.log(`    💾 삽입 완료 (id: ${id})`); inserted++; }
-    else { const t = await res.text(); console.log(`    ⚠️  삽입 실패: ${t}`); failed++; }
+    if (res.ok) {
+      process.stdout.write(`    💾 삽입 완료 (id: ${id})\n`);
+      inserted++;
+    } else {
+      const t = await res.text();
+      process.stdout.write(`    ⚠️  삽입 실패: ${t}\n`);
+      failed++;
+    }
   } else {
-    console.log(`    [DRY RUN] 삽입 예정: ${JSON.stringify(row)}`);
+    process.stdout.write(`    [DRY RUN] id: ${id}\n`);
     inserted++;
   }
 
-  await sleep(500);
+  await sleep(8000); // Claude rate limit 대응
 }
 
 console.log(`\n${"─".repeat(50)}`);
