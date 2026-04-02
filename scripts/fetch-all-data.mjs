@@ -56,6 +56,7 @@ const SUPABASE_SERVICE_KEY =
 
 const GOOGLE_KEY = env.GOOGLE_PLACES_API_KEY;
 const DRY_RUN = env.DRY_RUN === "1";
+const SKIP_IMAGES = env.SKIP_IMAGES === "1";
 const LIMIT = env.LIMIT ? parseInt(env.LIMIT) : null;
 const DELAY_MS = parseInt(env.DELAY_MS || "2000");
 const CITY = env.CITY || null;
@@ -335,34 +336,33 @@ async function main() {
         `${prefix} → 후보: ${details.candidateName}${details._byAddress ? " [주소검색]" : ""}`
       );
 
-      // 사진 다운로드 & 업로드 (최대 5장)
+      // 사진 다운로드 & 업로드 (최대 5장) — SKIP_IMAGES=1 이면 건너뜀
       const imageUrls = [];
-      let photoIdx = 0;
+      if (!SKIP_IMAGES) {
+        let photoIdx = 0;
+        while (imageUrls.length < 5 && photoIdx < details.photos.length) {
+          const photo = details.photos[photoIdx++];
+          const downloaded = await downloadPhoto(photo.photo_reference);
+          if (!downloaded) continue;
 
-      while (imageUrls.length < 5 && photoIdx < details.photos.length) {
-        const photo = details.photos[photoIdx++];
-        const downloaded = await downloadPhoto(photo.photo_reference);
-        if (!downloaded) continue;
+          const ext = downloaded.contentType.includes("png") ? "png" : "jpg";
+          const fileIdx = imageUrls.length;
+          const filePath = fileIdx === 0 ? `${r.id}.${ext}` : `${r.id}_${fileIdx}.${ext}`;
 
-        const ext = downloaded.contentType.includes("png") ? "png" : "jpg";
-        // image_url: {id}.jpg, extra_images: {id}_1.jpg, {id}_2.jpg ...
-        const fileIdx = imageUrls.length;
-        const filePath = fileIdx === 0 ? `${r.id}.${ext}` : `${r.id}_${fileIdx}.${ext}`;
-
-        if (!DRY_RUN) {
-          const publicUrl = await uploadToStorage(filePath, downloaded.buf, downloaded.contentType);
-          imageUrls.push(publicUrl);
-          process.stdout.write(`  📸 ${filePath} 업로드\n`);
-        } else {
-          imageUrls.push(`[DRY_RUN] ${filePath}`);
-          process.stdout.write(`  📸 [예정] ${filePath}\n`);
+          if (!DRY_RUN) {
+            const publicUrl = await uploadToStorage(filePath, downloaded.buf, downloaded.contentType);
+            imageUrls.push(publicUrl);
+            process.stdout.write(`  📸 ${filePath} 업로드\n`);
+          } else {
+            imageUrls.push(`[DRY_RUN] ${filePath}`);
+            process.stdout.write(`  📸 [예정] ${filePath}\n`);
+          }
         }
-      }
-
-      if (imageUrls.length === 0 && details.photos.length > 0) {
-        console.log(`  ⚠️  사진 다운로드 실패`);
-      } else if (details.photos.length === 0) {
-        console.log(`  ⚠️  Google에 사진 없음`);
+        if (imageUrls.length === 0 && details.photos.length > 0) {
+          console.log(`  ⚠️  사진 다운로드 실패`);
+        } else if (details.photos.length === 0) {
+          console.log(`  ⚠️  Google에 사진 없음`);
+        }
       }
 
       // DB 업데이트할 필드 수집
