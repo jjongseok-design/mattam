@@ -155,6 +155,35 @@ const MapView = ({ restaurants, selectedId, onSelect, visitedIds = new Set(), is
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
+  // ── 도시 변경 시 지도 중심·경계 업데이트 ─────────────────────────────────
+  useEffect(() => {
+    if (!city) return;
+
+    // 카카오맵 재중심화
+    const kakaoMap = kakaoMapRef.current;
+    if (kakaoMap) {
+      kakaoMap.setCenter(new kakao.maps.LatLng(city.lat, city.lng));
+      kakaoMap.setLevel(7);
+      // 새 도시 경계로 최대 레벨 재계산
+      const latSpan = city.bounds.ne.lat - city.bounds.sw.lat;
+      const lngSpan = city.bounds.ne.lng - city.bounds.sw.lng;
+      const neededSpan = Math.max(latSpan, lngSpan * 0.7) * 1.5;
+      const maxLevel = Math.max(7, Math.min(12, 7 + Math.ceil(Math.log2(neededSpan / 0.15))));
+      (kakaoMap as any).setMaxLevel(maxLevel);
+    }
+
+    // Leaflet 재중심화
+    const leafMap = leafMapRef.current;
+    if (leafMap) {
+      leafMap.setMaxBounds(L.latLngBounds(
+        L.latLng(city.bounds.sw.lat, city.bounds.sw.lng),
+        L.latLng(city.bounds.ne.lat, city.bounds.ne.lng)
+      ));
+      leafMap.setView([city.lat, city.lng], city.zoom ?? 12, { animate: false });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cityId]);
+
   // ── 카카오 마커 전체 재생성 ───────────────────────────────────────────────
   // restaurants 또는 selectedId 가 바뀔 때마다 마커를 완전히 지우고 다시 그린다.
   // 단순하고 확실한 방식 — 선택적 업데이트 없음.
