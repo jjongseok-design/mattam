@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const slides = [
-  { emoji: "🗺️", title: "춘천 맛집 지도, 맛탐", desc: "AI가 아닌 직접 가본 사람들이\n만들어가는 진짜 맛집 지도예요." },
+const getSlides = (cityName: string) => [
+  { emoji: "🗺️", title: `${cityName} 맛집 지도, 맛탐`, desc: "AI가 아닌 직접 가본 사람들이\n만들어가는 진짜 맛집 지도예요." },
   { emoji: "📮", title: "제보하면 지도에 추가돼요", desc: "아는 맛집을 + 버튼으로 제보하면\n맛탐팀이 확인 후 지도에 올려드려요." },
-  { emoji: "🌱", title: "함께 만들수록 더 풍성해져요", desc: "여러분의 제보 하나하나가\n춘천 최고의 맛집 지도를 만들어요." },
+  { emoji: "🌱", title: "함께 만들수록 더 풍성해져요", desc: `여러분의 제보 하나하나가\n${cityName} 최고의 맛집 지도를 만들어요.` },
 ];
 
-const OnboardingSlide = ({ onClose, centered }: { onClose: () => void; centered?: boolean }) => {
+const OnboardingSlide = ({ onClose, centered, cityName = "우리 동네" }: { onClose: () => void; centered?: boolean; cityName?: string }) => {
+  const slides = getSlides(cityName);
   const [current, setCurrent] = useState(0);
   const isLast = current === slides.length - 1;
   const handleNext = () => { if (isLast) { onClose(); } else { setCurrent((p) => p + 1); } };

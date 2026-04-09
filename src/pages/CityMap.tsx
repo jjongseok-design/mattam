@@ -386,7 +386,7 @@ const CityMap = () => {
           <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
           <TipNotificationPopup />
           <AnimatePresence>
-            {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} />}
+            {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} cityName={city?.name} />}
           </AnimatePresence>
 
           {/* 하단 탭바 */}
@@ -582,7 +582,7 @@ const CityMap = () => {
           <TipForm open={tipOpen} onClose={() => setTipOpen(false)} />
           <TipNotificationPopup />
           <AnimatePresence>
-            {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} centered />}
+            {showOnboarding && <OnboardingSlide onClose={handleOnboardingClose} centered cityName={city?.name} />}
           </AnimatePresence>
           <JsonLd />
           <ShareCard open={shareOpen} onClose={() => setShareOpen(false)} restaurants={restaurants} visited={visited} cityName={city?.name} />
