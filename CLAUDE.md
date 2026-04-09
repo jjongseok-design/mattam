@@ -183,3 +183,34 @@
 3. `public/sw.js` → `mattam-v2` 버전으로 교체, 전체 캐시 삭제로 변경
 4. `vite.config.ts`에서 Supabase `StaleWhileRevalidate` 캐시 제거
 5. `index.html`에 React 로드 전 SW/캐시 정리 인라인 스크립트 추가
+
+---
+
+## 도시 추가 작업 원칙
+
+### 🔒 절대 불변 원칙
+
+**새 도시 추가 작업 시:**
+- 기존에 존재하는 모든 도시(춘천, 전주, 제주 등) 데이터/코드/설정 절대 건드리지 않음
+- 새 도시의 city_id 로만 격리하여 작업
+- DB: restaurants, categories 테이블 모두 새 city_id 조건으로만 조회/수정/삭제
+- 스크립트: 항상 city_id를 명시적으로 지정, 전체 조회 금지
+- 카테고리 id_prefix는 반드시 도시코드 2글자로 시작 (예: 제주=jj, 전주=jn)
+
+**전체 플랫폼 작업 시에만 전 도시 아울러서 작업:**
+- UI/UX 개편
+- 전체 이미지 정책 변경
+- 플랫폼 기능 추가/개선
+- 공통 컴포넌트 수정
+
+### 새 도시 추가 순서
+1. DB cities 테이블에 도시 등록 (is_active=false, coming_soon=true)
+2. copy-categories.mjs 로 카테고리 복사 + 도시 특화 카테고리 추가
+3. 러버블에서 맛집 데이터 수집 → 엑셀 → JSON 변환
+4. import-{city}.mjs 로 카카오 검증 + DB 삽입 (DRY_RUN 먼저)
+5. retry-{city}-failed.mjs 로 실패 항목 재검증
+6. fetch-{city}-hours.mjs 로 영업시간 수집
+7. CITY={city} node scripts/fetch-menus.mjs 로 메뉴 수집
+8. upload-city-image.mjs 로 도시 대표 이미지 등록
+9. 어드민에서 식당별 이미지 수동 작업
+10. cities 테이블 is_active=true, coming_soon=false 로 오픈
